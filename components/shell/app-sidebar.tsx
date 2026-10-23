@@ -12,9 +12,7 @@ import {
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { PpbMark } from '@/components/brand/ppb-mark'
-import { usePlan } from '@/components/app/plan-provider'
-import { StatusChip } from '@/components/app/status-chip'
-import { fmt } from '@/lib/ppb-model'
+import { SidebarPlanSwitcher } from '@/components/app/plan-switcher'
 import { cn } from '@/lib/utils'
 
 const GROUPS: {
@@ -41,7 +39,6 @@ const GROUPS: {
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { sim, planName } = usePlan()
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
@@ -110,19 +107,7 @@ export function AppSidebar() {
       </nav>
 
       <div className="flex flex-col gap-2 border-t border-sidebar-border p-2">
-        <Link
-          href="/simulation"
-          className="rounded-md border border-sidebar-border bg-ink-raised px-2.5 py-2 transition-colors hover:border-brand/60 focus-visible:outline-2 focus-visible:outline-ring"
-        >
-          <p className="text-[10px] tracking-[0.08em] text-sidebar-foreground/50 uppercase">
-            Active plan
-          </p>
-          <p className="mt-0.5 truncate text-[12px] font-medium text-white">{planName}</p>
-          <div className="mt-1.5 flex items-center justify-between">
-            <span className="num text-[16px] font-semibold text-white">{fmt(sim.yearEnd)}</span>
-            <StatusChip status={sim.status} className="bg-white/10" />
-          </div>
-        </Link>
+        <SidebarPlanSwitcher />
         <button
           type="button"
           className="flex items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-white/5"

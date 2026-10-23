@@ -198,9 +198,10 @@ export function TrajectoryPanel({
                 value: `Required ${REQUIRED_SCORE}`,
                 position: 'insideTopLeft',
                 fill: INK,
-                fontSize: 10.5,
-                dy: -13,
-              }}
+  fontSize: 10.5,
+  dy: -9,
+  dx: 6,
+  }}
             />
             <Tooltip
               content={<ChartTooltip scenarioName={scenarioName} />}
@@ -214,7 +215,9 @@ export function TrajectoryPanel({
               strokeDasharray="5 4"
               dot={forecastDot}
               activeDot={{ r: 3.5 }}
-              isAnimationActive={false}
+              isAnimationActive
+              animationBegin={200}
+              animationDuration={1000}
             />
             <Line
               type="monotone"
@@ -224,7 +227,8 @@ export function TrajectoryPanel({
               dot={scenarioDot}
               activeDot={{ r: 4 }}
               isAnimationActive
-              animationDuration={450}
+              animationBegin={500}
+              animationDuration={900}
               hide={isBaseline}
             />
             <Line
@@ -234,7 +238,8 @@ export function TrajectoryPanel({
               strokeWidth={2.5}
               dot={actualDot}
               activeDot={{ r: 4 }}
-              isAnimationActive={false}
+              isAnimationActive
+              animationDuration={1100}
             />
           </LineChart>
         </ResponsiveContainer>

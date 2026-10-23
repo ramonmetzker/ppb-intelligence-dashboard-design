@@ -23,6 +23,7 @@ import {
   type SeriesRow,
   type VolumeMode,
 } from '@/lib/ppb-model'
+import { CountUp } from '@/components/app/count-up'
 import { Panel } from '@/components/app/panel'
 import { usePlan } from '@/components/app/plan-provider'
 import { Segmented } from '@/components/app/segmented'
@@ -191,7 +192,9 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
                 stackId="volume"
                 fill={item.color}
                 maxBarSize={34}
-                isAnimationActive={false}
+                isAnimationActive
+                animationDuration={900}
+                animationEasing="ease-out"
               />
             ))}
             <Line
@@ -203,7 +206,9 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               strokeDasharray="5 4"
               dot={false}
               connectNulls={false}
-              isAnimationActive={false}
+              isAnimationActive
+              animationBegin={300}
+              animationDuration={1000}
             />
             <Line
               yAxisId="right"
@@ -213,7 +218,9 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               strokeWidth={2.25}
               dot={{ r: 2.5, fill: '#fff', stroke: INK, strokeWidth: 1.5 }}
               activeDot={{ r: 4 }}
-              isAnimationActive={false}
+              isAnimationActive
+              animationBegin={300}
+              animationDuration={1100}
             />
           </ComposedChart>
         </ResponsiveContainer>
@@ -301,7 +308,7 @@ function Matrix({
           </tr>
         </thead>
         <tbody>
-          {ITEMS.map((item) => (
+          {ITEMS.map((item, rowIndex) => (
             <tr key={item.key} className="border-b border-border/70">
               <th scope="row" className="px-4 py-1.5 text-left font-medium">
                 <span className="flex items-center gap-2">
@@ -322,10 +329,15 @@ function Matrix({
                   <td
                     key={row.month}
                     className={cn(
-                      'px-2 py-1.5 text-right',
+                      'cell-in px-2 py-1.5 text-right',
                       openStart(row.index) && 'border-l border-dashed border-brand/60',
                     )}
-                    style={isShare ? { background: heat(cell.share) } : undefined}
+                    style={
+                      {
+                        ...(isShare ? { background: heat(cell.share) } : {}),
+                        '--cell-delay': `${300 + row.index * 45 + rowIndex * 60}ms`,
+                      } as React.CSSProperties
+                    }
                   >
                     {isShare ? (
                       <>
@@ -365,12 +377,21 @@ function Matrix({
               >
                 {isShare ? (
                   <>
-                    <span className="num block text-[12.5px] leading-4 font-semibold">
-                      {fmtPercent(row.total.share)}
-                    </span>
-                    <span className="num block text-[11.5px] leading-4 font-semibold text-brand-deep">
-                      {fmt(row.total.points, 1)}
-                    </span>
+                    <CountUp
+                      value={row.total.share * 100}
+                      decimals={1}
+                      suffix="%"
+                      duration={900}
+                      delay={row.index * 50}
+                      className="num block text-[12.5px] leading-4 font-semibold"
+                    />
+                    <CountUp
+                      value={row.total.points}
+                      decimals={1}
+                      duration={900}
+                      delay={row.index * 50}
+                      className="num block text-[11.5px] leading-4 font-semibold text-brand-deep"
+                    />
                   </>
                 ) : (
                   <span className="num text-[12.5px] font-semibold">

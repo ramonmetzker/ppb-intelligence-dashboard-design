@@ -1,59 +1,34 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight } from '@phosphor-icons/react'
-import {
-  ITEMS,
-  BASE_PLAN,
-  SUGGESTIONS,
-  fmtSigned,
-} from '@/lib/ppb-model'
+import { ArrowRight, Sparkle } from '@phosphor-icons/react'
+import { ITEMS, BASE_PLAN, fmtSigned } from '@/lib/ppb-model'
+import { CountUp } from '@/components/app/count-up'
 import { Panel } from '@/components/app/panel'
+import { PlanOptionGrid } from '@/components/app/plan-switcher'
 import { usePlan } from '@/components/app/plan-provider'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 
 export function PlanSummary() {
-  const { plan, sim, active, applySuggestion } = usePlan()
-  const value = active?.id ?? 'custom'
+  const { plan, sim } = usePlan()
 
   return (
     <Panel
       id="plan"
       title="Plan for November and December"
-      description="Local share you commit to in the months still open."
+      description="Pick a plan and the whole app recalculates."
       className="h-full"
       action={
-        <Select value={value} onValueChange={(id) => id && id !== 'custom' && applySuggestion(id)}>
-          <SelectTrigger
-            aria-label="Choose a plan"
-            className="h-7 w-[168px] rounded-md border-input bg-card text-[12px] font-medium shadow-none"
-          >
-            <SelectValue>{active?.name ?? 'Custom plan'}</SelectValue>
-          </SelectTrigger>
-          <SelectContent alignItemWithTrigger={false} align="end">
-            {SUGGESTIONS.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name}
-              </SelectItem>
-            ))}
-            {!active && (
-              <SelectItem value="custom" disabled>
-                Custom plan
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+        <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
+          <Sparkle size={13} weight="fill" className="text-brand" aria-hidden="true" />
+          Applies to every page
+        </span>
       }
       bodyClassName="flex flex-col p-0"
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 px-4 py-1.5 text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
+      <PlanOptionGrid />
+
+      <div className="grid grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 border-t border-border px-4 py-1.5 text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
         <span>Item</span>
         <span className="text-right">Nov</span>
         <span className="text-right">Dec</span>
@@ -80,12 +55,12 @@ export function PlanSummary() {
                 const changed = Math.abs(delta) >= 0.05
                 return (
                   <span key={open} className="num text-right text-[12.5px]">
-                    <span className={cn('font-medium', changed && 'text-brand')}>
-                      {plan[item.key][open].toFixed(1)}%
+                    <span className={cn('font-medium transition-colors', changed && 'text-brand')}>
+                      <CountUp value={plan[item.key][open]} decimals={1} suffix="%" duration={800} />
                     </span>
                     <span
                       className={cn(
-                        'block text-[10.5px] leading-3',
+                        'block text-[10.5px] leading-3 transition-colors',
                         changed
                           ? delta > 0
                             ? 'text-success'
@@ -100,7 +75,7 @@ export function PlanSummary() {
               })}
               <span
                 className={cn(
-                  'num text-right text-[12.5px] font-medium',
+                  'num text-right text-[12.5px] font-medium transition-colors',
                   Math.abs(row.delta) < 0.005
                     ? 'text-muted-foreground'
                     : row.delta > 0
@@ -108,7 +83,7 @@ export function PlanSummary() {
                       : 'text-critical',
                 )}
               >
-                {Math.abs(row.delta) < 0.005 ? '0.00' : fmtSigned(row.delta)}
+                <CountUp value={row.delta} signed duration={800} />
               </span>
             </li>
           )
