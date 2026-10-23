@@ -18,10 +18,13 @@ import {
   fmtDate,
   fmtPct,
   fmtPrice,
+  YEAR_AGO,
+  yearGap,
   type Material,
   type Origin,
   type PriceEntry,
   type PriceVersion,
+  type YearGap,
 } from '@/lib/material-store'
 import { cn } from '@/lib/utils'
 
@@ -69,6 +72,33 @@ function Delta({ current, previous }: { current: number; previous: number }) {
       )}
     >
       {fmtPct(change)}
+    </span>
+  )
+}
+
+function gapTone(ratio: number) {
+  if (Math.abs(ratio) < 0.0005) return 'text-muted-foreground'
+  return ratio > 0 ? 'text-critical' : 'text-success'
+}
+
+function YearGapCell({ gap }: { gap: YearGap | null }) {
+  if (!gap) {
+    return (
+      <span
+        className="text-[11.5px] text-muted-foreground"
+        title={`No price recorded on or before ${fmtDate(YEAR_AGO)}`}
+      >
+        No data
+      </span>
+    )
+  }
+  return (
+    <span
+      className="flex flex-col items-end leading-tight"
+      title={`${fmtPrice(gap.previous)} a year ago, ${gap.diff >= 0 ? '+' : '-'}${fmtPrice(Math.abs(gap.diff))}`}
+    >
+      <span className={cn('font-medium tabular-nums', gapTone(gap.ratio))}>{fmtPct(gap.ratio)}</span>
+      <span className="text-[10.5px] text-muted-foreground tabular-nums">from {fmtPrice(gap.previous)}</span>
     </span>
   )
 }
@@ -242,14 +272,15 @@ export function PriceTable() {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[860px] table-fixed text-left text-[12.5px]">
+        <table className="w-full min-w-[960px] table-fixed text-left text-[12.5px]">
           <colgroup>
-            <col className="w-[36%]" />
-            <col className="w-[20%]" />
-            <col className="w-[11%]" />
+            <col className="w-[29%]" />
+            <col className="w-[16%]" />
+            <col className="w-[10%]" />
             <col className="w-[13%]" />
             <col className="w-[12%]" />
-            <col className="w-[8%]" />
+            <col className="w-[11%]" />
+            <col className="w-[9%]" />
           </colgroup>
           <thead>
             <tr className="border-b border-border text-[11px] tracking-wide text-muted-foreground uppercase">
@@ -257,6 +288,7 @@ export function PriceTable() {
               <th scope="col" className="px-3 py-2 font-medium">Vendor</th>
               <th scope="col" className="px-3 py-2 font-medium">Origin</th>
               <th scope="col" className="px-3 py-2 text-right font-medium">Price (USD)</th>
+              <th scope="col" className="px-3 py-2 text-right font-medium">vs. last year</th>
               <th scope="col" className="px-3 py-2 font-medium">Last update</th>
               <th scope="col" className="px-3 py-2 text-right font-medium">
                 <span className="sr-only">Actions</span>
@@ -272,6 +304,8 @@ export function PriceTable() {
             const latest = entries.reduce((a, e) => (e.updatedAt > a ? e.updatedAt : a), '')
             const localCount = entries.filter((e) => e.origin === 'local').length
             const lowest = entries.length > 1 ? min : null
+            const gaps = entries.map(yearGap).filter((g): g is YearGap => g !== null)
+            const averageRatio = gaps.length ? gaps.reduce((sum, g) => sum + g.ratio, 0) / gaps.length : null
 
             return (
               <tbody key={material.code} className="border-b border-border last:border-b-0">
@@ -336,6 +370,23 @@ export function PriceTable() {
                   <td className="px-3 text-right text-muted-foreground tabular-nums">
                     {min === max ? fmtPrice(min) : `${fmtPrice(min)} to ${fmtPrice(max)}`}
                   </td>
+                  <td className="px-3 text-right">
+                    {averageRatio == null ? (
+                      <span className="text-[11.5px] text-muted-foreground">No data</span>
+                    ) : (
+                      <span
+                        className="flex flex-col items-end leading-tight"
+                        title={`Average across ${gaps.length} of ${entries.length} vendor${entries.length > 1 ? 's' : ''} with a year-ago price`}
+                      >
+                        <span className={cn('font-medium tabular-nums', gapTone(averageRatio))}>
+                          {fmtPct(averageRatio)}
+                        </span>
+                        {entries.length > 1 && (
+                          <span className="text-[10.5px] text-muted-foreground">average</span>
+                        )}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-3 text-muted-foreground tabular-nums">{fmtDate(latest)}</td>
                   <td />
                 </tr>
@@ -396,6 +447,9 @@ export function PriceTable() {
                               </span>
                             )}
                           </td>
+                          <td className="px-3 text-right">
+                            <YearGapCell gap={yearGap(entry)} />
+                          </td>
                           <td className="px-3 text-muted-foreground tabular-nums">{fmtDate(entry.updatedAt)}</td>
                           <td className="px-2">
                             <div className="flex items-center justify-end gap-0.5">
@@ -452,7 +506,7 @@ export function PriceTable() {
                         </tr>
                         {showHistory && (
                           <tr className="bg-secondary/30">
-                            <td colSpan={6}>
+                            <td colSpan={7}>
                               <HistoryList entry={entry} />
                             </td>
                           </tr>

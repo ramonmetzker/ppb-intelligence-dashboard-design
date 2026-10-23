@@ -160,24 +160,75 @@ const SEED: { code: string; description: string; item: ItemKey | null; vendors: 
   },
 ]
 
+/**
+ * Prices recorded about a year before the working date. A few vendors are left
+ * out on purpose: they started supplying later, so they have no year-ago price.
+ */
+const YEAR_AGO_SEED: [code: string, vendor: string, price: number][] = [
+  ['MEM-GH82-16G', 'Hynix Korea', 17.4],
+  ['MEM-GH82-16G', 'Samsung Semiconductor', 17.9],
+  ['MEM-GH82-16G', 'Memtech Manaus', 19.1],
+  ['MEM-GH96-08G', 'Hynix Korea', 12.9],
+  ['MEM-GH96-08G', 'Micron Asia', 13.1],
+  ['MEM-GH96-08G', 'Memtech Manaus', 13.4],
+  ['BAT-EB938-CELL', 'ATL Shenzhen', 8.55],
+  ['BAT-EB938-CELL', 'Sunwoda', 8.7],
+  ['BAT-EB938-CELL', 'Moura Baterias', 8.4],
+  ['BAT-FPC-02', 'Yuhui Electronics', 0.71],
+  ['ADP-TA20-US', 'Flex Shenzhen', 3.18],
+  ['ADP-TA20-US', 'Salcomp Manaus', 2.97],
+  ['ADP-CBL-USBC', 'Lintes Technology', 0.9],
+  ['ADP-CBL-USBC', 'Cabos do Sul', 0.89],
+  ['PBA-GH82-ASM', 'SMT Vietnam', 51.8],
+  ['PBA-GH82-ASM', 'Jabil Campinas', 52.1],
+  ['PBA-GH96-ASM', 'SMT Vietnam', 45.5],
+  ['MB-GH82-MB', 'Shenzhen Boards', 31.6],
+  ['MB-GH82-MB', 'Hon Hai Precision', 31.9],
+  ['MB-GH82-MB', 'Local SMT Manaus', 32.2],
+  ['MB-PCB-6L', 'TTM Technologies', 5.9],
+  ['MB-PCB-6L', 'Plasma PCB', 6.35],
+]
+
+const YEAR_AGO_DATE = '2025-10-15'
+
 export function seedBook(): PriceBook {
+  const yearAgo = new Map(YEAR_AGO_SEED.map(([code, vendor, price]) => [entryId(code, vendor), price]))
   const materials: Record<string, Material> = {}
   const entries: PriceEntry[] = []
   for (const m of SEED) {
     materials[m.code] = { code: m.code, description: m.description, item: m.item }
     for (const [vendor, origin, price, updatedAt, history = []] of m.vendors) {
-      entries.push({
-        id: entryId(m.code, vendor),
-        code: m.code,
-        vendor,
-        origin,
-        price,
-        updatedAt,
-        history: history.map(([p, d]) => ({ price: p, origin, updatedAt: d })),
-      })
+      const id = entryId(m.code, vendor)
+      const versions: PriceVersion[] = history.map(([p, d]) => ({ price: p, origin, updatedAt: d }))
+      const old = yearAgo.get(id)
+      if (old != null) versions.push({ price: old, origin, updatedAt: YEAR_AGO_DATE })
+      entries.push({ id, code: m.code, vendor, origin, price, updatedAt, history: versions })
     }
   }
   return { materials, entries }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Year-over-year gap                                                          */
+/* -------------------------------------------------------------------------- */
+
+/** The working date one year back, e.g. 2026-11-06 becomes 2025-11-06. */
+export const YEAR_AGO = `${Number(TODAY.slice(0, 4)) - 1}${TODAY.slice(4)}`
+
+export type YearGap = { previous: number; diff: number; ratio: number }
+
+/**
+ * Compares the current price with the price in effect on the year-ago date.
+ * Returns null when the price history does not reach back that far.
+ */
+export function yearGap(entry: PriceEntry): YearGap | null {
+  const inEffect = [entry, ...entry.history].find((v) => v.updatedAt <= YEAR_AGO)
+  if (!inEffect) return null
+  return {
+    previous: inEffect.price,
+    diff: entry.price - inEffect.price,
+    ratio: entry.price / inEffect.price - 1,
+  }
 }
 
 /* -------------------------------------------------------------------------- */
