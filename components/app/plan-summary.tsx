@@ -5,7 +5,7 @@ import { ArrowRight, Sparkle } from '@phosphor-icons/react'
 import { ITEMS, BASE_PLAN, fmtSigned } from '@/lib/ppb-model'
 import { CountUp } from '@/components/app/count-up'
 import { Panel } from '@/components/app/panel'
-import { PlanOptionGrid } from '@/components/app/plan-switcher'
+import { InlinePlanSwitcher } from '@/components/app/plan-switcher'
 import { usePlan } from '@/components/app/plan-provider'
 import { cn } from '@/lib/utils'
 
@@ -26,7 +26,7 @@ export function PlanSummary() {
       }
       bodyClassName="flex flex-col p-0"
     >
-      <PlanOptionGrid />
+      <InlinePlanSwitcher />
 
       <div className="grid grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 border-t border-border px-4 py-1.5 text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
         <span>Item</span>
