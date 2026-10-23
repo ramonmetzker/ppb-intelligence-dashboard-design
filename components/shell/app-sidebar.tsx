@@ -8,6 +8,7 @@ import {
   ChartBar,
   GitBranch,
   SquaresFour,
+  Tag,
   WarningDiamond,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
@@ -29,7 +30,10 @@ const GROUPS: {
   },
   {
     label: 'Plan',
-    items: [{ label: 'Simulation', href: '/simulation', icon: GitBranch }],
+    items: [
+      { label: 'Simulation', href: '/simulation', icon: GitBranch },
+      { label: 'Material prices', href: '/materials', icon: Tag },
+    ],
   },
   {
     label: 'Monitor',
