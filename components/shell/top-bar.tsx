@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select'
 
 const FILTERS = [
-  { label: 'Business', value: 'GBM', options: ['GBM'] },
+  { label: 'GBM', value: 'MX', options: ['MX', 'VD', 'DA'] },
   { label: 'Product', value: 'HHP', options: ['HHP', 'Tablet', 'Wearable'] },
   { label: 'Year', value: '2026', options: ['2026', '2025'] },
 ]

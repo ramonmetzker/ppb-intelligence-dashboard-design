@@ -54,7 +54,7 @@ function Splash({ leaving }: { leaving: boolean }) {
               PPB Intelligence
             </p>
             <p className="mt-0.5 text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/60 uppercase">
-              GBM 2026 compliance
+              MX 2026 compliance
             </p>
           </div>
         </div>

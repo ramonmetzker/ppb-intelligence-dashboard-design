@@ -1,6 +1,8 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Space_Grotesk } from 'next/font/google'
+import { BootProvider } from '@/components/app/boot'
+import { RouteProgress } from '@/components/app/route-progress'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -32,7 +34,9 @@ export default function RootLayout({
       className={`${geist.variable} ${spaceGrotesk.variable} bg-shell`}
     >
       <body className="antialiased">
-        {children}
+        <RouteProgress>
+          <BootProvider>{children}</BootProvider>
+        </RouteProgress>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

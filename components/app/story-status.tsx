@@ -62,7 +62,7 @@ export function StoryStatus() {
             <span className="absolute inline-flex size-full rounded-[2px] bg-brand/50 motion-safe:animate-ping" />
             <span className="relative inline-flex size-2 rounded-[2px] bg-brand" />
           </span>
-          Live model, GBM 2026. Actuals closed through October.
+          Live model, MX 2026. Actuals closed through October.
         </p>
         <p className="text-[11.5px] text-muted-foreground">
           Viewing{' '}

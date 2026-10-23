@@ -12,7 +12,7 @@ export default function OverviewPage() {
   return (
     <>
       <PageHeader
-        title="PPB overview, GBM 2026"
+        title="PPB overview, MX 2026"
         description="Where we are, what is required, where the forecast lands, and what your plan changes."
       />
       <div className="flex flex-col gap-3">
