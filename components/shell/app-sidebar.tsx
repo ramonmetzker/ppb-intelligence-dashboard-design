@@ -2,7 +2,6 @@ import {
   CaretUpDown,
   ChartLine,
   ChartLineUp,
-  Cube,
   Database,
   Factory,
   GearSix,
@@ -12,6 +11,7 @@ import {
 } from '@phosphor-icons/react/dist/ssr'
 import type { Icon } from '@phosphor-icons/react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { PpbMark } from '@/components/brand/ppb-mark'
 import { cn } from '@/lib/utils'
 
 const NAV: { label: string; icon: Icon; active?: boolean }[] = [
@@ -32,9 +32,7 @@ export function AppSidebar() {
       className="sticky top-3 hidden h-[calc(100vh-1.5rem)] w-[232px] shrink-0 flex-col rounded-2xl border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_8px_24px_-12px_rgba(10,14,20,0.45)] lg:flex"
     >
       <div className="flex items-center gap-3 px-4 pt-5 pb-4">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-brand/15 text-brand ring-1 ring-brand/30">
-          <Cube size={20} weight="duotone" aria-hidden="true" />
-        </div>
+        <PpbMark size={36} className="shrink-0" />
         <div className="min-w-0 leading-tight">
           <p className="truncate text-[14px] font-semibold tracking-tight text-white">
             PPB Intelligence

@@ -18,7 +18,7 @@ export function CostIntelligence() {
         </h2>
 
         <div className="mt-6">
-          <p className="tnum text-[44px] leading-none font-semibold tracking-tight">
+          <p className="num-mono text-[44px] leading-none font-medium">
             R$ 42.8k
           </p>
           <p className="mt-2 text-[13px] text-muted-foreground">
@@ -29,7 +29,7 @@ export function CostIntelligence() {
         <dl className="mt-auto grid grid-cols-3 gap-4 border-t border-border pt-5">
           {METRICS.map((m, i) => (
             <div key={m.label} className={i > 0 ? 'border-l border-border pl-4' : ''}>
-              <dd className="tnum text-[20px] leading-7 font-semibold tracking-tight">
+              <dd className="num-mono text-[20px] leading-7 font-medium">
                 {m.value}
               </dd>
               <dt className="mt-1 text-[12px] leading-snug text-muted-foreground">

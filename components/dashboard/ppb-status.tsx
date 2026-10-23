@@ -1,87 +1,144 @@
-import { CaretRight, CheckCircle, WarningCircle } from '@phosphor-icons/react/dist/ssr'
+import { CheckCircle, WarningCircle } from '@phosphor-icons/react/dist/ssr'
 import { status } from '@/lib/ppb-data'
 import { cn } from '@/lib/utils'
 
-const SCALE_MIN = 560
-const SCALE_MAX = 680
-const pos = (v: number) => `${((v - SCALE_MIN) / (SCALE_MAX - SCALE_MIN)) * 100}%`
+const TARGET_ALONG_SEGMENT =
+  (status.required - status.forecast) / (status.optimized - status.forecast)
+
+const fmt = (n: number) => n.toFixed(2)
+const delta = (n: number) => `${n >= 0 ? '+' : '\u2212'}${Math.abs(n).toFixed(2)}`
 
 export function PpbStatus() {
+  const gapToTarget = status.forecast - status.required
+  const marginToTarget = status.optimized - status.required
+
   return (
     <section
       aria-labelledby="ppb-status-heading"
-      className="overflow-hidden rounded-xl border border-border bg-card"
+      className="rounded-xl border border-border bg-card"
     >
       <h2 id="ppb-status-heading" className="sr-only">
-        PPB status: current, forecast, optimized and required score
+        PPB status: current {fmt(status.current)}, forecast {fmt(status.forecast)},
+        optimized {fmt(status.optimized)}, against a required score of{' '}
+        {status.required}
       </h2>
 
-      <div className="grid grid-cols-1 items-stretch lg:grid-cols-[1fr_88px_1.15fr_88px_1.15fr_auto]">
-        <Metric
-          label="Current"
-          value="573.74"
-          caption="Actual accumulated score"
-          tone="muted"
-        />
-        <Connector label="+67.46" />
-        <Metric
-          label="Year-end forecast"
-          value="641.20"
-          caption="-20.80 pts from target"
-          badge={{ tone: 'warning', text: 'At risk' }}
-        />
-        <Connector label="+27.10" accent />
-        <Metric
-          label="Optimized plan"
-          value="668.30"
-          caption="+6.30 pts above target"
-          badge={{ tone: 'success', text: 'Compliant' }}
-        />
-        <div className="flex flex-col justify-center border-t border-dashed border-border bg-secondary/60 p-6 lg:min-w-[220px] lg:border-t-0 lg:border-l lg:px-8">
-          <p className="eyebrow">Required score</p>
-          <p className="tnum mt-3 text-[44px] leading-none font-semibold tracking-tight">
-            662
-          </p>
-          <p className="mt-3 text-[13px] text-muted-foreground">
-            Brazil PPB compliance target
-          </p>
+      <div className="flex items-center justify-between px-6 pt-5 lg:px-8">
+        <p className="eyebrow">Year-end PPB position</p>
+        <GrammarKey />
+      </div>
+
+      <div
+        aria-hidden="true"
+        className="mt-3 hidden grid-cols-3 px-8 lg:grid"
+      >
+        <div className="relative flex h-[72px] items-center">
+          <span className="size-[11px] shrink-0 rounded-full bg-actual" />
+          <div className="relative mr-1.5 ml-1.5 h-full flex-1">
+            <span className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-linear-to-r from-actual/45 to-forecast" />
+            <SegmentDelta className="left-1/2">
+              {delta(status.forecast - status.current)}
+            </SegmentDelta>
+          </div>
+        </div>
+
+        <div className="relative flex h-[72px] items-center">
+          <span className="size-[11px] shrink-0 rounded-full border-2 border-forecast bg-card" />
+          <div className="relative mr-1.5 ml-1.5 h-full flex-1">
+            <span className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-linear-to-r from-forecast to-optimized" />
+            <SegmentDelta className="left-[30%]">
+              {delta(status.optimized - status.forecast)}
+            </SegmentDelta>
+            <div
+              className="absolute inset-y-0 flex -translate-x-1/2 flex-col items-center"
+              style={{ left: `${TARGET_ALONG_SEGMENT * 100}%` }}
+            >
+              <span className="num-mono text-[10.5px] font-medium tracking-normal whitespace-nowrap text-target uppercase">
+                Target {status.required}
+              </span>
+              <span className="mt-1 mb-2 w-px flex-1 bg-target" />
+            </div>
+          </div>
+        </div>
+
+        <div className="relative flex h-[72px] items-center">
+          <span className="size-[11px] shrink-0 rounded-full bg-optimized" />
         </div>
       </div>
 
-      <div className="hidden border-t border-border px-8 pt-3 pb-4 lg:block">
-        <ScoreRule />
+      <div className="grid grid-cols-1 divide-y divide-border px-6 pb-2 lg:mt-0 lg:grid-cols-3 lg:divide-y-0 lg:px-8 lg:pb-7">
+        <State
+          label="Current"
+          value={fmt(status.current)}
+          valueClass="text-actual"
+          caption="Actual accumulated score"
+        />
+        <State
+          label="Year-end forecast"
+          value={fmt(status.forecast)}
+          valueClass="text-forecast"
+          caption={`${delta(-Math.abs(gapToTarget))} pts from target`}
+          captionClass="text-warning"
+          tag={{ tone: 'warning', text: 'At risk' }}
+        />
+        <State
+          label="Optimized plan"
+          value={fmt(status.optimized)}
+          valueClass="text-optimized"
+          caption={`${delta(marginToTarget)} pts above target`}
+          captionClass="text-success"
+          tag={{ tone: 'success', text: 'Compliant' }}
+        />
+      </div>
+
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-border px-6 py-3.5 lg:px-8">
+        <p className="eyebrow">Required score</p>
+        <p className="num-mono text-[15px] font-medium">{status.required}</p>
+        <p className="text-[12.5px] text-muted-foreground">
+          Brazil PPB compliance benchmark. Forecast and optimized are measured
+          against it.
+        </p>
       </div>
     </section>
   )
 }
 
-function Metric({
+function State({
   label,
   value,
+  valueClass,
   caption,
-  badge,
-  tone,
+  captionClass,
+  tag,
 }: {
   label: string
   value: string
+  valueClass: string
   caption: string
-  badge?: { tone: 'warning' | 'success'; text: string }
-  tone?: 'muted'
+  captionClass?: string
+  tag?: { tone: 'warning' | 'success'; text: string }
 }) {
   return (
-    <div className="flex flex-col justify-center p-6 lg:px-8 lg:py-7">
+    <div className="py-5 lg:py-0 lg:pr-6">
       <p className="eyebrow">{label}</p>
       <p
         className={cn(
-          'tnum mt-3 text-[44px] leading-none font-semibold tracking-tight',
-          tone === 'muted' && 'text-foreground/70',
+          'num-mono mt-2.5 text-[44px] leading-none font-medium xl:text-[52px]',
+          valueClass,
         )}
       >
         {value}
       </p>
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <p className="tnum text-[13px] text-muted-foreground">{caption}</p>
-        {badge && <StatusTag tone={badge.tone}>{badge.text}</StatusTag>}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <p
+          className={cn(
+            'num-mono text-[13px]',
+            captionClass ?? 'text-muted-foreground',
+          )}
+        >
+          {caption}
+        </p>
+        {tag && <StatusTag tone={tag.tone}>{tag.text}</StatusTag>}
       </div>
     </div>
   )
@@ -110,101 +167,44 @@ function StatusTag({
   )
 }
 
-function Connector({ label, accent }: { label: string; accent?: boolean }) {
-  return (
-    <div
-      aria-hidden="true"
-      className="relative hidden items-center justify-center lg:flex"
-    >
-      <span className="tnum absolute top-1/2 mb-2 -translate-y-[calc(100%+4px)] text-[11px] text-muted-foreground">
-        {label}
-      </span>
-      <div className="flex w-full items-center">
-        <span
-          className={cn('h-px flex-1', accent ? 'bg-brand/60' : 'bg-input')}
-        />
-        <CaretRight
-          size={12}
-          weight="bold"
-          className={cn('-ml-1.5', accent ? 'text-brand' : 'text-muted-foreground')}
-        />
-      </div>
-    </div>
-  )
-}
-
-function ScoreRule() {
-  return (
-    <div
-      role="img"
-      aria-label="Score scale from 560 to 680. Current 573.74, forecast 641.20, required 662, optimized 668.30."
-      className="relative mx-2 h-[60px]"
-    >
-      <div className="absolute top-1/2 right-0 left-0 h-px bg-input" />
-
-      <span
-        className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-warning/70"
-        style={{ left: pos(status.forecast), right: `calc(100% - ${pos(status.required)})` }}
-      />
-      <span
-        className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-success/70"
-        style={{ left: pos(status.required), right: `calc(100% - ${pos(status.optimized)})` }}
-      />
-
-      <Mark at={status.current} dot="bg-foreground" label="Current" value="573.74" below />
-      <Mark at={status.forecast} dot="bg-brand" label="Forecast" value="641.20" below />
-      <Mark at={status.optimized} dot="bg-brand-deep" label="Optimized" value="668.30" below align="left" />
-      <div
-        className="absolute top-0 bottom-1/2 flex -translate-x-1/2 flex-col items-center"
-        style={{ left: pos(status.required) }}
-      >
-        <span className="tnum text-[11px] font-medium whitespace-nowrap">
-          Required 662
-        </span>
-        <span className="mt-0.5 w-px flex-1 bg-foreground" />
-      </div>
-
-      <span className="tnum absolute top-1/2 left-0 -translate-y-[calc(100%+6px)] text-[10px] text-muted-foreground/70">
-        560
-      </span>
-      <span className="tnum absolute top-1/2 right-0 -translate-y-[calc(100%+6px)] text-[10px] text-muted-foreground/70">
-        680
-      </span>
-    </div>
-  )
-}
-
-function Mark({
-  at,
-  dot,
-  label,
-  value,
-  align,
+function SegmentDelta({
+  children,
+  className,
 }: {
-  at: number
-  dot: string
-  label: string
-  value: string
-  below?: boolean
-  align?: 'left'
+  children: React.ReactNode
+  className?: string
 }) {
   return (
-    <div
+    <span
       className={cn(
-        'absolute top-1/2 flex flex-col',
-        align === 'left' ? 'items-start' : 'items-center -translate-x-1/2',
+        'num-mono absolute top-[calc(50%+9px)] -translate-x-1/2 text-[11px] whitespace-nowrap text-muted-foreground',
+        className,
       )}
-      style={{ left: pos(at), transform: align === 'left' ? 'translateX(-6px)' : undefined }}
     >
-      <span
-        className={cn(
-          'size-[11px] -translate-y-1/2 rounded-full ring-2 ring-card',
-          dot,
-        )}
-      />
-      <span className="tnum -mt-0.5 text-[11px] whitespace-nowrap text-muted-foreground">
-        {label} <span className="font-medium text-foreground">{value}</span>
-      </span>
-    </div>
+      {children}
+    </span>
+  )
+}
+
+function GrammarKey() {
+  return (
+    <ul
+      aria-hidden="true"
+      className="hidden items-center gap-4 text-[11.5px] text-muted-foreground sm:flex"
+    >
+      <li className="flex items-center gap-1.5">
+        <span className="size-2 rounded-full bg-actual" /> Actual
+      </li>
+      <li className="flex items-center gap-1.5">
+        <span className="size-2 rounded-full border-[1.5px] border-forecast" />{' '}
+        Forecast
+      </li>
+      <li className="flex items-center gap-1.5">
+        <span className="size-2 rounded-full bg-optimized" /> Optimized
+      </li>
+      <li className="flex items-center gap-1.5">
+        <span className="h-3 w-px bg-target" /> Target
+      </li>
+    </ul>
   )
 }

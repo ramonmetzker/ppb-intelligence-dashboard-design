@@ -102,7 +102,7 @@ export function CostScatter() {
                       textAnchor="end"
                       fontSize={11}
                       fontWeight={600}
-                      fill="#0b4a5e"
+                      fill="#0a6b78"
                     >
                       Memory / GH82
                     </text>
@@ -111,7 +111,7 @@ export function CostScatter() {
                     cx={props.cx}
                     cy={props.cy}
                     r={highlight ? 6 : 4}
-                    fill={highlight ? "#1687a7" : "#161a21"}
+                    fill={highlight ? "#0a6b78" : "#161a21"}
                     fillOpacity={highlight ? 1 : 0.8}
                     stroke="#fff"
                     strokeWidth={1.5}

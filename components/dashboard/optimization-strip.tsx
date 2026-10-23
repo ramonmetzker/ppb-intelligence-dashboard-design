@@ -21,7 +21,7 @@ export function OptimizationStrip() {
         >
           Optimized sourcing plan
         </h2>
-        <p className="tnum mt-2 text-[40px] leading-none font-semibold tracking-tight">
+        <p className="num-mono mt-2 text-[40px] leading-none font-medium">
           R$ 3.47M
         </p>
         <p className="mt-2 text-[13px] text-white/60">
@@ -35,7 +35,7 @@ export function OptimizationStrip() {
             key={m.label}
             className="border-white/10 px-6 sm:border-l"
           >
-            <dd className="tnum text-[26px] leading-8 font-semibold">{m.value}</dd>
+            <dd className="num-mono text-[26px] leading-8 font-medium">{m.value}</dd>
             <dt className="mt-0.5 text-[12px] text-white/60">{m.label}</dt>
           </div>
         ))}

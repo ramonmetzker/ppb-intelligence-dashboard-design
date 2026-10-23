@@ -16,7 +16,7 @@ export function OctoberClosing() {
   return (
     <section
       aria-labelledby="closing-heading"
-      className="flex flex-col gap-6 rounded-xl border border-border bg-card p-6 xl:flex-row xl:items-center"
+      className="flex flex-col gap-6 border-t border-border pt-8 xl:flex-row xl:items-center"
     >
       <div className="xl:w-[180px] xl:shrink-0">
         <h2 id="closing-heading" className="text-[19px] font-semibold tracking-tight">
@@ -54,7 +54,7 @@ export function OctoberClosing() {
 
       <div className="border-t border-border pt-5 xl:w-[150px] xl:shrink-0 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6">
         <p className="eyebrow">Data quality</p>
-        <p className="tnum mt-1.5 text-[30px] leading-none font-semibold tracking-tight">
+        <p className="num-mono mt-1.5 text-[30px] leading-none font-medium">
           98.7%
         </p>
       </div>

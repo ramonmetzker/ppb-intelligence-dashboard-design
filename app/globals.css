@@ -48,6 +48,10 @@
   --color-critical: var(--critical);
   --color-graphite: var(--graphite);
   --color-graphite-raised: var(--graphite-raised);
+  --color-actual: var(--actual);
+  --color-forecast: var(--forecast);
+  --color-optimized: var(--optimized);
+  --color-target: var(--target);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -83,7 +87,11 @@
   --ring: #1687a7;
 
   --brand: #1687a7;
-  --brand-deep: #0b4a5e;
+  --brand-deep: #0a6b78;
+  --actual: #161a21;
+  --forecast: #1687a7;
+  --optimized: #0a6b78;
+  --target: #7b8697;
   --success: #1c8558;
   --warning: #a8620a;
   --critical: #c0392b;
@@ -125,6 +133,12 @@
   .tnum {
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';
+  }
+  .num-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+    letter-spacing: -0.02em;
   }
   .eyebrow {
     @apply text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground;

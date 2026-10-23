@@ -116,7 +116,7 @@ function Legend() {
         <span className="h-1.5 w-3 rounded-sm bg-foreground" /> Current
       </li>
       <li className="flex items-center gap-1.5">
-        <span className="h-3 w-0.5 bg-brand" /> Forecast
+        <span className="h-3 w-0.5 bg-forecast" /> Forecast
       </li>
       <li className="flex items-center gap-1.5">
         <span className="h-3 w-0.5 bg-brand-deep" /> Optimized

@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: 'PPB Intelligence | Compliance, forecast and sourcing optimization',
   description:
     'Monitor Brazil PPB compliance, forecast year-end results with AI, and optimize material sourcing with mathematical optimization.',
+  icons: { icon: '/icon.svg' },
 }
 
 export const viewport: Viewport = {

@@ -28,20 +28,22 @@ export function AttentionQueue() {
         title="Requires attention"
         description="Open data items blocking the October calculation."
       />
-      <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+      <ul className="divide-y divide-border border-y border-border">
         {attention.map((item) => {
           const Icon = ICONS[item.icon]
           return (
             <li key={item.text}>
               <a
                 href="#"
-                className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-secondary/60"
+                className="group flex items-center gap-4 px-2 py-4 transition-colors hover:bg-secondary/60"
               >
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary text-foreground/70">
-                  <Icon size={17} aria-hidden="true" />
-                </span>
+                <Icon
+                  size={18}
+                  className="shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span className="flex-1 text-[14px] font-medium">{item.text}</span>
-                <span className="tnum w-10 text-right text-[18px] font-semibold">
+                <span className="num-mono w-10 text-right text-[18px] font-medium">
                   {item.count}
                 </span>
                 <span

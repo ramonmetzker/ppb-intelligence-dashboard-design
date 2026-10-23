@@ -6,11 +6,8 @@ const MAX_IMPACT = Math.max(...riskDrivers.map((d) => Math.abs(d.impact)))
 
 export function RiskSection() {
   return (
-    <section className="grid gap-6 xl:grid-cols-[minmax(0,6fr)_minmax(0,4fr)]">
-      <div
-        aria-labelledby="risk-heading"
-        className="rounded-xl border border-border bg-card p-6"
-      >
+    <section className="grid gap-10 border-t border-border pt-8 xl:grid-cols-[minmax(0,6fr)_minmax(0,4fr)] xl:gap-0">
+      <div aria-labelledby="risk-heading" className="xl:pr-10">
         <div className="flex items-baseline justify-between">
           <h2 id="risk-heading" className="text-[19px] font-semibold tracking-tight">
             Main risk drivers
@@ -26,11 +23,18 @@ export function RiskSection() {
               key={d.rank}
               className="grid grid-cols-[28px_minmax(0,1fr)_96px_72px] items-center gap-4 py-3.5"
             >
-              <span className="font-mono text-[12px] text-muted-foreground">
+              <span className="num-mono text-[12px] text-muted-foreground">
                 {d.rank}
               </span>
               <div className="min-w-0">
-                <p className="text-[14px] font-medium">{d.driver}</p>
+                <p className="flex items-center gap-2 text-[14px] font-medium">
+                  {d.driver}
+                  {i === 0 && (
+                    <span className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-brand-deep">
+                      Primary driver
+                    </span>
+                  )}
+                </p>
                 <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
                   {d.reason}
                 </p>
@@ -65,7 +69,7 @@ export function RiskSection() {
 
       <div
         aria-labelledby="changes-heading"
-        className="rounded-xl border border-border bg-card p-6"
+        className="xl:border-l xl:border-border xl:pl-10"
       >
         <h2 id="changes-heading" className="text-[19px] font-semibold tracking-tight">
           Since last forecast
@@ -86,9 +90,16 @@ export function RiskSection() {
                   <span className="flex size-6 items-center justify-center rounded-md bg-secondary text-muted-foreground">
                     <Arrow size={14} weight="bold" aria-hidden="true" />
                   </span>
-                  <span className="text-[14px]">{c.label}</span>
+                  <div>
+                    <span className="text-[14px]">{c.label}</span>
+                    {c.label === 'Memory local share' && (
+                      <p className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-brand-deep">
+                        Anomaly detected
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <span className="tnum text-[15px] font-semibold">{c.value}</span>
+                <span className="num-mono text-[15px] font-medium">{c.value}</span>
               </li>
             )
           })}
