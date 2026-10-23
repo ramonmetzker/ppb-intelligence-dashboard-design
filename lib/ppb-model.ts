@@ -294,14 +294,45 @@ export function itemShareTrend(plan: Plan, key: ItemKey) {
 /* AI suggestions: starting points for the plan                                */
 /* -------------------------------------------------------------------------- */
 
+export type PlanSource = 'forecast' | 'agent'
+
 export type Suggestion = {
   id: string
   name: string
   tag: string
   blurb: string
+  /** Local time, ISO without a zone: YYYY-MM-DDTHH:mm:ss. */
+  createdAt: string
+  source: PlanSource
   /** Percentage points added to the forecast share, per open month. */
   delta: Record<ItemKey, [number, number]>
   plan: Plan
+}
+
+/** The nightly model run that produced the built-in suggestions. */
+export const FORECAST_RUN_AT = '2026-11-06T08:42:00'
+
+const MONTH_NAMES = MONTHS as readonly string[]
+
+/** "Nov 06, 08:42" from a local ISO string, without any timezone conversion. */
+export function fmtCreated(iso: string) {
+  const [date, time = '00:00'] = iso.split('T')
+  const [, month, day] = date.split('-').map(Number)
+  return `${MONTH_NAMES[month - 1]} ${String(day).padStart(2, '0')}, ${time.slice(0, 5)}`
+}
+
+/** Builds a plan option from raw shares, used for plans the planner agent delivers. */
+export function planToSuggestion(
+  meta: Pick<Suggestion, 'id' | 'name' | 'tag' | 'blurb' | 'createdAt'>,
+  plan: Plan,
+): Suggestion {
+  const delta = Object.fromEntries(
+    ITEMS.map((i) => [
+      i.key,
+      [plan[i.key][0] - BASE_PLAN[i.key][0], plan[i.key][1] - BASE_PLAN[i.key][1]],
+    ]),
+  ) as Record<ItemKey, [number, number]>
+  return { ...meta, source: 'agent', delta, plan: clonePlan(plan) }
 }
 
 const zero: [number, number] = [0, 0]
@@ -319,13 +350,19 @@ function planFromDelta(delta: Record<ItemKey, [number, number]>): Plan {
 }
 
 function suggestion(
-  meta: Omit<Suggestion, 'delta' | 'plan'>,
+  meta: Omit<Suggestion, 'delta' | 'plan' | 'createdAt' | 'source'>,
   delta: Partial<Record<ItemKey, [number, number]>>,
 ): Suggestion {
   const full = Object.fromEntries(
     ITEMS.map((i) => [i.key, delta[i.key] ?? zero]),
   ) as Record<ItemKey, [number, number]>
-  return { ...meta, delta: full, plan: planFromDelta(full) }
+  return {
+    ...meta,
+    createdAt: FORECAST_RUN_AT,
+    source: 'forecast',
+    delta: full,
+    plan: planFromDelta(full),
+  }
 }
 
 export const SUGGESTIONS: Suggestion[] = [
@@ -422,8 +459,8 @@ export function samePlan(a: Plan, b: Plan) {
   )
 }
 
-export function matchSuggestion(plan: Plan) {
-  return SUGGESTIONS.find((s) => samePlan(s.plan, plan))
+export function matchSuggestion(plan: Plan, pool: Suggestion[] = SUGGESTIONS) {
+  return pool.find((s) => samePlan(s.plan, plan))
 }
 
 /* -------------------------------------------------------------------------- */

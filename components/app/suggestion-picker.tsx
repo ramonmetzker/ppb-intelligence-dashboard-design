@@ -3,9 +3,9 @@
 import { ArrowCounterClockwise, Sparkle } from '@phosphor-icons/react'
 import {
   REQUIRED_SCORE,
-  SUGGESTION_RESULTS,
   fmt,
   fmtCost,
+  fmtCreated,
   fmtSigned,
 } from '@/lib/ppb-model'
 import { Panel } from '@/components/app/panel'
@@ -18,7 +18,7 @@ const MAX = 700
 const pct = (v: number) => `${Math.min(100, Math.max(0, ((v - MIN) / (MAX - MIN)) * 100))}%`
 
 export function SuggestionPicker() {
-  const { active, origin, applySuggestion, resetToOrigin } = usePlan()
+  const { active, origin, plans, freshIds, applySuggestion, resetToOrigin } = usePlan()
   const activeId = active?.id ?? 'custom'
 
   return (
@@ -44,7 +44,7 @@ export function SuggestionPicker() {
         ) : (
           <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
             <Sparkle size={13} weight="fill" className="text-brand" aria-hidden="true" />
-            {SUGGESTION_RESULTS.length} suggestions simulated
+            {plans.length} plans simulated
           </span>
         )
       }
@@ -55,7 +55,7 @@ export function SuggestionPicker() {
         aria-label="AI suggestions"
         className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
       >
-        {SUGGESTION_RESULTS.map(({ suggestion, sim }) => {
+        {plans.map(({ suggestion, sim }) => {
           const selected = suggestion.id === activeId
           return (
             <button
@@ -83,6 +83,11 @@ export function SuggestionPicker() {
                     )}
                   >
                     {suggestion.tag}
+                    {freshIds.includes(suggestion.id) && (
+                      <span className="ml-1.5 rounded-[3px] bg-success px-1 py-px text-[9.5px] leading-3 font-semibold tracking-normal text-white normal-case">
+                        New
+                      </span>
+                    )}
                   </p>
                   <p className="font-display mt-0.5 truncate text-[13.5px] leading-5 font-semibold tracking-tight">
                     {suggestion.name}
@@ -124,6 +129,9 @@ export function SuggestionPicker() {
                 <span>{sim.cost > 0 ? fmtCost(sim.cost) : 'No spend'}</span>
                 <span>{sim.confidence}% confidence</span>
               </div>
+              <p className="text-[10.5px] leading-3 text-muted-foreground">
+                Created {fmtCreated(suggestion.createdAt)}
+              </p>
             </button>
           )
         })}

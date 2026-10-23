@@ -3,17 +3,18 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Popover } from '@base-ui/react/popover'
-import { ArrowRight, CaretUpDown, Check } from '@phosphor-icons/react'
+import { ArrowRight, CaretUpDown, Check, Sparkle } from '@phosphor-icons/react'
 import {
   REQUIRED_SCORE,
-  SUGGESTION_RESULTS,
   fmt,
+  fmtCreated,
   fmtSigned,
   type Simulation,
 } from '@/lib/ppb-model'
 import { CountUp } from '@/components/app/count-up'
 import { usePlan } from '@/components/app/plan-provider'
 import { StatusChip, statusText } from '@/components/app/status-chip'
+import { useAgent } from '@/components/agent/agent-provider'
 import { cn } from '@/lib/utils'
 
 type PlanOption = {
@@ -22,16 +23,20 @@ type PlanOption = {
   tag: string
   blurb: string
   sim: Simulation
+  createdAt?: string
+  fresh: boolean
 }
 
 function usePlanOptions() {
-  const { active, sim } = usePlan()
-  const options: PlanOption[] = SUGGESTION_RESULTS.map(({ suggestion, sim: result }) => ({
+  const { active, sim, plans, freshIds } = usePlan()
+  const options: PlanOption[] = plans.map(({ suggestion, sim: result }) => ({
     id: suggestion.id,
     name: suggestion.name,
     tag: suggestion.tag,
     blurb: suggestion.blurb,
     sim: result,
+    createdAt: suggestion.createdAt,
+    fresh: freshIds.includes(suggestion.id),
   }))
   const custom: PlanOption | null = active
     ? null
@@ -41,6 +46,7 @@ function usePlanOptions() {
         tag: 'Edited by you',
         blurb: 'Your own local share for the open months.',
         sim,
+        fresh: false,
       }
   return { activeId: active?.id ?? 'custom', options, custom }
 }
@@ -62,6 +68,7 @@ function PlanMenuPopup({
   onClose: () => void
 }) {
   const { applySuggestion } = usePlan()
+  const { setOpen: openAgent } = useAgent()
   const { activeId, options, custom } = usePlanOptions()
   const rows = custom ? [custom, ...options] : options
 
@@ -77,7 +84,7 @@ function PlanMenuPopup({
               Every page recalculates with the plan you pick. Required score is {REQUIRED_SCORE}.
             </Popover.Description>
           </div>
-          <ul className="flex flex-col gap-0.5 p-1.5">
+          <ul className="flex max-h-[min(52vh,420px)] flex-col gap-0.5 overflow-y-auto p-1.5">
             {rows.map((option) => {
               const selected = option.id === activeId
               return (
@@ -104,10 +111,22 @@ function PlanMenuPopup({
                       {selected && <Check size={11} weight="bold" />}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="eyebrow block">{option.tag}</span>
+                      <span className="eyebrow flex items-center gap-1.5">
+                        <span className="truncate">{option.tag}</span>
+                        {option.fresh && (
+                          <span className="rounded-[3px] bg-success px-1 py-px text-[9.5px] leading-3 font-semibold tracking-normal text-white normal-case">
+                            New
+                          </span>
+                        )}
+                      </span>
                       <span className="font-display block truncate text-[13px] leading-5 font-semibold tracking-tight">
                         {option.name}
                       </span>
+                      {option.createdAt && (
+                        <span className="block text-[10.5px] leading-4 text-muted-foreground">
+                          Created {fmtCreated(option.createdAt)}
+                        </span>
+                      )}
                       <span className="relative mt-1 block h-[3px] bg-border" aria-hidden="true">
                         <span
                           className={cn('block h-full', barTone(option.sim.status))}
@@ -139,7 +158,21 @@ function PlanMenuPopup({
               )
             })}
           </ul>
-          <div className="border-t border-border px-3.5 py-2">
+          <div className="flex flex-col gap-1.5 border-t border-border px-3.5 py-2">
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                openAgent(true)
+              }}
+              className="flex items-center justify-between text-left text-[12px] font-medium text-brand-deep hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <span className="flex items-center gap-1.5">
+                <Sparkle size={13} weight="fill" aria-hidden="true" />
+                Ask the AI agent for a new plan
+              </span>
+              <ArrowRight size={13} aria-hidden="true" />
+            </button>
             <Link
               href="/simulation"
               onClick={onClose}

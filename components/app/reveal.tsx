@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useBooted } from '@/components/app/boot'
 import { cn } from '@/lib/utils'
 
 /** Fades and lifts its children into place the first time they scroll into view. */
@@ -15,8 +16,10 @@ export function Reveal({
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const [shown, setShown] = useState(false)
+  const booted = useBooted()
 
   useEffect(() => {
+    if (!booted) return
     const el = ref.current
     if (!el || typeof IntersectionObserver === 'undefined') {
       setShown(true)
@@ -33,7 +36,7 @@ export function Reveal({
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [])
+  }, [booted])
 
   return (
     <div

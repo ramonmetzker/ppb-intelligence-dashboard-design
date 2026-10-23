@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { fmtSigned } from '@/lib/ppb-model'
+import { useBooted } from '@/components/app/boot'
 import { cn } from '@/lib/utils'
 
 const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t))
@@ -12,8 +13,10 @@ function useCountUp(target: number, duration: number, delay: number) {
   const [seen, setSeen] = useState(false)
   const shown = useRef(0)
   const first = useRef(true)
+  const booted = useBooted()
 
   useEffect(() => {
+    if (!booted) return
     const el = ref.current
     if (!el || typeof IntersectionObserver === 'undefined') {
       setSeen(true)
@@ -30,7 +33,7 @@ function useCountUp(target: number, duration: number, delay: number) {
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [])
+  }, [booted])
 
   useEffect(() => {
     if (!seen) return

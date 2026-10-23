@@ -10,6 +10,7 @@ import {
   fmtSigned,
   statusFor,
 } from '@/lib/ppb-model'
+import { useBooted } from '@/components/app/boot'
 import { CountUp } from '@/components/app/count-up'
 import { usePlan } from '@/components/app/plan-provider'
 import { StatusChip, statusText } from '@/components/app/status-chip'
@@ -25,15 +26,17 @@ const pos = (score: number) =>
 
 /** 0 = before mount, 1 = intro playing, 2 = intro finished (interactions stop waiting). */
 function useIntroPhase() {
+  const booted = useBooted()
   const [phase, setPhase] = useState<0 | 1 | 2>(0)
   useEffect(() => {
+    if (!booted) return
     const start = requestAnimationFrame(() => setPhase(1))
     const settle = setTimeout(() => setPhase(2), 2600)
     return () => {
       cancelAnimationFrame(start)
       clearTimeout(settle)
     }
-  }, [])
+  }, [booted])
   return phase
 }
 
