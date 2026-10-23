@@ -3,13 +3,12 @@
 import { Dialog } from '@base-ui/react/dialog'
 import { Lightning, Sparkle, X } from '@phosphor-icons/react'
 import { useAgent } from '@/components/agent/agent-provider'
-import { BriefPanel } from '@/components/agent/brief-panel'
 import { ChatPanel } from '@/components/agent/chat-panel'
 import { ProcessPanel } from '@/components/agent/process-panel'
 import { cn } from '@/lib/utils'
 
 function statusLine(run: ReturnType<typeof useAgent>['run']) {
-  if (!run) return 'Idle, waiting for a brief'
+  if (!run) return 'Ready, goal: reach the target at the lowest spend'
   if (run.status === 'running') {
     const step = run.data.steps[run.stepIndex]
     return `Running, ${step ? step.title.toLowerCase() : 'working'}`
@@ -89,10 +88,7 @@ export function AgentDialog() {
             </div>
           </header>
 
-          <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[288px_minmax(0,1fr)_356px] lg:overflow-hidden [&>section]:min-h-[420px] lg:[&>section]:min-h-0">
-            <div className="flex min-h-0 flex-col border-border lg:border-r [&>section]:min-h-0 [&>section]:flex-1">
-              <BriefPanel />
-            </div>
+          <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_392px] lg:overflow-hidden [&>section]:min-h-[420px] lg:[&>section]:min-h-0">
             <ProcessPanel />
             <div className="flex min-h-0 flex-col border-border lg:border-l [&>section]:min-h-0 [&>section]:flex-1">
               <ChatPanel />

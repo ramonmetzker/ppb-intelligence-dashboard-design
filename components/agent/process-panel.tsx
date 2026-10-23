@@ -12,13 +12,24 @@ import {
   ListChecks,
   MagnifyingGlass,
   Play,
+  Stop,
   TreeStructure,
   Warning,
   X,
   type Icon,
 } from '@phosphor-icons/react'
-import { BASELINE, REQUIRED_SCORE, fmt, fmtCost, fmtCreated, fmtSigned } from '@/lib/ppb-model'
-import { targetScore, type AgentStep, type Phase } from '@/lib/planner-agent'
+import {
+  BASELINE,
+  ITEMS,
+  OPEN_MONTHS,
+  REQUIRED_SCORE,
+  fmt,
+  fmtCost,
+  fmtCreated,
+  fmtSigned,
+} from '@/lib/ppb-model'
+import { PRICE_FEED, QUOTES, premium } from '@/lib/material-prices'
+import { TARGET_SCORE, type AgentStep, type Phase } from '@/lib/planner-agent'
 import { CountUp } from '@/components/app/count-up'
 import { usePlan } from '@/components/app/plan-provider'
 import { statusText } from '@/components/app/status-chip'
@@ -69,49 +80,167 @@ function progressOf(run: RunState) {
 /* Idle state                                                                  */
 /* -------------------------------------------------------------------------- */
 
-function IdleState() {
-  const { start, params } = useAgent()
+const PREMIUM_SCALE = 0.13
+
+function PriceSignals() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 px-8 py-10 text-center">
-      <div className="relative flex size-14 items-center justify-center rounded-md bg-ink text-brand-soft">
-        <Cpu size={26} aria-hidden="true" />
-        <span aria-hidden="true" className="absolute -inset-1.5 rounded-lg border border-brand/30" />
+    <div className="overflow-hidden rounded-md border border-border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <p className="eyebrow">Material price signals</p>
+        <span className="rounded-[3px] bg-warning/10 px-1.5 py-px text-[10.5px] font-medium text-warning">
+          {PRICE_FEED.note}
+        </span>
       </div>
-      <div className="max-w-md">
-        <h3 className="font-display text-[20px] leading-7 font-semibold tracking-tight text-balance">
-          Ready to optimize the open months
-        </h3>
-        <p className="mt-1.5 text-[13px] leading-5 text-pretty text-muted-foreground">
-          The agent builds a mixed integer model of Nov and Dec local share, solves it, checks every
-          constraint and re-optimizes until the plan holds. You can watch each step.
-        </p>
-      </div>
-      <ol className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2" aria-label="How a run works">
-        {PHASES.map((phase, i) => (
-          <li key={phase.id} className="flex items-center gap-1">
-            <span className="flex h-6 items-center gap-1.5 rounded-[4px] border border-border bg-card px-2 text-[11px] font-medium text-muted-foreground">
-              <phase.icon size={12} aria-hidden="true" />
-              {phase.label}
-            </span>
-            {i < PHASES.length - 1 && <ArrowRight size={11} className="text-border" aria-hidden="true" />}
-          </li>
-        ))}
-      </ol>
-      <div className="flex flex-col items-center gap-2">
-        <button
-          type="button"
-          onClick={() => start()}
-          className="flex h-10 items-center gap-2 rounded-md bg-brand px-5 text-[13px] font-medium text-white transition-[filter,transform] hover:brightness-110 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          <Play size={15} weight="fill" aria-hidden="true" />
-          Run simulation
-        </button>
-        <p className="num text-[11.5px] text-muted-foreground">
-          Target {targetScore(params).toFixed(1)}, cap {fmtCost(params.budget)}, confidence{' '}
-          {params.confidenceFloor}% or more
-        </p>
+      <table className="w-full text-[12px]">
+        <caption className="sr-only">Local price premium over import, per item and month</caption>
+        <thead>
+          <tr className="border-b border-border text-left text-[11px] text-muted-foreground">
+            <th scope="col" className="px-3 py-1.5 font-medium">
+              Item
+            </th>
+            {OPEN_MONTHS.map((m) => (
+              <th key={m} scope="col" className="px-3 py-1.5 font-medium">
+                {m} local premium
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border">
+          {ITEMS.map((item) => {
+            const lowest = Math.min(premium(item.key, 0), premium(item.key, 1))
+            return (
+              <tr key={item.key}>
+                <th scope="row" className="px-3 py-1.5 text-left font-medium">
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden="true" className="size-2 rounded-[2px]" style={{ background: item.color }} />
+                    {item.name}
+                  </span>
+                </th>
+                {([0, 1] as const).map((open) => {
+                  const p = premium(item.key, open)
+                  const q = QUOTES[item.key].months[open]
+                  const cheap = p === lowest
+                  return (
+                    <td key={open} className="px-3 py-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="h-1.5 w-16 shrink-0 bg-border" aria-hidden="true">
+                          <span
+                            className={cn('block h-full', cheap ? 'bg-brand' : 'bg-muted-foreground/50')}
+                            style={{ width: `${Math.min(100, (p / PREMIUM_SCALE) * 100)}%` }}
+                          />
+                        </span>
+                        <span className={cn('num w-11 font-semibold', cheap && 'text-brand-deep')}>
+                          {(p * 100).toFixed(1)}%
+                        </span>
+                        <span className="num hidden text-[11px] text-muted-foreground xl:inline">
+                          ${q.local.toFixed(2)} vs ${q.imported.toFixed(2)}
+                        </span>
+                      </div>
+                    </td>
+                  )
+                })}
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function IdleState() {
+  const { start, instructions } = useAgent()
+  const gap = TARGET_SCORE - BASELINE.yearEnd
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-6 py-8">
+        <div className="flex items-start gap-4">
+          <div className="relative flex size-12 shrink-0 items-center justify-center rounded-md bg-ink text-brand-soft">
+            <Cpu size={24} aria-hidden="true" />
+            <span aria-hidden="true" className="absolute -inset-1 rounded-lg border border-brand/30" />
+          </div>
+          <div>
+            <p className="eyebrow">Plan optimizer</p>
+            <h3 className="font-display text-[22px] leading-7 font-semibold tracking-tight text-balance">
+              Reach {TARGET_SCORE.toFixed(0)} at the lowest spend
+            </h3>
+            <p className="mt-1 max-w-lg text-[13px] leading-5 text-pretty text-muted-foreground">
+              For the rest of the year, the agent moves each item&apos;s local share up or down in Nov and Dec
+              by comparing material prices, solves the MILP, checks every limit and re-optimizes until the
+              plan holds.
+            </p>
+          </div>
+        </div>
+
+        <dl className="grid grid-cols-3 divide-x divide-border rounded-md border border-border bg-card">
+          {[
+            { label: 'Forecast', value: fmt(BASELINE.yearEnd), sub: 'year-end today' },
+            { label: 'Target', value: TARGET_SCORE.toFixed(2), sub: `${REQUIRED_SCORE} required + buffer` },
+            { label: 'To close', value: fmtSigned(gap), sub: 'points to find' },
+          ].map((m) => (
+            <div key={m.label} className="px-4 py-3">
+              <dt className="eyebrow">{m.label}</dt>
+              <dd className="num mt-0.5 text-[20px] leading-7 font-semibold">{m.value}</dd>
+              <dd className="text-[11px] leading-4 text-muted-foreground">{m.sub}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <PriceSignals />
+
+        <ol className="flex flex-wrap items-center gap-x-1 gap-y-2" aria-label="How a run works">
+          {PHASES.map((phase, i) => (
+            <li key={phase.id} className="flex items-center gap-1">
+              <span className="flex h-6 items-center gap-1.5 rounded-[4px] border border-border bg-card px-2 text-[11px] font-medium text-muted-foreground">
+                <phase.icon size={12} aria-hidden="true" />
+                {phase.label}
+              </span>
+              {i < PHASES.length - 1 && <ArrowRight size={11} className="text-border" aria-hidden="true" />}
+            </li>
+          ))}
+        </ol>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => start()}
+            className="flex h-10 items-center gap-2 rounded-md bg-brand px-5 text-[13px] font-medium text-white transition-[filter,transform] hover:brightness-110 active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <Play size={15} weight="fill" aria-hidden="true" />
+            Find the cheapest plan
+          </button>
+          <p className="text-[12px] text-muted-foreground">
+            {instructions.length > 0
+              ? `${instructions.length} instruction${instructions.length === 1 ? '' : 's'} from the chat will apply`
+              : 'Or tell the agent where to push or pull in the chat'}
+          </p>
+        </div>
       </div>
     </div>
+  )
+}
+
+function RunControls({ run }: { run: RunState }) {
+  const { start, stop } = useAgent()
+  return run.status === 'running' ? (
+    <button
+      type="button"
+      onClick={stop}
+      className="flex h-6 items-center gap-1.5 rounded-[4px] border border-input bg-card px-2 text-[11.5px] font-medium transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring"
+    >
+      <Stop size={11} weight="fill" aria-hidden="true" />
+      Stop
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={() => start()}
+      className="flex h-6 items-center gap-1.5 rounded-[4px] bg-brand px-2 text-[11.5px] font-medium text-white transition-[filter] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
+      <Play size={11} weight="fill" aria-hidden="true" />
+      Run again
+    </button>
   )
 }
 
@@ -124,7 +253,7 @@ const RULER_MAX = 700
 const at = (v: number) => `${Math.min(100, Math.max(0, ((v - RULER_MIN) / (RULER_MAX - RULER_MIN)) * 100))}%`
 
 function ScoreRuler({ run }: { run: RunState }) {
-  const target = targetScore(run.data.params)
+  const target = TARGET_SCORE
   const landed = run.data.steps
     .map((step, index) => ({ step, index }))
     .filter(({ step, index }) => step.phase === 'solve' && step.candidate && stepFinished(run, index))
@@ -215,7 +344,7 @@ function RunHeader({ run }: { run: RunState }) {
     .map((step, index) => ({ step, index }))
     .filter(({ step, index }) => step.candidate && stepFinished(run, index))
     .pop()?.step.candidate
-  const target = targetScore(run.data.params)
+  const target = TARGET_SCORE
 
   return (
     <header className="border-b border-border bg-card px-5 pt-3.5">
@@ -226,6 +355,8 @@ function RunHeader({ run }: { run: RunState }) {
             {run.data.name}
           </p>
         </div>
+        <div className="flex items-center gap-2">
+        <RunControls run={run} />
         <ol className="flex items-center gap-1" aria-label="Phases">
           {PHASES.map((p) => {
             const active = current === p.id
@@ -247,6 +378,7 @@ function RunHeader({ run }: { run: RunState }) {
             )
           })}
         </ol>
+        </div>
       </div>
 
       <div className="mt-3 h-[3px] bg-border" role="progressbar" aria-label="Run progress" aria-valuenow={Math.round(progress * 100)} aria-valuemin={0} aria-valuemax={100}>

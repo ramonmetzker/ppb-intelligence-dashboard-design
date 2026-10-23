@@ -10,45 +10,63 @@ import {
   clonePlan,
   fmtCost,
   simulate,
+  type ItemDef,
   type ItemKey,
   type Plan,
   type Simulation,
 } from '@/lib/ppb-model'
+import { premium, priceIndex } from '@/lib/material-prices'
 
 /* -------------------------------------------------------------------------- */
-/* Parameters                                                                  */
+/* The fixed brief: reach the target at the lowest spend, rest of the year     */
 /* -------------------------------------------------------------------------- */
 
-export type Objective = 'min-cost' | 'max-score'
+export const SAFETY_BUFFER = 2
+export const TARGET_SCORE = REQUIRED_SCORE + SAFETY_BUFFER
+export const CONFIDENCE_FLOOR = 70
 
-export type AgentParams = {
-  objective: Objective
-  /** Points the plan must clear above the required score. */
-  margin: number
-  /** Spend cap in $K. */
-  budget: number
-  /** Lowest acceptable model confidence, percent. */
-  confidenceFloor: number
-  locked: ItemKey[]
-  months: 'both' | 'dec'
+/** Percentage points the optimizer may pull local share back on its own where imports are cheaper. */
+const AUTO_DOWN = 3
+/** Deepest pull back a user instruction can ask for. */
+const USER_DOWN = 8
+const DEFAULT_AMOUNT = 3
+
+/* -------------------------------------------------------------------------- */
+/* Instructions from the chat                                                  */
+/* -------------------------------------------------------------------------- */
+
+export type DirectiveKind = 'max' | 'min' | 'raise' | 'lower' | 'hold'
+
+export type Directive = {
+  /** One instruction per item and month, so a newer one replaces an older one. */
+  id: string
+  kind: DirectiveKind
+  item: ItemKey
+  open: 0 | 1
+  /** Percentage points, for raise and lower. */
+  amount?: number
+  /** Why the user asked, quoted back in the trace. */
+  reason?: string
 }
 
-export const DEFAULT_PARAMS: AgentParams = {
-  objective: 'min-cost',
-  margin: 4,
-  budget: 3000,
-  confidenceFloor: 70,
-  locked: [],
-  months: 'both',
+export const directiveId = (item: ItemKey, open: 0 | 1) => `${item}-${open}`
+
+export function directiveLabel(d: Directive) {
+  const name = ITEM_BY_KEY[d.item].name
+  const month = OPEN_MONTHS[d.open]
+  switch (d.kind) {
+    case 'max':
+      return `Max ${name} ${month}`
+    case 'min':
+      return `Min ${name} ${month}`
+    case 'hold':
+      return `Hold ${name} ${month}`
+    case 'raise':
+      return `${name} ${month} up ${d.amount ?? DEFAULT_AMOUNT} pp`
+    case 'lower':
+      return `${name} ${month} down ${d.amount ?? DEFAULT_AMOUNT} pp`
+  }
 }
-
-export const LIMITS = {
-  margin: [0, 18],
-  budget: [300, 6000],
-  confidenceFloor: [60, 85],
-} as const
-
-export const targetScore = (p: AgentParams) => REQUIRED_SCORE + p.margin
 
 /* -------------------------------------------------------------------------- */
 /* App clock: the app lives on November 6, so plans are stamped on that clock   */
@@ -65,42 +83,88 @@ export function appNowIso() {
 /* Optimizer                                                                   */
 /* -------------------------------------------------------------------------- */
 
-type Entry = {
-  key: ItemKey
-  open: 0 | 1
-  /** Points of year-end score earned per percentage point of local share. */
-  gain: number
-  /** Spend in $K per percentage point. */
-  cost: number
-  /** Confidence effort per percentage point. */
-  inv: number
-  /** Largest increase suppliers can deliver, in percentage points. */
-  cap: number
-}
-
 const STEP = 0.5
 const floorStep = (n: number) => Math.floor(n / STEP + 1e-9) * STEP
 const ceilStep = (n: number) => Math.ceil(n / STEP - 1e-9) * STEP
 
-/** Confidence is BASE_CONFIDENCE minus 4 per unit of effort, so this is the effort budget. */
-const effortLimit = (floor: number) => Math.max(0, (BASE_CONFIDENCE - floor) / 4)
+/** Confidence drops 3 per 10 pp of retreat and 4 per unit of effort, so a retreat pp costs this much effort. */
+const DOWN_EFFORT = 0.075
 
-function buildEntries(params: AgentParams): Entry[] {
+const effortAt = (headroom: number, x: number) =>
+  x > 0 ? Math.min(1.5, x / headroom) : -x * DOWN_EFFORT
+
+/** Confidence is BASE_CONFIDENCE minus 4 per unit of effort, so this is the effort budget. */
+const effortLimit = (BASE_CONFIDENCE - CONFIDENCE_FLOOR) / 4
+
+type Entry = {
+  key: ItemKey
+  open: 0 | 1
+  /** Lowest and highest move from the forecast share, in percentage points. */
+  lo: number
+  hi: number
+  /** Points of year-end score earned per percentage point of local share. */
+  gain: number
+  /** Spend in $K per percentage point, at this month's material prices. */
+  cost: number
+  headroom: number
+  directive?: Directive
+}
+
+const GAIN: Record<string, number> = {}
+function gainOf(key: ItemKey, open: 0 | 1) {
+  const id = `${key}-${open}`
+  if (GAIN[id] === undefined) {
+    const probe = clonePlan(BASE_PLAN)
+    probe[key][open] += 5
+    GAIN[id] = (simulate(probe).yearEnd - BASELINE.yearEnd) / 5
+  }
+  return GAIN[id]
+}
+
+function boundsFor(item: ItemDef, open: 0 | 1, scale: number, directive?: Directive) {
+  const base = BASE_PLAN[item.key][open]
+  const hiAuto = floorStep(ceilingFor(item.key, open) - base)
+  const loAuto = -Math.min(floorStep(AUTO_DOWN * scale), floorStep(base))
+  const loUser = -Math.min(USER_DOWN, floorStep(base))
+  let lo = loAuto
+  let hi = hiAuto
+
+  switch (directive?.kind) {
+    case 'max':
+      lo = hi = hiAuto
+      break
+    case 'min':
+      lo = hi = loUser
+      break
+    case 'hold':
+      lo = hi = 0
+      break
+    case 'raise':
+      lo = Math.min(hiAuto, ceilStep(directive.amount ?? DEFAULT_AMOUNT))
+      break
+    case 'lower':
+      hi = Math.max(loUser, -ceilStep(directive.amount ?? DEFAULT_AMOUNT))
+      lo = loUser
+      break
+  }
+  return { lo: Math.min(lo, hi), hi }
+}
+
+function buildEntries(directives: Directive[], scale = 1): Entry[] {
   const entries: Entry[] = []
   ITEMS.forEach((item) => {
-    if (params.locked.includes(item.key)) return
     ;([0, 1] as const).forEach((open) => {
-      if (params.months === 'dec' && open === 0) return
-      const probe = clonePlan(BASE_PLAN)
-      probe[item.key][open] += 5
-      const gain = (simulate(probe).yearEnd - BASELINE.yearEnd) / 5
+      const directive = directives.find((d) => d.item === item.key && d.open === open)
+      const { lo, hi } = boundsFor(item, open, scale, directive)
       entries.push({
         key: item.key,
         open,
-        gain,
-        cost: item.costPerPp,
-        inv: 1 / item.headroom,
-        cap: floorStep(ceilingFor(item.key, open) - BASE_PLAN[item.key][open]),
+        lo,
+        hi,
+        gain: gainOf(item.key, open),
+        cost: item.costPerPp * priceIndex(item.key, open),
+        headroom: item.headroom,
+        directive,
       })
     })
   })
@@ -108,39 +172,55 @@ function buildEntries(params: AgentParams): Entry[] {
 }
 
 type FillOptions = {
-  objective: Objective
+  objective: 'min-cost' | 'max-score'
   lambda: number
   integer: boolean
   effortCap: number
-  need: number
-  budget: number
 }
 
+/** The most an entry can be raised from its lowest move before the effort budget runs out. */
+function effortRoom(e: Entry, effortLeft: number) {
+  if (e.lo < 0) {
+    const freed = -e.lo * DOWN_EFFORT
+    return -e.lo + Math.max(0, (effortLeft + freed) * e.headroom)
+  }
+  return Math.max(0, effortLeft * e.headroom)
+}
+
+/**
+ * Every entry starts at its lowest move, where imports replace local. Points are then bought
+ * back from the cheapest per point upward until the target is met, so shares fall only where
+ * a point is not worth its price.
+ */
 function fill(entries: Entry[], o: FillOptions) {
-  const rank = (e: Entry) => e.gain / (e.cost + o.lambda * e.inv)
-  const sorted = [...entries].sort((a, b) => rank(b) - rank(a))
   const plan = clonePlan(BASE_PLAN)
+  entries.forEach((e) => {
+    plan[e.key][e.open] += e.lo
+  })
+  let effortLeft = o.effortCap - entries.reduce((s, e) => s + effortAt(e.headroom, e.lo), 0)
   // The simulation rounds to two decimals, so aim a hair past the target.
-  let remaining = o.need + 0.006
-  let budgetLeft = o.budget
-  let effortLeft = o.effortCap
+  let remaining = TARGET_SCORE - simulate(plan).yearEnd + 0.006
+
+  const sorted = [...entries].sort(
+    (a, b) => b.gain / (b.cost + o.lambda / b.headroom) - a.gain / (a.cost + o.lambda / a.headroom),
+  )
 
   for (const e of sorted) {
-    let pp: number
+    const room = e.hi - e.lo
+    if (room <= 1e-9) continue
+    const limit = Math.min(room, effortRoom(e, effortLeft))
+    let add: number
     if (o.objective === 'min-cost') {
+      if (remaining <= 1e-6) break
       const wanted = remaining / e.gain
-      const limit = Math.min(e.cap, effortLeft / e.inv)
-      pp = o.integer ? Math.min(ceilStep(wanted), floorStep(limit)) : Math.min(wanted, limit)
+      add = o.integer ? Math.min(ceilStep(wanted), floorStep(limit)) : Math.min(wanted, limit)
     } else {
-      const limit = Math.min(e.cap, budgetLeft / e.cost, effortLeft / e.inv)
-      pp = o.integer ? floorStep(limit) : limit
+      add = o.integer ? floorStep(limit) : limit
     }
-    if (!(pp > 1e-6)) continue
-    plan[e.key][e.open] += pp
-    effortLeft -= pp * e.inv
-    budgetLeft -= pp * e.cost
-    remaining -= pp * e.gain
-    if (o.objective === 'min-cost' && remaining <= 1e-6) break
+    if (!(add > 1e-6)) continue
+    plan[e.key][e.open] += add
+    effortLeft -= effortAt(e.headroom, e.lo + add) - effortAt(e.headroom, e.lo)
+    remaining -= add * e.gain
   }
   return plan
 }
@@ -150,7 +230,7 @@ const effortOf = (plan: Plan) =>
     (sum, i) =>
       sum +
       ([0, 1] as const).reduce<number>(
-        (s, m) => s + Math.min(1.5, Math.max(0, plan[i.key][m] - BASE_PLAN[i.key][m]) / i.headroom),
+        (s, m) => s + effortAt(i.headroom, plan[i.key][m] - BASE_PLAN[i.key][m]),
         0,
       ),
     0,
@@ -158,6 +238,7 @@ const effortOf = (plan: Plan) =>
 
 export type Probe = {
   lambda: number
+  scale: number
   score: number
   cost: number
   effort: number
@@ -165,69 +246,74 @@ export type Probe = {
 }
 
 const LAMBDA_GRID = [0, 150, 300, 600, 1200, 2400, 4800, 9600, 19200, 60000]
+const SCALES = [1, 0.5, 0]
 
 type RoundSolution = {
   plan: Plan
   sim: Simulation
   probes: Probe[]
   chosen: number
-  /** True when no probe could reach the target inside the constraints. */
+  /** True when no probe could reach the target inside the limits. */
   unreachable: boolean
 }
 
 function solveRound(
-  entries: Entry[],
-  params: AgentParams,
-  opts: { objective: Objective; relaxed: boolean; integer: boolean; tighten: number },
+  directives: Directive[],
+  opts: {
+    objective: 'min-cost' | 'max-score'
+    relaxed: boolean
+    integer: boolean
+    tighten: number
+  },
 ): RoundSolution {
-  const need = targetScore(params) - BASELINE.yearEnd
-  const effortCap = opts.relaxed
-    ? Number.POSITIVE_INFINITY
-    : Math.max(0, effortLimit(params.confidenceFloor) - opts.tighten)
-  const grid = opts.relaxed ? [0] : LAMBDA_GRID
+  const effortCap = opts.relaxed ? Number.POSITIVE_INFINITY : Math.max(0, effortLimit - opts.tighten)
+  const combos = opts.relaxed
+    ? [{ lambda: 0, scale: 1 }]
+    : LAMBDA_GRID.flatMap((lambda) => SCALES.map((scale) => ({ lambda, scale })))
 
   const probes: Probe[] = []
   const plans: Plan[] = []
-  grid.forEach((lambda) => {
-    const plan = fill(entries, {
+  const sims: Simulation[] = []
+  combos.forEach(({ lambda, scale }) => {
+    const plan = fill(buildEntries(directives, scale), {
       objective: opts.objective,
       lambda,
       integer: opts.integer,
       effortCap,
-      need,
-      budget: params.budget,
     })
     const sim = simulate(plan)
     plans.push(plan)
+    sims.push(sim)
     probes.push({
       lambda,
+      scale,
       score: sim.yearEnd,
       cost: sim.cost,
       effort: effortOf(plan),
-      feasible: sim.yearEnd + 0.004 >= targetScore(params),
+      feasible:
+        sim.yearEnd + 0.004 >= TARGET_SCORE &&
+        (opts.relaxed || sim.confidence >= CONFIDENCE_FLOOR) &&
+        sim.overCeiling.length === 0,
     })
   })
 
-  let chosen = 0
-  if (opts.objective === 'min-cost') {
-    const ok = probes.map((p, i) => ({ p, i })).filter(({ p }) => p.feasible)
-    if (ok.length > 0) {
-      chosen = ok.sort((a, b) => a.p.cost - b.p.cost || a.p.effort - b.p.effort)[0].i
-    } else {
-      chosen = probes.map((p, i) => ({ p, i })).sort((a, b) => b.p.score - a.p.score)[0].i
-    }
+  const indexed = probes.map((p, i) => ({ p, i }))
+  let chosen: number
+  const ok = indexed.filter(({ p }) => p.feasible)
+  if (opts.objective === 'min-cost' && ok.length > 0) {
+    chosen = ok.sort((a, b) => a.p.cost - b.p.cost || a.p.effort - b.p.effort)[0].i
   } else {
-    chosen = probes
-      .map((p, i) => ({ p, i }))
-      .sort((a, b) => b.p.score - a.p.score || a.p.cost - b.p.cost)[0].i
+    const confident = indexed.filter(({ i }) => opts.relaxed || sims[i].confidence >= CONFIDENCE_FLOOR)
+    const pool = confident.length > 0 ? confident : indexed
+    chosen = pool.sort((a, b) => b.p.score - a.p.score || a.p.cost - b.p.cost)[0].i
   }
 
   return {
     plan: plans[chosen],
-    sim: simulate(plans[chosen]),
+    sim: sims[chosen],
     probes,
     chosen,
-    unreachable: !probes.some((p) => p.feasible),
+    unreachable: ok.length === 0,
   }
 }
 
@@ -236,36 +322,45 @@ function solveRound(
 /* -------------------------------------------------------------------------- */
 
 export type CheckRow = {
-  id: 'score' | 'budget' | 'confidence' | 'ceiling' | 'locked'
+  id: 'score' | 'confidence' | 'ceiling' | 'instructions'
   label: string
   actual: string
   limit: string
   pass: boolean
 }
 
-function runChecks(sim: Simulation, params: AgentParams): CheckRow[] {
-  const target = targetScore(params)
+function honored(d: Directive, plan: Plan) {
+  const delta = plan[d.item][d.open] - BASE_PLAN[d.item][d.open]
+  const ceiling = ceilingFor(d.item, d.open) - BASE_PLAN[d.item][d.open]
+  switch (d.kind) {
+    case 'max':
+      return delta >= ceiling - 0.06
+    case 'min':
+      return delta <= -Math.min(USER_DOWN, floorStep(BASE_PLAN[d.item][d.open])) + 0.06
+    case 'hold':
+      return Math.abs(delta) < 0.06
+    case 'raise':
+      return delta >= Math.min(d.amount ?? DEFAULT_AMOUNT, ceiling) - 0.06
+    case 'lower':
+      return delta <= -(d.amount ?? DEFAULT_AMOUNT) + 0.06
+  }
+}
+
+function runChecks(sim: Simulation, directives: Directive[]): CheckRow[] {
   const rows: CheckRow[] = [
     {
       id: 'score',
       label: 'Year-end score',
       actual: sim.yearEnd.toFixed(2),
-      limit: `\u2265 ${target.toFixed(2)}`,
-      pass: sim.yearEnd + 0.004 >= target,
-    },
-    {
-      id: 'budget',
-      label: 'Spend',
-      actual: fmtCost(sim.cost),
-      limit: `\u2264 ${fmtCost(params.budget)}`,
-      pass: sim.cost <= params.budget,
+      limit: `\u2265 ${TARGET_SCORE.toFixed(2)}`,
+      pass: sim.yearEnd + 0.004 >= TARGET_SCORE,
     },
     {
       id: 'confidence',
       label: 'Model confidence',
       actual: `${sim.confidence}%`,
-      limit: `\u2265 ${params.confidenceFloor}%`,
-      pass: sim.confidence >= params.confidenceFloor,
+      limit: `\u2265 ${CONFIDENCE_FLOOR}%`,
+      pass: sim.confidence >= CONFIDENCE_FLOOR,
     },
     {
       id: 'ceiling',
@@ -275,14 +370,14 @@ function runChecks(sim: Simulation, params: AgentParams): CheckRow[] {
       pass: sim.overCeiling.length === 0,
     },
   ]
-  if (params.locked.length > 0) {
-    const touched = sim.changes.filter((c) => params.locked.includes(c.key)).length
+  if (directives.length > 0) {
+    const met = directives.filter((d) => honored(d, sim.plan)).length
     rows.push({
-      id: 'locked',
-      label: 'Locked items',
-      actual: touched === 0 ? 'untouched' : `${touched} changed`,
-      limit: params.locked.map((k) => ITEM_BY_KEY[k].name).join(', '),
-      pass: touched === 0,
+      id: 'instructions',
+      label: 'Your instructions',
+      actual: `${met} of ${directives.length}`,
+      limit: 'all met',
+      pass: met === directives.length,
     })
   }
   return rows
@@ -316,7 +411,7 @@ export type AgentStep = {
 }
 
 export type AgentRun = {
-  params: AgentParams
+  directives: Directive[]
   steps: AgentStep[]
   totalMs: number
   candidates: Candidate[]
@@ -329,6 +424,8 @@ export type AgentRun = {
 
 const num = (n: number, d = 1) => n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })
 const pad = (n: number, w: number) => String(n).padStart(w, '0')
+const pp = (n: number) => `${n >= 0 ? '+' : '\u2212'}${Math.abs(n).toFixed(1)} pp`
+const pct = (n: number) => `${(n * 100).toFixed(1)}%`
 
 function convergence(from: number, to: number, count: number) {
   return Array.from({ length: count }, (_, i) => {
@@ -337,7 +434,7 @@ function convergence(from: number, to: number, count: number) {
   })
 }
 
-function lpLines(final: number, objective: Objective, rows: number, cols: number): string[] {
+function lpLines(final: number, objective: 'min-cost' | 'max-score', rows: number, cols: number): string[] {
   const unit = objective === 'min-cost' ? '$K' : 'pts'
   const start = objective === 'min-cost' ? final * 1.9 : final * 0.93
   const path = convergence(start, final, 4)
@@ -350,7 +447,7 @@ function lpLines(final: number, objective: Objective, rows: number, cols: number
   ]
 }
 
-function mipLines(lp: number, final: number, objective: Objective, vars: number): string[] {
+function mipLines(lp: number, final: number, objective: 'min-cost' | 'max-score', vars: number): string[] {
   const unit = objective === 'min-cost' ? '$K' : 'pts'
   const d = objective === 'min-cost' ? 1 : 2
   const worse = objective === 'min-cost' ? lp * 1.12 : lp * 0.97
@@ -365,16 +462,36 @@ function mipLines(lp: number, final: number, objective: Objective, vars: number)
   ]
 }
 
-export function runAgent(params: AgentParams): AgentRun {
-  const entries = buildEntries(params)
+const valueOf = (sim: Simulation, objective: 'min-cost' | 'max-score') =>
+  objective === 'min-cost' ? sim.cost : sim.yearEnd
+
+/** Why each move was made, in the agent's own words, from the material prices. */
+export function explainPlan(plan: Plan): string[] {
+  const sim = simulate(plan)
+  return [...sim.changes]
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 4)
+    .map((c) => {
+      const p = premium(c.key, c.open)
+      const perPoint = ITEM_BY_KEY[c.key].costPerPp * priceIndex(c.key, c.open)
+      const why =
+        c.delta >= 0
+          ? `local costs ${pct(p)} over import and a point of share costs ${fmtCost(perPoint)}, among the cheapest ways to earn score`
+          : `a point of share costs ${fmtCost(perPoint)}, more than it earns, so imports take the volume`
+      return `${c.name} ${c.month} ${pp(c.delta)}: ${why}.`
+    })
+}
+
+export function runAgent(directives: Directive[]): AgentRun {
+  const entries = buildEntries(directives)
   const vars = entries.length
-  const target = targetScore(params)
   const steps: AgentStep[] = []
   const candidates: Candidate[] = []
   const gapNow = BASELINE.yearEnd - REQUIRED_SCORE
 
-  const lockedNames = params.locked.map((k) => ITEM_BY_KEY[k].name)
-  const ranked = [...entries].sort((a, b) => b.gain / b.cost - a.gain / a.cost)
+  const byValue = [...entries].sort((a, b) => b.gain / b.cost - a.gain / a.cost)
+  const cheapest = byValue.filter((e) => !e.directive).slice(0, 3)
+  const priciest = byValue.filter((e) => !e.directive).slice(-1)[0]
 
   /* ---- Round 0: read the scenario ---- */
   steps.push({
@@ -384,70 +501,49 @@ export function runAgent(params: AgentParams): AgentRun {
     title: 'Analyzing the current scenario',
     lines: [
       `Forecast closes at ${BASELINE.yearEnd.toFixed(2)}, ${Math.abs(gapNow).toFixed(2)} pts ${gapNow < 0 ? 'short of' : 'above'} the ${REQUIRED_SCORE} requirement`,
-      `Target for this run: ${target.toFixed(2)} (${params.margin >= 0 ? '+' : ''}${params.margin.toFixed(1)} over required)`,
-      `${vars} decision variables: ${params.months === 'dec' ? 'December only' : 'November and December'}${lockedNames.length ? `, ${lockedNames.join(' and ')} locked` : ''}`,
-      `Objective: ${params.objective === 'min-cost' ? 'minimize spend while clearing the target' : 'maximize score inside the budget'}`,
-      ...ranked
-        .slice(0, 3)
-        .map(
-          (e) =>
-            `${ITEM_BY_KEY[e.key].name} ${OPEN_MONTHS[e.open]}: ${e.gain.toFixed(3)} pts per pp at ${fmtCost(e.cost)} per pp`,
-        ),
+      `Target ${TARGET_SCORE.toFixed(2)}: the requirement plus a ${SAFETY_BUFFER.toFixed(1)} pt safety buffer`,
+      `Scope: local share for Nov and Dec on ${ITEMS.length} items, ${vars} decision variables, moving up or down`,
+      'Objective: reach the target at the lowest spend',
+      ...directives.map((d) => `Instruction: ${directiveLabel(d)}${d.reason ? ` (${d.reason})` : ''}`),
+      ...cheapest.map(
+        (e) =>
+          `${ITEM_BY_KEY[e.key].name} ${OPEN_MONTHS[e.open]}: ${e.gain.toFixed(3)} pts per pp at ${fmtCost(e.cost)} per pp, local premium ${pct(premium(e.key, e.open))}`,
+      ),
+      ...(priciest
+        ? [
+            `${ITEM_BY_KEY[priciest.key].name} ${OPEN_MONTHS[priciest.open]} is the dearest point at ${fmtCost(priciest.cost)} per pp, first to pull back`,
+          ]
+        : []),
     ],
-    outcome: `${vars} variables and 4 constraint families identified`,
+    outcome: `${vars} variables priced from the material feed`,
     tone: 'neutral',
-    duration: 2000,
+    duration: 2200,
   })
 
   /* ---- Rounds ---- */
-  type Plannedround = {
-    label: string
-    relaxed: boolean
-    integer: boolean
-    objective: Objective
-    tighten: number
-  }
-
-  let objective = params.objective
+  let objective: 'min-cost' | 'max-score' = 'min-cost'
   let relaxed = true
   let integer = false
   let tighten = 0
-  let round = 0
   let lastLpValue = 0
   let final: Candidate | null = null
-  let satisfied = false
   let closest = false
 
-  const valueOf = (sim: Simulation, obj: Objective) => (obj === 'min-cost' ? sim.cost : sim.yearEnd)
-
-  for (round = 1; round <= 5; round++) {
-    const plannedRound: Plannedround = {
-      label: integer
-        ? 'Integer rounding'
-        : relaxed
-          ? 'Relaxed solve'
-          : closest
-            ? 'Closest feasible'
-            : 'Constrained solve',
-      relaxed,
-      integer,
-      objective,
-      tighten,
-    }
-    const solution = solveRound(entries, params, plannedRound)
+  for (let round = 1; round <= 5; round++) {
+    const label = integer
+      ? 'Integer rounding'
+      : relaxed
+        ? 'Relaxed solve'
+        : closest
+          ? 'Closest feasible'
+          : 'Constrained solve'
+    const solution = solveRound(directives, { objective, relaxed, integer, tighten })
     const sim = solution.sim
-    const candidate: Candidate = {
-      round,
-      label: plannedRound.label,
-      plan: solution.plan,
-      sim,
-      effort: effortOf(solution.plan),
-    }
+    const candidate: Candidate = { round, label, plan: solution.plan, sim, effort: effortOf(solution.plan) }
     candidates.push(candidate)
 
     const rows = 4 + vars
-    const constraintCount = 1 + 1 + (plannedRound.relaxed ? 0 : 1) + vars
-    const cols = vars
+    const constraintCount = 1 + (relaxed ? 0 : 1) + vars + directives.length
 
     /* model */
     steps.push({
@@ -459,36 +555,37 @@ export function runAgent(params: AgentParams): AgentRun {
         round === 1
           ? [
               `variables: ${vars} (local share per item and open month)`,
-              `constraints: ${constraintCount} (score target, budget, ${vars} supplier ceilings)`,
-              'confidence constraint left out so the first pass shows the unconstrained optimum',
-              `objective: ${params.objective === 'min-cost' ? 'min spend' : 'max score'}`,
+              `bounds: up to the supplier ceiling, down at most ${AUTO_DOWN} pp where imports are cheaper`,
+              `constraints: ${constraintCount} (score target, ${vars} bounds${directives.length ? `, ${directives.length} instruction${directives.length === 1 ? '' : 's'}` : ''})`,
+              'confidence left out so the first pass shows the unconstrained optimum',
+              'objective: min spend at this month\u2019s material prices',
             ]
           : [
-              `variables: ${vars}${plannedRound.integer ? ' (now integer, 0.5 pp steps)' : ''}`,
-              `constraints: ${constraintCount}${plannedRound.relaxed ? '' : ' including the confidence limit'}`,
-              plannedRound.relaxed
+              `variables: ${vars}${integer ? ' (now integer, 0.5 pp steps)' : ''}`,
+              `constraints: ${constraintCount}${relaxed ? '' : ' including the confidence limit'}`,
+              relaxed
                 ? 'no change to constraints'
-                : `confidence floor ${params.confidenceFloor}% caps total effort at ${(effortLimit(params.confidenceFloor) - tighten).toFixed(2)}`,
+                : `confidence floor ${CONFIDENCE_FLOOR}% caps total effort at ${(effortLimit - tighten).toFixed(2)}`,
               closest ? 'objective switched to max score inside the limits' : 'objective unchanged',
             ],
       outcome: `${constraintCount} constraints loaded`,
       tone: 'neutral',
-      duration: round === 1 ? 1300 : 800,
+      duration: round === 1 ? 1400 : 800,
     })
 
     /* solve */
-    const finalValue = valueOf(sim, plannedRound.objective)
-    const solveLines = plannedRound.integer
-      ? mipLines(lastLpValue || finalValue, finalValue, plannedRound.objective, vars)
-      : lpLines(finalValue, plannedRound.objective, rows, cols)
-    if (!plannedRound.relaxed && !plannedRound.integer) {
-      const shown = solution.probes.filter((_, i) => i % 3 === 0 || i === solution.chosen).slice(0, 4)
+    const finalValue = valueOf(sim, objective)
+    const solveLines = integer
+      ? mipLines(lastLpValue || finalValue, finalValue, objective, vars)
+      : lpLines(finalValue, objective, rows, vars)
+    if (!relaxed && !integer) {
+      const shown = solution.probes.filter((_, i) => i % 7 === 0 || i === solution.chosen).slice(0, 4)
       solveLines.splice(
         1,
         0,
         ...shown.map(
           (p) =>
-            `probe  confidence weight ${num(p.lambda, 0)}  effort ${p.effort.toFixed(2)}  score ${p.score.toFixed(2)}  spend ${fmtCost(p.cost)}`,
+            `probe  confidence weight ${num(p.lambda, 0)}  pull back ${num(AUTO_DOWN * p.scale, 1)} pp  score ${p.score.toFixed(2)}  spend ${fmtCost(p.cost)}`,
         ),
       )
     }
@@ -496,22 +593,20 @@ export function runAgent(params: AgentParams): AgentRun {
       id: `solve-${round}`,
       phase: 'solve',
       round,
-      title: plannedRound.integer ? 'Solving, branch and bound' : 'Solving the relaxation',
+      title: integer ? 'Solving, branch and bound' : 'Solving the relaxation',
       lines: solveLines,
       outcome: `Candidate ${round}: ${sim.yearEnd.toFixed(2)} pts for ${fmtCost(sim.cost)}`,
       tone: 'neutral',
-      duration: plannedRound.integer ? 1900 : 1700,
+      duration: integer ? 1900 : 1700,
       candidate,
     })
-    if (!plannedRound.integer) lastLpValue = finalValue
+    if (!integer) lastLpValue = finalValue
 
     /* check */
-    const checks = runChecks(sim, params)
+    const checks = runChecks(sim, directives)
     const failed = checks.filter((c) => !c.pass)
-    // The score is a hard limit only while minimizing spend. When maximizing, or once the
-    // agent falls back to the closest plan, it is the goal and cannot block delivery.
-    const scoreIsHard = params.objective === 'min-cost' && !closest
-    const blocking = failed.filter((c) => c.id !== 'score' || scoreIsHard)
+    // The score is a hard limit until the agent falls back to the closest feasible plan.
+    const blocking = failed.filter((c) => c.id !== 'score' || !closest)
     const failedIds = blocking.map((c) => c.id)
     steps.push({
       id: `check-${round}`,
@@ -531,14 +626,8 @@ export function runAgent(params: AgentParams): AgentRun {
     })
 
     /* decide */
-    if (blocking.length === 0 && integer) {
+    if ((blocking.length === 0 && integer) || round === 5) {
       final = candidate
-      satisfied = failed.length === 0
-      break
-    }
-    if (round === 5) {
-      final = candidate
-      satisfied = failed.length === 0
       break
     }
 
@@ -562,8 +651,7 @@ export function runAgent(params: AgentParams): AgentRun {
       continue
     }
 
-    const onlyRounding = integer
-    if (onlyRounding) {
+    if (integer) {
       tighten += 0.08
       steps.push({
         id: `reopt-${round}`,
@@ -572,7 +660,7 @@ export function runAgent(params: AgentParams): AgentRun {
         title: 'Re-optimizing, tightening the limits',
         lines: [
           `Rounding pushed ${failedIds.join(' and ')} outside the limit`,
-          `Lowering the effort cap by 0.08 to leave room for the integer steps`,
+          'Lowering the effort cap by 0.08 to leave room for the integer steps',
         ],
         outcome: 'Re-solving with a safety margin',
         tone: 'warn',
@@ -581,23 +669,16 @@ export function runAgent(params: AgentParams): AgentRun {
       continue
     }
 
-    const needsFallback =
-      scoreIsHard &&
-      (failedIds.includes('budget') ||
-        (failedIds.includes('score') && !failedIds.includes('confidence')))
-    if (needsFallback) {
+    if (!relaxed && !closest && failedIds.includes('score')) {
       closest = true
       objective = 'max-score'
-      relaxed = false
       steps.push({
         id: `reopt-${round}`,
         phase: 'reoptimize',
         round,
         title: 'Re-optimizing, looking for the closest feasible plan',
         lines: [
-          failedIds.includes('budget')
-            ? `${target.toFixed(2)} costs ${fmtCost(sim.cost)}, above the ${fmtCost(params.budget)} cap`
-            : `${target.toFixed(2)} cannot be reached inside the confidence and supplier limits`,
+          `${TARGET_SCORE.toFixed(2)} cannot be reached inside the confidence, ceiling and instruction limits`,
           'Switching the objective to maximize score inside every limit',
           'The result will be flagged as short of the target',
         ],
@@ -605,11 +686,9 @@ export function runAgent(params: AgentParams): AgentRun {
         tone: 'warn',
         duration: 1700,
       })
-      integer = false
       continue
     }
 
-    /* confidence failed: add the constraint */
     relaxed = false
     steps.push({
       id: `reopt-${round}`,
@@ -617,10 +696,10 @@ export function runAgent(params: AgentParams): AgentRun {
       round,
       title: 'Re-optimizing, adding the confidence limit',
       lines: [
-        `Confidence ${sim.confidence}% is below the ${params.confidenceFloor}% floor`,
+        `Confidence ${sim.confidence}% is below the ${CONFIDENCE_FLOOR}% floor`,
         `The cheapest plan leans hard on a few items (effort ${candidate.effort.toFixed(2)}), which lowers confidence`,
-        `Spreading the increase across more items to stay under effort ${effortLimit(params.confidenceFloor).toFixed(2)}`,
-        'Sweeping the confidence weight to find the lowest-cost plan that clears the limit',
+        `Spreading the increase across more items to stay under effort ${effortLimit.toFixed(2)}`,
+        'Sweeping the confidence weight and the pull back depth for the lowest spend that clears the limit',
       ],
       outcome: 'Re-solving with the confidence constraint',
       tone: 'warn',
@@ -630,13 +709,11 @@ export function runAgent(params: AgentParams): AgentRun {
 
   const finalCandidate = final ?? candidates[candidates.length - 1]
   const finalSim = finalCandidate.sim
-  const finalChecks = runChecks(finalSim, params)
-  const allPass = finalChecks.every((c) => c.pass)
-  satisfied = allPass
+  const satisfied = runChecks(finalSim, directives).every((c) => c.pass)
 
   const headline = satisfied
-    ? `Delivered a plan at ${finalSim.yearEnd.toFixed(2)} pts, ${Math.abs(finalSim.yearEnd - target).toFixed(2)} above your ${target.toFixed(2)} target`
-    : `Closest feasible plan reaches ${finalSim.yearEnd.toFixed(2)} pts, ${Math.abs(target - finalSim.yearEnd).toFixed(2)} short of ${target.toFixed(2)}`
+    ? `Delivered a plan at ${finalSim.yearEnd.toFixed(2)} pts, ${Math.abs(finalSim.yearEnd - TARGET_SCORE).toFixed(2)} above the ${TARGET_SCORE.toFixed(2)} target`
+    : `Closest feasible plan reaches ${finalSim.yearEnd.toFixed(2)} pts, ${Math.abs(TARGET_SCORE - finalSim.yearEnd).toFixed(2)} short of ${TARGET_SCORE.toFixed(2)}`
 
   steps.push({
     id: 'deliver',
@@ -654,38 +731,36 @@ export function runAgent(params: AgentParams): AgentRun {
     candidate: finalCandidate,
   })
 
-  const biggest = [...finalSim.changes].sort((a, b) => b.delta - a.delta).slice(0, 3)
+  const moves = [...finalSim.changes].sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 3)
   const summary = [
-    headline + '.',
-    ...(biggest.length
-      ? [
-          `Biggest moves: ${biggest
-            .map((c) => `${c.name} ${c.month} ${c.delta >= 0 ? '+' : ''}${c.delta.toFixed(1)} pp`)
-            .join(', ')}.`,
-        ]
+    `${headline}.`,
+    ...(moves.length
+      ? [`Biggest moves: ${moves.map((c) => `${c.name} ${c.month} ${pp(c.delta)}`).join(', ')}.`]
       : []),
-    `Spend ${fmtCost(finalSim.cost)} against a ${fmtCost(params.budget)} cap, confidence ${finalSim.confidence}%.`,
+    `Spend ${fmtCost(finalSim.cost)}, the lowest the model found, at ${finalSim.confidence}% confidence.`,
   ]
 
-  const nameBase = params.objective === 'min-cost' ? 'Lowest spend' : 'Best score'
-  const blurbParts = [
-    params.objective === 'min-cost'
-      ? `Cheapest way to reach ${target.toFixed(1)}`
-      : `Highest score inside ${fmtCost(params.budget)}`,
-    lockedNames.length ? `${lockedNames.join(', ')} locked` : null,
-    params.months === 'dec' ? 'December only' : null,
+  const shortNames = directives.slice(0, 2).map(directiveLabel)
+  const name = directives.length
+    ? `Least spend, ${shortNames.join(' and ')}${directives.length > 2 ? ` +${directives.length - 2}` : ''}`
+    : 'Least spend to target'
+  const blurb = [
+    `Cheapest way to reach ${TARGET_SCORE.toFixed(0)}`,
+    directives.length ? `${directives.length} instruction${directives.length === 1 ? '' : 's'} applied` : null,
     satisfied ? null : 'Short of target',
-  ].filter(Boolean)
+  ]
+    .filter(Boolean)
+    .join('. ')
 
   return {
-    params,
+    directives,
     steps,
     totalMs: steps.reduce((s, st) => s + st.duration, 0),
     candidates,
     final: finalCandidate,
     satisfied,
-    name: `${nameBase}, +${params.margin.toFixed(0)}`,
-    blurb: `${blurbParts.join('. ')}.`,
+    name,
+    blurb: `${blurb}.`,
     summary,
   }
 }

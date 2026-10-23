@@ -1,3 +1,5 @@
+import { priceIndex } from '@/lib/material-prices'
+
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -645,7 +647,7 @@ export function simulate(plan: Plan): Simulation {
       }
       changes.push(change)
       if (to > ceilingFor(item.key, open) + 0.05) overCeiling.push(change)
-      cost += Math.max(0, delta) * item.costPerPp
+      cost += delta * item.costPerPp * priceIndex(item.key, open)
       effort += Math.min(1.5, Math.max(0, delta) / item.headroom)
       retreat += Math.max(0, -delta) / 10
     })
@@ -706,7 +708,7 @@ export function simulate(plan: Plan): Simulation {
     yearEnd,
     gap: round2(yearEnd - REQUIRED_SCORE),
     status: statusFor(yearEnd),
-    cost: Math.round(cost),
+    cost: Math.max(0, Math.round(cost)),
     confidence,
     trajectory,
     steps,

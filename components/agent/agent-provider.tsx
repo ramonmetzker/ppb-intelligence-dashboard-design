@@ -12,13 +12,14 @@ import {
 } from 'react'
 import { planToSuggestion } from '@/lib/ppb-model'
 import {
-  DEFAULT_PARAMS,
+  TARGET_SCORE,
   appNowIso,
+  explainPlan,
   runAgent,
-  type AgentParams,
   type AgentRun,
+  type Directive,
 } from '@/lib/planner-agent'
-import { HELP_REPLY, parseRequest } from '@/lib/agent-chat'
+import { HELP_REPLY, mergeDirectives, parseRequest } from '@/lib/agent-chat'
 import { usePlan } from '@/components/app/plan-provider'
 
 export type ChatMessage = {
@@ -45,14 +46,16 @@ export type RunState = {
 type AgentState = {
   open: boolean
   setOpen: (open: boolean) => void
-  params: AgentParams
-  patchParams: (patch: Partial<AgentParams>) => void
+  /** Instructions from the chat that every run must respect. */
+  instructions: Directive[]
+  removeInstruction: (id: string) => void
+  clearInstructions: () => void
   messages: ChatMessage[]
   thinking: boolean
   run: RunState | null
   speed: 1 | 3
   setSpeed: (speed: 1 | 3) => void
-  start: (params?: AgentParams) => void
+  start: (next?: Directive[]) => void
   stop: () => void
   send: (text: string) => void
   /** Plans delivered while the dialog was closed. */
@@ -64,7 +67,7 @@ const AgentContext = createContext<AgentState | null>(null)
 const WELCOME: ChatMessage = {
   id: 'welcome',
   role: 'agent',
-  text: 'I optimize the Nov and Dec local share with a MILP solver. Set the brief on the left or tell me what you need, and I will run it, check it and deliver a new plan.',
+  text: `My goal is fixed: reach ${TARGET_SCORE.toFixed(0)} at the lowest spend for the rest of the year. I move each item's local share up or down, month by month, using material prices. Press Run, or tell me where to push or pull.`,
 }
 
 let messageCounter = 0
@@ -73,19 +76,21 @@ const nextId = (prefix: string) => `${prefix}-${++messageCounter}`
 export function AgentProvider({ children }: { children: ReactNode }) {
   const { plans, addPlan } = usePlan()
   const [open, setOpenState] = useState(false)
-  const [params, setParams] = useState<AgentParams>(DEFAULT_PARAMS)
+  const [instructions, setInstructions] = useState<Directive[]>([])
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME])
   const [thinking, setThinking] = useState(false)
   const [run, setRun] = useState<RunState | null>(null)
   const [speed, setSpeed] = useState<1 | 3>(1)
   const [unseen, setUnseen] = useState(0)
 
-  const paramsRef = useRef(params)
-  paramsRef.current = params
+  const instructionsRef = useRef(instructions)
+  instructionsRef.current = instructions
   const openRef = useRef(open)
   openRef.current = open
   const plansRef = useRef(plans)
   plansRef.current = plans
+  const runRef = useRef(run)
+  runRef.current = run
   const runCounter = useRef(0)
   const delivered = useRef(new Set<number>())
 
@@ -98,13 +103,15 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     if (next) setUnseen(0)
   }, [])
 
-  const patchParams = useCallback((patch: Partial<AgentParams>) => {
-    setParams((prev) => ({ ...prev, ...patch }))
+  const removeInstruction = useCallback((id: string) => {
+    setInstructions((prev) => prev.filter((d) => d.id !== id))
   }, [])
 
-  const start = useCallback((override?: AgentParams) => {
-    const used = override ?? paramsRef.current
-    if (override) setParams(override)
+  const clearInstructions = useCallback(() => setInstructions([]), [])
+
+  const start = useCallback((next?: Directive[]) => {
+    const used = next ?? instructionsRef.current
+    if (next) setInstructions(next)
     runCounter.current += 1
     setRun({
       id: runCounter.current,
@@ -194,22 +201,52 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       const trimmed = text.trim()
       if (!trimmed) return
       push({ role: 'user', text: trimmed })
-      const parsed = parseRequest(trimmed, paramsRef.current)
+
+      const parsed = parseRequest(trimmed)
+      const current = runRef.current
       setThinking(true)
       window.setTimeout(() => {
         setThinking(false)
+
+        if (current?.status === 'running') {
+          push({
+            role: 'agent',
+            text: 'I am still solving. Stop the run or wait for the plan, then send the next instruction.',
+          })
+          return
+        }
+
+        if (parsed.asksWhy && current?.status === 'done') {
+          push({
+            role: 'agent',
+            text: 'Here is why the last plan moves where it does.',
+            summary: explainPlan(current.data.final.plan),
+          })
+          return
+        }
+
         if (!parsed.wantsRun) {
           push({ role: 'agent', text: HELP_REPLY })
           return
         }
+
+        const merged = mergeDirectives(instructionsRef.current, parsed.directives, parsed.reset)
+        const reason = parsed.directives.find((d) => d.reason)?.reason
+        const lead = parsed.directives.length
+          ? `Understood. I will respect ${parsed.directives.length === 1 ? 'that instruction' : `those ${parsed.directives.length} instructions`} and find the cheapest way to the target.`
+          : parsed.reset
+            ? 'Cleared my instructions. Running the cheapest plan with nothing pinned.'
+            : merged.length
+              ? `Running again with ${merged.length} instruction${merged.length === 1 ? '' : 's'} in effect.`
+              : 'Running the cheapest plan with nothing pinned.'
         push({
           role: 'agent',
-          text: parsed.changed
-            ? 'Understood. I updated the brief and I am running a new simulation.'
-            : 'Running the current brief again.',
+          text: reason
+            ? `${lead} You mentioned ${reason}; prices here are sample data for now, so I will confirm it against the live feed once it is connected.`
+            : lead,
           notes: parsed.notes,
         })
-        start(parsed.params)
+        start(merged)
       }, 650)
     },
     [push, start],
@@ -219,8 +256,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     () => ({
       open,
       setOpen,
-      params,
-      patchParams,
+      instructions,
+      removeInstruction,
+      clearInstructions,
       messages,
       thinking,
       run,
@@ -231,7 +269,21 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       send,
       unseen,
     }),
-    [open, setOpen, params, patchParams, messages, thinking, run, speed, start, stop, send, unseen],
+    [
+      open,
+      setOpen,
+      instructions,
+      removeInstruction,
+      clearInstructions,
+      messages,
+      thinking,
+      run,
+      speed,
+      start,
+      stop,
+      send,
+      unseen,
+    ],
   )
 
   return <AgentContext.Provider value={value}>{children}</AgentContext.Provider>

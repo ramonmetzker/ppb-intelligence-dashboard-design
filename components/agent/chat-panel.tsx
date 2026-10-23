@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Check, PaperPlaneRight, Sparkle } from '@phosphor-icons/react'
+import { ArrowRight, Check, PaperPlaneRight, Sparkle, X } from '@phosphor-icons/react'
 import { fmt, fmtCost, fmtCreated, fmtSigned } from '@/lib/ppb-model'
 import { QUICK_PROMPTS } from '@/lib/agent-chat'
+import { directiveLabel } from '@/lib/planner-agent'
 import { usePlan } from '@/components/app/plan-provider'
 import { statusText } from '@/components/app/status-chip'
 import { useAgent, type ChatMessage } from '@/components/agent/agent-provider'
@@ -124,7 +125,7 @@ function Message({ message }: { message: ChatMessage }) {
 }
 
 export function ChatPanel() {
-  const { messages, thinking, send, run } = useAgent()
+  const { messages, thinking, send, run, instructions, removeInstruction, clearInstructions } = useAgent()
   const [draft, setDraft] = useState('')
   const scroller = useRef<HTMLDivElement>(null)
 
@@ -141,9 +142,9 @@ export function ChatPanel() {
   return (
     <section aria-label="Chat with the planner agent" className="flex min-h-0 flex-col bg-card">
       <div className="border-b border-border px-4 py-3">
-        <p className="eyebrow">Ask the agent</p>
+        <p className="eyebrow">Instruct the agent</p>
         <p className="font-display mt-0.5 text-[14px] leading-5 font-semibold tracking-tight">
-          Describe what you need
+          Where should local share move?
         </p>
       </div>
 
@@ -178,6 +179,38 @@ export function ChatPanel() {
       </div>
 
       <div className="border-t border-border p-3">
+        {instructions.length > 0 && (
+          <div className="mb-2 rounded-md border border-brand/30 bg-brand-soft/60 p-2">
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="eyebrow text-brand-deep">In effect for every run</p>
+              <button
+                type="button"
+                onClick={clearInstructions}
+                className="text-[11px] font-medium text-brand-deep underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                Clear all
+              </button>
+            </div>
+            <ul className="flex flex-wrap gap-1">
+              {instructions.map((d) => (
+                <li
+                  key={d.id}
+                  className="flex h-6 items-center gap-1 rounded-[4px] border border-brand/30 bg-card pr-0.5 pl-2 text-[11px] font-medium text-brand-deep"
+                >
+                  {directiveLabel(d)}
+                  <button
+                    type="button"
+                    onClick={() => removeInstruction(d.id)}
+                    aria-label={`Remove instruction: ${directiveLabel(d)}`}
+                    className="flex size-5 items-center justify-center rounded-[3px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    <X size={10} weight="bold" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="mb-2 flex flex-wrap gap-1">
           {QUICK_PROMPTS.map((prompt) => (
             <button
@@ -207,7 +240,7 @@ export function ChatPanel() {
                 submit()
               }
             }}
-            placeholder="Reach 672 under $2M, lock Memory..."
+            placeholder="Increase local memory in November..."
             className="max-h-24 min-h-9 flex-1 resize-none bg-transparent px-1.5 py-1 text-[12.5px] leading-[18px] outline-none placeholder:text-muted-foreground"
           />
           <button
