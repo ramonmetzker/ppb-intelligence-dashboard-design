@@ -1,17 +1,15 @@
 'use client'
 
-import { useMemo } from 'react'
 import { ArrowCounterClockwise, Sparkle } from '@phosphor-icons/react'
 import {
   REQUIRED_SCORE,
-  SCENARIOS,
+  SUGGESTION_RESULTS,
   fmt,
   fmtCost,
   fmtSigned,
-  simulate,
-  type Scenario,
 } from '@/lib/ppb-model'
 import { Panel } from '@/components/app/panel'
+import { usePlan } from '@/components/app/plan-provider'
 import { statusText } from '@/components/app/status-chip'
 import { cn } from '@/lib/utils'
 
@@ -19,46 +17,34 @@ const MIN = 610
 const MAX = 700
 const pct = (v: number) => `${Math.min(100, Math.max(0, ((v - MIN) / (MAX - MIN)) * 100))}%`
 
-export function ScenarioPicker({
-  activeId,
-  customFrom,
-  onSelect,
-  onReset,
-}: {
-  activeId: string
-  customFrom?: string
-  onSelect: (scenario: Scenario) => void
-  onReset: () => void
-}) {
-  const results = useMemo(
-    () => SCENARIOS.map((s) => ({ scenario: s, sim: simulate(s.levers) })),
-    [],
-  )
+export function SuggestionPicker() {
+  const { active, origin, applySuggestion, resetToOrigin } = usePlan()
+  const activeId = active?.id ?? 'custom'
 
   return (
     <Panel
-      id="scenarios"
-      title="AI scenarios"
-      description="Simulated by the PPB model. Select one and the whole page recalculates."
+      id="suggestions"
+      title="AI suggestions"
+      description="Starting points built by the model. Each one fills in the open months, and you can edit from there."
       action={
         activeId === 'custom' ? (
           <div className="flex items-center gap-2">
             <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 text-[11px] font-medium text-brand-deep">
-              Custom levers
+              Edited plan
             </span>
             <button
               type="button"
-              onClick={onReset}
+              onClick={resetToOrigin}
               className="flex h-6 items-center gap-1 rounded-md border border-input px-2 text-[11.5px] font-medium transition-colors hover:bg-secondary"
             >
               <ArrowCounterClockwise size={12} aria-hidden="true" />
-              Reset{customFrom ? ` to ${customFrom}` : ''}
+              Back to {origin.name}
             </button>
           </div>
         ) : (
           <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
             <Sparkle size={13} weight="fill" className="text-brand" aria-hidden="true" />
-            {SCENARIOS.length} scenarios simulated
+            {SUGGESTION_RESULTS.length} suggestions simulated
           </span>
         )
       }
@@ -66,20 +52,20 @@ export function ScenarioPicker({
     >
       <div
         role="radiogroup"
-        aria-label="Scenarios"
+        aria-label="AI suggestions"
         className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4"
       >
-        {results.map(({ scenario, sim }) => {
-          const selected = scenario.id === activeId
+        {SUGGESTION_RESULTS.map(({ suggestion, sim }) => {
+          const selected = suggestion.id === activeId
           return (
             <button
-              key={scenario.id}
+              key={suggestion.id}
               type="button"
               role="radio"
               aria-checked={selected}
-              onClick={() => onSelect(scenario)}
+              onClick={() => applySuggestion(suggestion.id)}
               className={cn(
-                'group relative flex flex-col gap-2 rounded-md border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                'relative flex flex-col gap-2 rounded-md border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                 selected
                   ? 'border-brand bg-brand-soft/70'
                   : 'border-border bg-card hover:border-input hover:bg-secondary/60',
@@ -96,10 +82,10 @@ export function ScenarioPicker({
                       selected ? 'text-brand-deep' : 'text-muted-foreground',
                     )}
                   >
-                    {scenario.tag}
+                    {suggestion.tag}
                   </p>
                   <p className="font-display mt-0.5 truncate text-[13.5px] leading-5 font-semibold tracking-tight">
-                    {scenario.name}
+                    {suggestion.name}
                   </p>
                 </div>
                 <div className="text-right">
@@ -113,7 +99,7 @@ export function ScenarioPicker({
               </div>
 
               <p className="line-clamp-2 min-h-8 text-[11.5px] leading-4 text-muted-foreground">
-                {scenario.blurb}
+                {suggestion.blurb}
               </p>
 
               <div className="relative h-1 bg-border" aria-hidden="true">

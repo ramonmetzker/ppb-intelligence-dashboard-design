@@ -1,27 +1,53 @@
-import { ArrowsClockwise, Bell, CaretRight } from '@phosphor-icons/react/dist/ssr'
+'use client'
+
+import { ArrowsClockwise, Bell } from '@phosphor-icons/react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+const FILTERS = [
+  { label: 'Business', value: 'GBM', options: ['GBM'] },
+  { label: 'Product', value: 'HHP', options: ['HHP', 'Tablet', 'Wearable'] },
+  { label: 'Year', value: '2026', options: ['2026', '2025'] },
+]
 
 export function TopBar() {
   return (
-    <header className="flex h-11 shrink-0 items-center justify-between">
-      <nav aria-label="Breadcrumb">
-        <ol className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-          <li>PPB</li>
-          <li aria-hidden="true">
-            <CaretRight size={10} />
-          </li>
-          <li>GBM</li>
-          <li aria-hidden="true">
-            <CaretRight size={10} />
-          </li>
-          <li aria-current="page" className="font-medium text-foreground">
-            HHP
-          </li>
-        </ol>
-      </nav>
+    <header className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 py-1.5">
+      <div className="flex flex-wrap items-center gap-3">
+        {FILTERS.map((filter) => (
+          <div key={filter.label} className="flex items-center gap-1.5">
+            <span className="eyebrow">{filter.label}</span>
+            <Select defaultValue={filter.value}>
+              <SelectTrigger
+                aria-label={filter.label}
+                className="h-7 w-[92px] rounded-md border-input bg-card text-[12px] font-medium shadow-none"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                {filter.options.map((option) => (
+                  <SelectItem
+                    key={option}
+                    value={option}
+                    disabled={option !== filter.value}
+                  >
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ))}
+      </div>
 
       <div className="flex items-center gap-1">
         <p className="tnum mr-2 text-[11.5px] text-muted-foreground">
-          Updated Oct 06, 08:42
+          October closed. Updated Nov 06, 08:42
         </p>
         <button
           type="button"

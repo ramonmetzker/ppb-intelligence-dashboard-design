@@ -148,13 +148,13 @@ export function TrajectoryPanel({
     <Panel
       id="trajectory"
       title="Annual PPB trajectory"
-      description="Actual through October, then the baseline forecast against the selected scenario."
+      description="Accumulated score. Actual through October, then the AI forecast against your plan."
       className="h-full"
       action={
         <ul className="flex items-center gap-3 text-[11.5px] text-muted-foreground">
           <Legend color={INK} label="Actual" />
           <Legend color={MUTED} label="Forecast" dashed />
-          <Legend color={BRAND} label="Scenario" />
+          <Legend color={BRAND} label="Plan" />
         </ul>
       }
       bodyClassName="flex p-3"

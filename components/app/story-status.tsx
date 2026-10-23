@@ -1,11 +1,14 @@
+'use client'
+
 import {
   BASE_FORECAST,
   CURRENT_SCORE,
   REQUIRED_SCORE,
   fmt,
   fmtSigned,
-  type Simulation,
+  statusFor,
 } from '@/lib/ppb-model'
+import { usePlan } from '@/components/app/plan-provider'
 import { StatusChip, statusText } from '@/components/app/status-chip'
 import { cn } from '@/lib/utils'
 
@@ -16,83 +19,97 @@ const TICKS = [560, 580, 600, 620, 640, 660, 680, 700]
 const pos = (score: number) =>
   `${Math.min(100, Math.max(0, ((score - AXIS_MIN) / (AXIS_MAX - AXIS_MIN)) * 100))}%`
 
-export function ScoreStatus({
-  sim,
-  scenarioName,
-}: {
-  sim: Simulation
-  scenarioName: string
-}) {
+export function StoryStatus() {
+  const { sim, planName } = usePlan()
+  const toGo = REQUIRED_SCORE - CURRENT_SCORE
   const forecastGap = BASE_FORECAST - REQUIRED_SCORE
-  const forecastStatus = sim.gain === 0 ? sim.status : 'At risk'
-  const isBaseline = sim.gain === 0
+  const closed = Math.round(((BASE_FORECAST - CURRENT_SCORE) / toGo) * 100)
+  const unchanged = sim.changes.length === 0
 
   return (
-    <section
-      aria-label="PPB score status"
-      className="rounded-lg border border-border bg-card"
-    >
+    <section aria-label="PPB score story" className="rounded-lg border border-border bg-card">
       <div className="grid grid-cols-2 divide-y divide-border md:grid-cols-4 md:divide-x md:divide-y-0">
-        <Metric
+        <Step
           eyebrow="Now"
-          note="Actual accumulated, Oct close"
+          caption="Where we are"
           value={fmt(CURRENT_SCORE)}
           valueClass="text-foreground"
           foot={
-            <span className="tnum text-muted-foreground">
-              {fmt(REQUIRED_SCORE - CURRENT_SCORE)} pts to target
+            <span className="text-muted-foreground">
+              Accumulated through the October close
             </span>
           }
         />
-        <Metric
+        <Step
+          eyebrow="Required"
+          caption="What the regulation asks"
+          value={String(REQUIRED_SCORE)}
+          valueClass="text-foreground"
+          foot={
+            <span className="tnum text-muted-foreground">
+              {fmt(toGo)} pts still to earn
+            </span>
+          }
+        />
+        <Step
           eyebrow="Forecast"
-          note="AI year-end projection"
+          caption="Where the AI lands the year"
           value={fmt(BASE_FORECAST)}
           valueClass="text-brand"
           foot={
-            <span className="flex items-center gap-2">
-              <span className="num text-[12px] font-medium text-warning">
-                {fmtSigned(forecastGap)} pts
-              </span>
-              <StatusChip status={forecastStatus === 'Compliant' ? 'At risk' : 'At risk'} />
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className="num font-medium text-warning">{fmtSigned(forecastGap)} pts</span>
+              <StatusChip status={statusFor(BASE_FORECAST)} />
             </span>
           }
         />
-        <Metric
-          eyebrow={isBaseline ? 'Scenario' : 'Scenario'}
-          note={scenarioName}
-          highlight
+        <Step
+          eyebrow="Scenario"
+          caption={planName}
           value={fmt(sim.yearEnd)}
           valueClass={statusText(sim.status)}
+          highlight
           foot={
-            <span className="flex items-center gap-2">
-              <span className={cn('num text-[12px] font-medium', statusText(sim.status))}>
+            <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span className={cn('num font-medium', statusText(sim.status))}>
                 {fmtSigned(sim.gap)} pts
               </span>
               <StatusChip status={sim.status} />
             </span>
           }
         />
-        <Metric
-          eyebrow="Required"
-          note="Regulatory benchmark"
-          value={String(REQUIRED_SCORE)}
-          valueClass="text-muted-foreground"
-          foot={<span className="text-muted-foreground">Target for 2026</span>}
-        />
       </div>
 
       <div className="border-t border-border px-4 pt-3 pb-2">
-        <div className="relative h-14" role="img" aria-label={`Score ruler. Now ${fmt(CURRENT_SCORE)}, forecast ${fmt(BASE_FORECAST)}, scenario ${fmt(sim.yearEnd)}, required ${REQUIRED_SCORE}.`}>
-          {/* compliance zone */}
+        <p className="text-[13px] leading-5 text-balance">
+          We stand at <span className="num font-semibold">{fmt(CURRENT_SCORE)}</span> and need{' '}
+          <span className="num font-semibold">{REQUIRED_SCORE}</span>. The forecast earns {closed}% of
+          the remaining distance and lands{' '}
+          <span className="num font-semibold text-warning">{fmt(Math.abs(forecastGap))}</span> pts short.{' '}
+          {unchanged ? (
+            'No changes are planned for the open months yet.'
+          ) : (
+            <>
+              Your plan lands at{' '}
+              <span className={cn('num font-semibold', statusText(sim.status))}>
+                {fmt(sim.yearEnd)}
+              </span>
+              , {fmtSigned(sim.gain)} pts versus the forecast.
+            </>
+          )}
+        </p>
+
+        <div
+          className="relative mt-2 h-12"
+          role="img"
+          aria-label={`Score ruler. Now ${fmt(CURRENT_SCORE)}, forecast ${fmt(BASE_FORECAST)}, scenario ${fmt(sim.yearEnd)}, required ${REQUIRED_SCORE}.`}
+        >
           <div
             aria-hidden="true"
-            className="absolute top-3 bottom-4 right-0 bg-success/[0.07]"
+            className="absolute top-3 right-0 bottom-4 bg-success/[0.07]"
             style={{ left: pos(REQUIRED_SCORE) }}
           />
-          {/* axis */}
           <div aria-hidden="true" className="absolute inset-x-0 top-[26px] h-px bg-border" />
-          {/* now → forecast */}
           <div
             aria-hidden="true"
             className="absolute top-[25px] h-[3px]"
@@ -102,24 +119,22 @@ export function ScoreStatus({
               background: 'linear-gradient(to right, #0a1128, #2457e6)',
             }}
           />
-          {/* forecast → scenario */}
           <div
             aria-hidden="true"
             className="absolute top-[25px] h-[3px] bg-brand transition-all duration-500 ease-out"
             style={{
               left: `min(${pos(BASE_FORECAST)}, ${pos(sim.yearEnd)})`,
               width: `calc(max(${pos(BASE_FORECAST)}, ${pos(sim.yearEnd)}) - min(${pos(BASE_FORECAST)}, ${pos(sim.yearEnd)}))`,
-              opacity: isBaseline ? 0 : 1,
+              opacity: unchanged ? 0 : 1,
             }}
           />
-          {/* target */}
           <div
             aria-hidden="true"
             className="absolute top-1 bottom-4 w-px bg-foreground"
             style={{ left: pos(REQUIRED_SCORE) }}
           />
           <span
-            className="num absolute top-[-2px] -translate-x-1/2 bg-card px-1 text-[10.5px] font-medium text-foreground"
+            className="num absolute top-[-2px] -translate-x-1/2 bg-card px-1 text-[10.5px] font-medium"
             style={{ left: pos(REQUIRED_SCORE) }}
           >
             Required {REQUIRED_SCORE}
@@ -129,6 +144,8 @@ export function ScoreStatus({
           <Marker score={BASE_FORECAST} className="bg-card ring-2 ring-brand" />
           <Marker
             score={sim.yearEnd}
+            hidden={unchanged}
+            large
             className={cn(
               'transition-all duration-500 ease-out',
               sim.status === 'Compliant'
@@ -137,11 +154,8 @@ export function ScoreStatus({
                   ? 'bg-warning'
                   : 'bg-critical',
             )}
-            hidden={isBaseline}
-            large
           />
 
-          {/* scale */}
           {TICKS.map((t) => (
             <span
               key={t}
@@ -182,16 +196,16 @@ function Marker({
   )
 }
 
-function Metric({
+function Step({
   eyebrow,
-  note,
+  caption,
   value,
   valueClass,
   foot,
   highlight,
 }: {
   eyebrow: string
-  note: string
+  caption: string
   value: string
   valueClass: string
   foot: React.ReactNode
@@ -203,8 +217,8 @@ function Metric({
       <p className={cn('num text-[34px] leading-9 font-semibold transition-colors', valueClass)}>
         {value}
       </p>
-      <p className="truncate text-[11.5px] text-muted-foreground">{note}</p>
-      <div className="mt-0.5 min-h-5 text-[12px]">{foot}</div>
+      <p className="truncate text-[12px] font-medium">{caption}</p>
+      <div className="min-h-5 text-[12px]">{foot}</div>
     </div>
   )
 }

@@ -1,34 +1,56 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import {
-  ArrowsLeftRight,
+  Cube,
   CaretUpDown,
   ChartBar,
-  ChartLineUp,
   GitBranch,
-  ListChecks,
   SquaresFour,
   WarningDiamond,
-} from '@phosphor-icons/react/dist/ssr'
+} from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { PpbMark } from '@/components/brand/ppb-mark'
+import { usePlan } from '@/components/app/plan-provider'
+import { StatusChip } from '@/components/app/status-chip'
+import { fmt } from '@/lib/ppb-model'
+import { cn } from '@/lib/utils'
 
-const NAV: { label: string; href: string; icon: Icon }[] = [
-  { label: 'Overview', href: '#overview', icon: SquaresFour },
-  { label: 'Scenarios', href: '#scenarios', icon: GitBranch },
-  { label: 'Trajectory', href: '#trajectory', icon: ChartLineUp },
-  { label: 'What changes', href: '#changes', icon: ArrowsLeftRight },
-  { label: 'Volume', href: '#volume', icon: ChartBar },
-  { label: 'Risk drivers', href: '#drivers', icon: WarningDiamond },
-  { label: 'Data readiness', href: '#readiness', icon: ListChecks },
+const GROUPS: {
+  label: string
+  items: { label: string; href: string; icon: Icon }[]
+}[] = [
+  {
+    label: 'Analyze',
+    items: [
+      { label: 'Overview', href: '/', icon: SquaresFour },
+      { label: 'Production', href: '/production', icon: ChartBar },
+      { label: 'PPB items', href: '/items', icon: Cube },
+    ],
+  },
+  {
+    label: 'Plan',
+    items: [{ label: 'Simulation', href: '/simulation', icon: GitBranch }],
+  },
+  {
+    label: 'Monitor',
+    items: [{ label: 'Risks and data', href: '/risks', icon: WarningDiamond }],
+  },
 ]
 
 export function AppSidebar() {
+  const pathname = usePathname()
+  const { sim, planName } = usePlan()
+  const isActive = (href: string) =>
+    href === '/' ? pathname === '/' : pathname.startsWith(href)
+
   return (
     <aside
       aria-label="Primary"
-      className="sticky top-2 hidden h-[calc(100vh-1rem)] w-[196px] shrink-0 flex-col rounded-lg border border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex"
+      className="sticky top-2 hidden h-[calc(100vh-1rem)] w-[200px] shrink-0 flex-col rounded-lg border border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex"
     >
-      <div className="flex items-center gap-2.5 px-3.5 pt-4 pb-3.5">
+      <Link href="/" className="flex items-center gap-2.5 px-3.5 pt-4 pb-3.5">
         <PpbMark size={28} className="shrink-0" />
         <div className="min-w-0 leading-tight">
           <p className="font-display truncate text-[14px] font-semibold tracking-tight text-white">
@@ -38,64 +60,79 @@ export function AppSidebar() {
             Basic Productive Process
           </p>
         </div>
-      </div>
+      </Link>
 
       <div className="mx-3.5 h-px bg-sidebar-border" />
 
-      <nav aria-label="Sections" className="flex-1 overflow-y-auto px-2 py-3">
-        <ul className="flex flex-col gap-0.5">
-          {NAV.map(({ label, href, icon: NavIcon }, i) => {
-            const active = i === 0
-            return (
-              <li key={label}>
-                <a
-                  href={href}
-                  aria-current={active ? 'true' : undefined}
-                  className={
-                    active
-                      ? 'relative flex h-8 items-center gap-2.5 rounded-md bg-sidebar-accent px-2.5 text-[12.5px] font-medium text-white'
-                      : 'flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[12.5px] font-medium text-sidebar-foreground/70 transition-colors hover:bg-white/5 hover:text-white'
-                  }
-                >
-                  {active && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute top-1.5 bottom-1.5 -left-2 w-[2px] bg-brand"
-                    />
-                  )}
-                  <NavIcon
-                    size={16}
-                    weight={active ? 'fill' : 'regular'}
-                    className={active ? 'text-[#7fa2ff]' : 'text-sidebar-foreground/45'}
-                    aria-hidden="true"
-                  />
-                  {label}
-                </a>
-              </li>
-            )
-          })}
-        </ul>
+      <nav aria-label="Pages" className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="flex flex-col gap-4">
+          {GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="mb-1 px-2.5 text-[10px] font-medium tracking-[0.1em] text-sidebar-foreground/40 uppercase">
+                {group.label}
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map(({ label, href, icon: NavIcon }) => {
+                  const active = isActive(href)
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'relative flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[12.5px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
+                          active
+                            ? 'bg-sidebar-accent text-white'
+                            : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-white',
+                        )}
+                      >
+                        {active && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute top-1.5 bottom-1.5 -left-2 w-[2px] bg-brand"
+                          />
+                        )}
+                        <NavIcon
+                          size={16}
+                          weight={active ? 'fill' : 'regular'}
+                          className={active ? 'text-[#7fa2ff]' : 'text-sidebar-foreground/45'}
+                          aria-hidden="true"
+                        />
+                        {label}
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
       </nav>
 
       <div className="flex flex-col gap-2 border-t border-sidebar-border p-2">
-        <div className="rounded-md border border-sidebar-border bg-ink-raised px-2.5 py-2">
+        <Link
+          href="/simulation"
+          className="rounded-md border border-sidebar-border bg-ink-raised px-2.5 py-2 transition-colors hover:border-brand/60 focus-visible:outline-2 focus-visible:outline-ring"
+        >
           <p className="text-[10px] tracking-[0.08em] text-sidebar-foreground/50 uppercase">
-            Model
+            Active plan
           </p>
-          <p className="mt-0.5 flex items-center justify-between text-[12px] font-medium text-white">
-            Forecast v3.2
-            <span aria-hidden="true" className="size-1.5 rounded-[1px] bg-success" />
-          </p>
-        </div>
+          <p className="mt-0.5 truncate text-[12px] font-medium text-white">{planName}</p>
+          <div className="mt-1.5 flex items-center justify-between">
+            <span className="num text-[16px] font-semibold text-white">{fmt(sim.yearEnd)}</span>
+            <StatusChip status={sim.status} className="bg-white/10" />
+          </div>
+        </Link>
         <button
           type="button"
           className="flex items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors hover:bg-white/5"
         >
-          <Avatar size="sm" className="after:hidden">
-            <AvatarFallback className="bg-ink-raised text-[10px] font-medium text-white">
-              RA
-            </AvatarFallback>
-          </Avatar>
+          <span
+            aria-hidden="true"
+            className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink-raised text-[10px] font-medium text-white"
+          >
+            RA
+          </span>
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block truncate text-[12px] font-medium text-white">
               Rafael Alves
