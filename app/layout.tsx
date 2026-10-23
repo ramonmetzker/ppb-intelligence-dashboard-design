@@ -1,24 +1,24 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Space_Grotesk } from 'next/font/google'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
-const geistMono = Geist_Mono({
+const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-geist-mono',
+  variable: '--font-space-grotesk',
 })
 
 export const metadata: Metadata = {
-  title: 'PPB Intelligence | Compliance, forecast and sourcing optimization',
+  title: 'PPB Intelligence | Scenario simulation for PPB compliance',
   description:
-    'Monitor Brazil PPB compliance, forecast year-end results with AI, and optimize material sourcing with mathematical optimization.',
+    'See where PPB stands today, how the year will close, and simulate AI scenarios that show exactly what must change to comply.',
   icons: { icon: '/icon.svg' },
 }
 
 export const viewport: Viewport = {
   colorScheme: 'light',
-  themeColor: '#e7ebf0',
+  themeColor: '#e5eaf4',
 }
 
 export default function RootLayout({
@@ -27,7 +27,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable} bg-shell`}>
+    <html
+      lang="en"
+      className={`${geist.variable} ${spaceGrotesk.variable} bg-shell`}
+    >
       <body className="antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}

@@ -6,7 +6,8 @@
 
 @theme inline {
   --font-sans: var(--font-geist), 'Geist', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), 'Geist Mono', ui-monospace, monospace;
+  --font-display: var(--font-space-grotesk), 'Space Grotesk', ui-sans-serif,
+    system-ui, sans-serif;
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -43,77 +44,71 @@
   --color-shell: var(--shell);
   --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
+  --color-brand-soft: var(--brand-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-critical: var(--critical);
-  --color-graphite: var(--graphite);
-  --color-graphite-raised: var(--graphite-raised);
-  --color-actual: var(--actual);
-  --color-forecast: var(--forecast);
-  --color-optimized: var(--optimized);
-  --color-target: var(--target);
+  --color-ink: var(--ink);
+  --color-ink-raised: var(--ink-raised);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.2);
-  --radius-2xl: calc(var(--radius) * 1.4);
-  --radius-3xl: calc(var(--radius) * 1.8);
-  --radius-4xl: calc(var(--radius) * 2.2);
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
+  --radius-3xl: 10px;
+  --radius-4xl: 12px;
 }
 
 :root {
   color-scheme: light;
 
-  --shell: #e7ebf0;
-  --background: #f5f7fa;
-  --foreground: #161a21;
+  --shell: #e5eaf4;
+  --background: #f3f5fb;
+  --foreground: #0a1128;
   --card: #ffffff;
-  --card-foreground: #161a21;
+  --card-foreground: #0a1128;
   --popover: #ffffff;
-  --popover-foreground: #161a21;
+  --popover-foreground: #0a1128;
 
-  --primary: #137c9a;
+  --primary: #2457e6;
   --primary-foreground: #ffffff;
-  --secondary: #eef1f5;
-  --secondary-foreground: #161a21;
-  --muted: #eef1f5;
-  --muted-foreground: #5f6b7d;
-  --accent: #eef1f5;
-  --accent-foreground: #161a21;
-  --destructive: #c0392b;
-  --border: #e1e6ed;
-  --input: #d3dae3;
-  --ring: #1687a7;
+  --secondary: #edf0f8;
+  --secondary-foreground: #0a1128;
+  --muted: #edf0f8;
+  --muted-foreground: #586380;
+  --accent: #edf0f8;
+  --accent-foreground: #0a1128;
+  --destructive: #c8382b;
+  --border: #dde3f0;
+  --input: #c9d2e6;
+  --ring: #2457e6;
 
-  --brand: #1687a7;
-  --brand-deep: #0a6b78;
-  --actual: #161a21;
-  --forecast: #1687a7;
-  --optimized: #0a6b78;
-  --target: #7b8697;
-  --success: #1c8558;
-  --warning: #a8620a;
-  --critical: #c0392b;
-  --graphite: #181b21;
-  --graphite-raised: #21252d;
+  --brand: #2457e6;
+  --brand-deep: #14308f;
+  --brand-soft: #e8eeff;
+  --success: #0f8a5f;
+  --warning: #b26a00;
+  --critical: #c8382b;
+  --ink: #0b1330;
+  --ink-raised: #141d40;
 
-  --chart-1: #1687a7;
-  --chart-2: #0b4a5e;
-  --chart-3: #161a21;
-  --chart-4: #5f6b7d;
-  --chart-5: #d3dae3;
+  --chart-1: #14308f;
+  --chart-2: #2457e6;
+  --chart-3: #5b8bff;
+  --chart-4: #9dbcff;
+  --chart-5: #cfdcff;
 
-  --radius: 0.75rem;
+  --radius: 0.25rem;
 
-  --sidebar: #181b21;
-  --sidebar-foreground: #c3c9d3;
-  --sidebar-primary: #1687a7;
+  --sidebar: #0b1330;
+  --sidebar-foreground: #b9c3e0;
+  --sidebar-primary: #2457e6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1b2a31;
+  --sidebar-accent: #172352;
   --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #2a2f38;
-  --sidebar-ring: #1687a7;
+  --sidebar-border: #1f2a5a;
+  --sidebar-ring: #2457e6;
 }
 
 @layer base {
@@ -122,10 +117,14 @@
   }
   html {
     @apply bg-shell;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-shell text-foreground font-sans;
-    font-feature-settings: 'cv11', 'ss01';
+    font-feature-settings: 'ss01';
+  }
+  section[id] {
+    scroll-margin-top: 4.5rem;
   }
 }
 
@@ -134,13 +133,68 @@
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';
   }
-  .num-mono {
-    font-family: var(--font-mono);
+  .num {
+    font-family: var(--font-display);
     font-variant-numeric: tabular-nums;
     font-feature-settings: 'tnum';
     letter-spacing: -0.02em;
   }
   .eyebrow {
-    @apply text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground;
+    @apply text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground;
+  }
+}
+
+/* Lever sliders: thin track, square thumb. The fill width is set inline via --fill. */
+input[type='range'].lever {
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type='range'].lever::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 0;
+  background: linear-gradient(
+    to right,
+    var(--brand) var(--fill, 0%),
+    var(--input) var(--fill, 0%)
+  );
+}
+input[type='range'].lever::-moz-range-track {
+  height: 3px;
+  background: var(--input);
+}
+input[type='range'].lever::-moz-range-progress {
+  height: 3px;
+  background: var(--brand);
+}
+input[type='range'].lever::-webkit-slider-thumb {
+  appearance: none;
+  width: 10px;
+  height: 14px;
+  margin-top: -5.5px;
+  border-radius: 2px;
+  background: var(--card);
+  border: 2px solid var(--brand);
+}
+input[type='range'].lever::-moz-range-thumb {
+  width: 6px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--card);
+  border: 2px solid var(--brand);
+}
+input[type='range'].lever:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    transition-duration: 0.01ms !important;
   }
 }
