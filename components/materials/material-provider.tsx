@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import type { ItemKey } from '@/lib/ppb-model'
+import { useNotifications } from '@/components/shell/notification-provider'
 import {
   applyPreview,
   classifyMaterial,
@@ -26,6 +27,7 @@ type MaterialsContext = {
 const Context = createContext<MaterialsContext | null>(null)
 
 export function MaterialProvider({ children }: { children: React.ReactNode }) {
+  const { push } = useNotifications()
   const [book, setBook] = useState<PriceBook>(seedBook)
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null)
 
@@ -37,8 +39,15 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
     }
     setBook((current) => applyPreview(current, preview))
     setLastImport(summary)
+    push({
+      severity: 'success',
+      title: 'Price list imported',
+      body: `${summary.fileName}: ${summary.added} new and ${summary.updated} updated prices.`,
+      href: '/materials',
+      hrefLabel: 'View material prices',
+    })
     return summary
-  }, [])
+  }, [push])
 
   const editEntry = useCallback(
     (id: string, price: number, origin: Origin) =>
