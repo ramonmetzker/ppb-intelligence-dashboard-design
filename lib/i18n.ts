@@ -77,6 +77,14 @@ const en = {
     },
     languageTitle: 'Language',
     languageDescription: 'Choose the interface language.',
+    signOut: 'Sign out',
+    signingOut: 'Signing out...',
+    signOutHint: 'End your session on this device.',
+    signOutFailed: 'Could not sign out. Try again.',
+    signedOutTitle: 'You have been signed out',
+    signedOutDescription:
+      'Your session on this device has ended. Your theme and language are kept for next time.',
+    signInAgain: 'Sign in again',
   },
 }
 
@@ -161,6 +169,14 @@ const ptBR: Dictionary = {
     },
     languageTitle: 'Idioma',
     languageDescription: 'Escolha o idioma da interface.',
+    signOut: 'Sair',
+    signingOut: 'Saindo...',
+    signOutHint: 'Encerra sua sessão neste dispositivo.',
+    signOutFailed: 'Não foi possível sair. Tente novamente.',
+    signedOutTitle: 'Você saiu da sua conta',
+    signedOutDescription:
+      'Sua sessão neste dispositivo foi encerrada. Tema e idioma ficam salvos para a próxima vez.',
+    signInAgain: 'Entrar novamente',
   },
 }
 
@@ -240,6 +256,14 @@ const ko: Dictionary = {
     },
     languageTitle: '언어',
     languageDescription: '인터페이스 언어를 선택하세요.',
+    signOut: '로그아웃',
+    signingOut: '로그아웃 중...',
+    signOutHint: '이 기기에서 세션을 종료합니다.',
+    signOutFailed: '로그아웃하지 못했습니다. 다시 시도해 주세요.',
+    signedOutTitle: '로그아웃되었습니다',
+    signedOutDescription:
+      '이 기기의 세션이 종료되었습니다. 테마와 언어 설정은 다음을 위해 유지됩니다.',
+    signInAgain: '다시 로그인',
   },
 }
 

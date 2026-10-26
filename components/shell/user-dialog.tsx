@@ -1,6 +1,7 @@
 'use client'
 
-import { Check, LockSimple } from '@phosphor-icons/react'
+import { useState } from 'react'
+import { Check, LockSimple, SignOut } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { usePreferences } from '@/components/shell/preferences-provider'
 import { LANGUAGES, THEMES } from '@/lib/preferences'
@@ -21,6 +22,21 @@ export function UserDialog() {
   } = usePreferences()
 
   const copy = t.user
+  const [signingOut, setSigningOut] = useState(false)
+  const [signOutError, setSignOutError] = useState(false)
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    setSignOutError(false)
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' })
+      if (!response.ok) throw new Error('Sign out failed')
+      window.location.assign('/signed-out')
+    } catch {
+      setSigningOut(false)
+      setSignOutError(true)
+    }
+  }
 
   return (
     <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
@@ -221,6 +237,27 @@ export function UserDialog() {
             </div>
           </section>
         </div>
+
+        <footer className="flex items-center justify-between gap-4 border-t border-border bg-muted/40 px-5 py-3">
+          <p
+            role="status"
+            className={cn(
+              'min-w-0 text-[12px] text-pretty',
+              signOutError ? 'text-destructive' : 'text-muted-foreground',
+            )}
+          >
+            {signOutError ? copy.signOutFailed : copy.signOutHint}
+          </p>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-border bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-60"
+          >
+            <SignOut size={16} aria-hidden="true" />
+            {signingOut ? copy.signingOut : copy.signOut}
+          </button>
+        </footer>
       </DialogContent>
     </Dialog>
   )
