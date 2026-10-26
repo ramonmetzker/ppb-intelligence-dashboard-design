@@ -101,6 +101,11 @@
 
   --radius: 0.25rem;
 
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #b8c2da;
+  --scrollbar-thumb-hover: #8d9abd;
+  --scrollbar-thumb-active: #2457e6;
+
   --sidebar: #0b1330;
   --sidebar-foreground: #b9c3e0;
   --sidebar-primary: #2457e6;
@@ -125,6 +130,57 @@
   }
   section[id] {
     scroll-margin-top: 4.5rem;
+  }
+
+  /* Custom scrollbar. WebKit/Blink get the detailed version; Firefox falls back to the standard properties. */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+    min-height: 40px;
+    min-width: 40px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollbar-thumb-active);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
+  }
+}
+
+@layer utilities {
+  /* For scroll areas that sit on the dark ink/sidebar surfaces. */
+  .scroll-dark {
+    --scrollbar-thumb: #2c3a74;
+    --scrollbar-thumb-hover: #4a5da8;
+    --scrollbar-thumb-active: #5b8bff;
+  }
+  .scroll-dark::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+  }
+  .scroll-dark::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+  .scroll-dark::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollbar-thumb-active);
   }
 }
 

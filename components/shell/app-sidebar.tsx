@@ -65,7 +65,7 @@ export function AppSidebar() {
 
       <div className="mx-3.5 h-px bg-sidebar-border" />
 
-      <nav aria-label="Pages" className="flex-1 overflow-y-auto px-2 py-3">
+      <nav aria-label="Pages" className="scroll-dark flex-1 overflow-y-auto px-2 py-3">
         <div className="flex flex-col gap-4">
           {GROUPS.map((group) => (
             <div key={group.label}>
