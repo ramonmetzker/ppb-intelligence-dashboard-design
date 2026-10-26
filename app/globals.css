@@ -101,10 +101,13 @@
 
   --radius: 0.25rem;
 
+  --faint: #8793ad;
+  --grid: #e6eaf4;
+
   --scrollbar-track: transparent;
-  --scrollbar-thumb: #b8c2da;
-  --scrollbar-thumb-hover: #8d9abd;
-  --scrollbar-thumb-active: #2457e6;
+  --scrollbar-thumb: color-mix(in srgb, var(--muted-foreground) 38%, var(--card));
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--muted-foreground) 62%, var(--card));
+  --scrollbar-thumb-active: var(--brand);
 
   --sidebar: #0b1330;
   --sidebar-foreground: #b9c3e0;
@@ -114,6 +117,156 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #1f2a5a;
   --sidebar-ring: #2457e6;
+  --sidebar-highlight: #7fa2ff;
+}
+
+/* Theme palettes. Blue is the default and lives in :root. */
+:root[data-theme='green'] {
+  --shell: #e1eee7;
+  --background: #f1f7f3;
+  --foreground: #0a1f17;
+  --card-foreground: #0a1f17;
+  --popover-foreground: #0a1f17;
+  --primary: #0f7a55;
+  --secondary: #e9f2ed;
+  --secondary-foreground: #0a1f17;
+  --muted: #e9f2ed;
+  --muted-foreground: #4f685b;
+  --accent: #e9f2ed;
+  --accent-foreground: #0a1f17;
+  --border: #d5e4db;
+  --input: #bfd4c8;
+  --ring: #0f7a55;
+  --brand: #0f7a55;
+  --brand-deep: #0a4d37;
+  --brand-soft: #e0f3ea;
+  --ink: #0a1f17;
+  --ink-raised: #123327;
+  --chart-1: #0a4d37;
+  --chart-2: #0f7a55;
+  --chart-3: #3fa67c;
+  --chart-4: #8fd0b3;
+  --chart-5: #cdeadc;
+  --faint: #87a093;
+  --grid: #e3eee7;
+  --sidebar: #0a2018;
+  --sidebar-foreground: #b5d0c3;
+  --sidebar-primary: #0f7a55;
+  --sidebar-accent: #123628;
+  --sidebar-border: #1c4535;
+  --sidebar-ring: #0f7a55;
+  --sidebar-highlight: #6fd6a6;
+}
+
+:root[data-theme='pink'] {
+  --shell: #f3e4eb;
+  --background: #faf2f6;
+  --foreground: #2a0d19;
+  --card-foreground: #2a0d19;
+  --popover-foreground: #2a0d19;
+  --primary: #c2255c;
+  --secondary: #f6eaf0;
+  --secondary-foreground: #2a0d19;
+  --muted: #f6eaf0;
+  --muted-foreground: #765263;
+  --accent: #f6eaf0;
+  --accent-foreground: #2a0d19;
+  --border: #ebd8e1;
+  --input: #dcc1ce;
+  --ring: #c2255c;
+  --brand: #c2255c;
+  --brand-deep: #8a1640;
+  --brand-soft: #fde6ee;
+  --ink: #2a0d19;
+  --ink-raised: #44182b;
+  --chart-1: #8a1640;
+  --chart-2: #c2255c;
+  --chart-3: #e0668f;
+  --chart-4: #f0a6bf;
+  --chart-5: #f9d9e4;
+  --faint: #a88b99;
+  --grid: #f1e3ea;
+  --sidebar: #2b0f1c;
+  --sidebar-foreground: #e0bccb;
+  --sidebar-primary: #c2255c;
+  --sidebar-accent: #471b30;
+  --sidebar-border: #5a2540;
+  --sidebar-ring: #c2255c;
+  --sidebar-highlight: #f58aae;
+}
+
+:root[data-theme='purple'] {
+  --shell: #e9e4f4;
+  --background: #f5f2fb;
+  --foreground: #160b33;
+  --card-foreground: #160b33;
+  --popover-foreground: #160b33;
+  --primary: #6d3fd6;
+  --secondary: #eeeaf8;
+  --secondary-foreground: #160b33;
+  --muted: #eeeaf8;
+  --muted-foreground: #5e5688;
+  --accent: #eeeaf8;
+  --accent-foreground: #160b33;
+  --border: #ddd6ee;
+  --input: #cbc1e4;
+  --ring: #6d3fd6;
+  --brand: #6d3fd6;
+  --brand-deep: #43238f;
+  --brand-soft: #eee8fd;
+  --ink: #160b33;
+  --ink-raised: #261653;
+  --chart-1: #43238f;
+  --chart-2: #6d3fd6;
+  --chart-3: #9a78ec;
+  --chart-4: #c4adf5;
+  --chart-5: #e4d9fb;
+  --faint: #958bb8;
+  --grid: #e8e3f4;
+  --sidebar: #170d36;
+  --sidebar-foreground: #c6bce3;
+  --sidebar-primary: #6d3fd6;
+  --sidebar-accent: #2a1a5c;
+  --sidebar-border: #38246f;
+  --sidebar-ring: #6d3fd6;
+  --sidebar-highlight: #b497f7;
+}
+
+:root[data-theme='terracotta'] {
+  --shell: #efe2d9;
+  --background: #f8f1ec;
+  --foreground: #2b1409;
+  --card-foreground: #2b1409;
+  --popover-foreground: #2b1409;
+  --primary: #c2542d;
+  --secondary: #f3eae3;
+  --secondary-foreground: #2b1409;
+  --muted: #f3eae3;
+  --muted-foreground: #765a4a;
+  --accent: #f3eae3;
+  --accent-foreground: #2b1409;
+  --border: #e7d8cc;
+  --input: #d7c3b3;
+  --ring: #c2542d;
+  --brand: #c2542d;
+  --brand-deep: #8a3418;
+  --brand-soft: #fbeae1;
+  --ink: #2b1409;
+  --ink-raised: #45230f;
+  --chart-1: #8a3418;
+  --chart-2: #c2542d;
+  --chart-3: #df8a68;
+  --chart-4: #efb9a0;
+  --chart-5: #f8e0d3;
+  --faint: #a88f7f;
+  --grid: #f0e4db;
+  --sidebar: #2a150c;
+  --sidebar-foreground: #dcc3b3;
+  --sidebar-primary: #c2542d;
+  --sidebar-accent: #4a2616;
+  --sidebar-border: #5d3220;
+  --sidebar-ring: #c2542d;
+  --sidebar-highlight: #f0a07a;
 }
 
 @layer base {
@@ -169,9 +322,9 @@
 @layer utilities {
   /* For scroll areas that sit on the dark ink/sidebar surfaces. */
   .scroll-dark {
-    --scrollbar-thumb: #2c3a74;
-    --scrollbar-thumb-hover: #4a5da8;
-    --scrollbar-thumb-active: #5b8bff;
+    --scrollbar-thumb: color-mix(in srgb, var(--sidebar-highlight) 28%, var(--sidebar));
+    --scrollbar-thumb-hover: color-mix(in srgb, var(--sidebar-highlight) 55%, var(--sidebar));
+    --scrollbar-thumb-active: var(--sidebar-highlight);
   }
   .scroll-dark::-webkit-scrollbar-thumb {
     background-color: var(--scrollbar-thumb);

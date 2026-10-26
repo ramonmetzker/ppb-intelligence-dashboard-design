@@ -22,11 +22,11 @@ import {
 } from '@/lib/ppb-model'
 import { Panel } from '@/components/app/panel'
 
-const INK = '#0a1128'
-const BRAND = '#2457e6'
+const INK = 'var(--ink)'
+const BRAND = 'var(--brand)'
 const MUTED = '#8793ad'
-const GRID = '#e6eaf4'
-const AXIS = '#586380'
+const GRID = 'var(--grid)'
+const AXIS = 'var(--muted-foreground)'
 const FONT_NUM = 'var(--font-space-grotesk)'
 
 const COLORS = { actual: INK, forecast: MUTED, scenario: BRAND }
@@ -227,7 +227,7 @@ export function TrajectoryPanel({
   const top = Math.max(700, Math.ceil((peak + 12) / 20) * 20)
   const ticks = Array.from({ length: 8 }, (_, i) => 440 + i * 60).filter((t) => t <= top - 12)
 
-  const markerAt = (month: string, fill: string, size: number, stroke = '#fff') =>
+  const markerAt = (month: string, fill: string, size: number, stroke = 'var(--card)') =>
     function Marker({ cx, cy, index }: DotProps) {
       const point = index === undefined ? undefined : sim.trajectory[index]
       if (!point || point.month !== month || cx === undefined || cy === undefined) {
@@ -273,7 +273,7 @@ export function TrajectoryPanel({
             <ReferenceArea
               x1={LAST_ACTUAL_MONTH}
               x2={LAST_MONTH}
-              fill="#edf0f8"
+              fill="var(--muted)"
               fillOpacity={0.7}
               ifOverflow="visible"
             />
@@ -297,7 +297,7 @@ export function TrajectoryPanel({
             <ReferenceLine y={REQUIRED_SCORE} stroke={INK} strokeWidth={1} />
             <Tooltip
               content={<ChartTooltip scenarioName={scenarioName} />}
-              cursor={{ stroke: '#c9d2e6', strokeWidth: 1 }}
+              cursor={{ stroke: 'var(--input)', strokeWidth: 1 }}
             />
             <Line
               type="monotone"
@@ -305,7 +305,7 @@ export function TrajectoryPanel({
               stroke={MUTED}
               strokeWidth={1.75}
               strokeDasharray="5 4"
-              dot={isBaseline ? markerAt(LAST_MONTH, MUTED, 8) : markerAt(LAST_MONTH, '#fff', 6, MUTED)}
+              dot={isBaseline ? markerAt(LAST_MONTH, MUTED, 8) : markerAt(LAST_MONTH, 'var(--card)', 6, MUTED)}
               activeDot={{ r: 3.5 }}
               isAnimationActive
               animationBegin={200}

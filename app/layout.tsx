@@ -1,7 +1,9 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Space_Grotesk } from 'next/font/google'
+import { cookies } from 'next/headers'
 import { BootProvider } from '@/components/app/boot'
+import { THEMES, readPreferences } from '@/lib/preferences'
 import { RouteProgress } from '@/components/app/route-progress'
 import './globals.css'
 
@@ -18,19 +20,25 @@ export const metadata: Metadata = {
   icons: { icon: '/icon.svg' },
 }
 
-export const viewport: Viewport = {
-  colorScheme: 'light',
-  themeColor: '#e5eaf4',
+export async function generateViewport(): Promise<Viewport> {
+  const { theme } = readPreferences(await cookies())
+  return {
+    colorScheme: 'light',
+    themeColor: THEMES.find((option) => option.id === theme)?.chrome ?? '#e5eaf4',
+  }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const { theme, language } = readPreferences(await cookies())
+
   return (
     <html
-      lang="en"
+      lang={language}
+      data-theme={theme}
       className={`${geist.variable} ${spaceGrotesk.variable} bg-shell`}
     >
       <body className="antialiased">

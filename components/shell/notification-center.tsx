@@ -19,13 +19,14 @@ import {
   type AppNotification,
   type Severity,
 } from '@/components/shell/notification-provider'
+import { usePreferences } from '@/components/shell/preferences-provider'
 import { cn } from '@/lib/utils'
 
-const SEVERITY: Record<Severity, { icon: Icon; tone: string; label: string }> = {
-  critical: { icon: WarningOctagon, tone: 'bg-critical/10 text-critical', label: 'Critical' },
-  warning: { icon: WarningDiamond, tone: 'bg-warning/10 text-warning', label: 'Warning' },
-  success: { icon: CheckCircle, tone: 'bg-success/10 text-success', label: 'Success' },
-  info: { icon: Info, tone: 'bg-brand-soft text-brand', label: 'Info' },
+const SEVERITY: Record<Severity, { icon: Icon; tone: string }> = {
+  critical: { icon: WarningOctagon, tone: 'bg-critical/10 text-critical' },
+  warning: { icon: WarningDiamond, tone: 'bg-warning/10 text-warning' },
+  success: { icon: CheckCircle, tone: 'bg-success/10 text-success' },
+  info: { icon: Info, tone: 'bg-brand-soft text-brand' },
 }
 
 type Filter = 'all' | 'unread'
@@ -38,6 +39,8 @@ export function NotificationCenter({
   onOpenChange: (open: boolean) => void
 }) {
   const { notifications, unreadCount, markAllRead, clearRead } = useNotifications()
+  const { t, knoxAlerts } = usePreferences()
+  const copy = t.notifications
   const [filter, setFilter] = useState<Filter>('all')
 
   const visible = filter === 'unread' ? notifications.filter((n) => !n.read) : notifications
@@ -50,12 +53,10 @@ export function NotificationCenter({
           <div className="flex items-baseline justify-between gap-3">
             <div>
               <DialogTitle className="font-display text-[15px] font-semibold tracking-tight">
-                Notification center
+                {copy.title}
               </DialogTitle>
               <DialogDescription className="mt-1 text-[12px]">
-                {unreadCount > 0
-                  ? `${unreadCount} unread ${unreadCount === 1 ? 'update' : 'updates'}`
-                  : 'You are all caught up'}
+                {unreadCount > 0 ? copy.unreadCount(unreadCount) : copy.caughtUp}
               </DialogDescription>
             </div>
             <button
@@ -65,13 +66,13 @@ export function NotificationCenter({
               className="flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium text-brand transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:text-muted-foreground/60"
             >
               <Check size={13} aria-hidden="true" />
-              Mark all read
+              {copy.markAllRead}
             </button>
           </div>
 
           <div
             role="tablist"
-            aria-label="Filter notifications"
+            aria-label={copy.filterLabel}
             className="flex w-fit items-center gap-0.5 rounded-md bg-muted p-0.5"
           >
             {(['all', 'unread'] as const).map((value) => (
@@ -82,13 +83,13 @@ export function NotificationCenter({
                 aria-selected={filter === value}
                 onClick={() => setFilter(value)}
                 className={cn(
-                  'h-6 rounded-[3px] px-2.5 text-[12px] font-medium capitalize transition-colors focus-visible:outline-2 focus-visible:outline-ring',
+                  'h-6 rounded-[3px] px-2.5 text-[12px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
                   filter === value
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                {value}
+                {copy[value]}
                 {value === 'unread' && unreadCount > 0 && (
                   <span className="tnum ml-1.5 text-brand">{unreadCount}</span>
                 )}
@@ -111,18 +112,30 @@ export function NotificationCenter({
           </ul>
         )}
 
-        <footer className="flex items-center justify-between gap-3 border-t border-border px-4 py-2.5">
-          <p className="text-[11.5px] text-muted-foreground">
-            {notifications.length} {notifications.length === 1 ? 'notification' : 'notifications'}
+        <footer className="flex flex-col gap-2 border-t border-border px-4 py-2.5">
+          <p className="flex items-start gap-2 text-[11.5px] leading-snug text-pretty text-muted-foreground">
+            <span
+              aria-hidden="true"
+              className={cn(
+                'mt-1 size-1.5 shrink-0 rounded-full',
+                knoxAlerts ? 'bg-brand' : 'bg-input',
+              )}
+            />
+            {knoxAlerts ? copy.knoxOn : copy.knoxOff}
           </p>
-          <button
-            type="button"
-            onClick={clearRead}
-            disabled={!hasRead}
-            className="h-7 rounded-md px-2 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
-          >
-            Clear read
-          </button>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11.5px] text-muted-foreground">
+              {copy.count(notifications.length)}
+            </p>
+            <button
+              type="button"
+              onClick={clearRead}
+              disabled={!hasRead}
+              className="h-7 rounded-md px-2 text-[12px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50"
+            >
+              {copy.clearRead}
+            </button>
+          </div>
         </footer>
       </DialogContent>
     </Dialog>
@@ -137,7 +150,10 @@ function NotificationRow({
   onNavigate: () => void
 }) {
   const { markRead, dismiss } = useNotifications()
-  const { icon: SeverityIcon, tone, label } = SEVERITY[notification.severity]
+  const { t } = usePreferences()
+  const copy = t.notifications
+  const { icon: SeverityIcon, tone } = SEVERITY[notification.severity]
+  const label = copy[notification.severity]
 
   return (
     <li
@@ -161,7 +177,7 @@ function NotificationRow({
               notification.read ? 'font-medium text-foreground/80' : 'font-semibold text-foreground',
             )}
           >
-            {!notification.read && <span className="sr-only">Unread. </span>}
+            {!notification.read && <span className="sr-only">{copy.unreadSr}</span>}
             <span className="sr-only">{label}. </span>
             {notification.title}
           </p>
@@ -192,7 +208,7 @@ function NotificationRow({
               <button
                 type="button"
                 onClick={() => markRead(notification.id)}
-                aria-label={`Mark "${notification.title}" as read`}
+                aria-label={copy.markRead(notification.title)}
                 className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
               >
                 <Check size={13} aria-hidden="true" />
@@ -201,7 +217,7 @@ function NotificationRow({
             <button
               type="button"
               onClick={() => dismiss(notification.id)}
-              aria-label={`Dismiss "${notification.title}"`}
+              aria-label={copy.dismiss(notification.title)}
               className="flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-card hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             >
               <X size={13} aria-hidden="true" />
@@ -221,16 +237,18 @@ function NotificationRow({
 }
 
 function EmptyState({ filter }: { filter: Filter }) {
+  const { t } = usePreferences()
+  const copy = t.notifications
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-14 text-center">
       <span className="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
         <BellSlash size={18} aria-hidden="true" />
       </span>
       <p className="text-[13px] font-medium text-foreground">
-        {filter === 'unread' ? 'No unread notifications' : 'Nothing here yet'}
+        {filter === 'unread' ? copy.emptyUnread : copy.emptyAll}
       </p>
       <p className="max-w-[28ch] text-[12px] text-pretty text-muted-foreground">
-        Price changes, risks and plan updates will show up here.
+        {copy.emptyHint}
       </p>
     </div>
   )

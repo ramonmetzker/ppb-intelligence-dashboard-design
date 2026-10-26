@@ -219,7 +219,7 @@ export function StoryStatus() {
               width: ready
                 ? `calc(${pos(BASE_FORECAST)} - ${pos(CURRENT_SCORE)})`
                 : '0px',
-              background: 'linear-gradient(to right, #0a1128, #2457e6)',
+              background: 'linear-gradient(to right, var(--ink), var(--brand))',
               transition: `width 1200ms ${EASE} ${intro(450)}ms`,
             }}
           />

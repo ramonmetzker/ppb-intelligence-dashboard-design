@@ -13,11 +13,11 @@ import { ITEMS, fmt, fmtPercent, fmtSigned, itemShareTrend } from '@/lib/ppb-mod
 import { usePlan } from '@/components/app/plan-provider'
 import { cn } from '@/lib/utils'
 
-const INK = '#0a1128'
-const BRAND = '#2457e6'
+const INK = 'var(--ink)'
+const BRAND = 'var(--brand)'
 const MUTED = '#8793ad'
-const GRID = '#e6eaf4'
-const AXIS = '#586380'
+const GRID = 'var(--grid)'
+const AXIS = 'var(--muted-foreground)'
 
 export function ItemTrends() {
   const { plan, sim } = usePlan()
@@ -83,7 +83,7 @@ export function ItemTrends() {
                     <ReferenceArea
                       x1="Nov"
                       x2="Dec"
-                      fill="#e8eeff"
+                      fill="var(--brand-soft)"
                       fillOpacity={0.7}
                       ifOverflow="visible"
                     />
@@ -125,7 +125,7 @@ export function ItemTrends() {
                       dataKey="plan"
                       stroke={BRAND}
                       strokeWidth={2.25}
-                      dot={{ r: 2.5, fill: BRAND, stroke: '#fff', strokeWidth: 1 }}
+                      dot={{ r: 2.5, fill: BRAND, stroke: 'var(--card)', strokeWidth: 1 }}
                       isAnimationActive={false}
                     />
                   </LineChart>

@@ -29,11 +29,11 @@ import { usePlan } from '@/components/app/plan-provider'
 import { Segmented } from '@/components/app/segmented'
 import { cn } from '@/lib/utils'
 
-const INK = '#0a1128'
-const BRAND = '#2457e6'
+const INK = 'var(--ink)'
+const BRAND = 'var(--brand)'
 const MUTED = '#8793ad'
-const GRID = '#e6eaf4'
-const AXIS = '#586380'
+const GRID = 'var(--grid)'
+const AXIS = 'var(--muted-foreground)'
 
 type LineMetric = 'share' | 'points'
 type MatrixMetric = 'sharePoints' | 'volume'
@@ -151,7 +151,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               yAxisId="left"
               x1="Nov"
               x2="Dec"
-              fill="#e8eeff"
+              fill="var(--brand-soft)"
               fillOpacity={0.7}
               ifOverflow="visible"
               label={{ value: 'Open months', position: 'insideTop', fill: AXIS, fontSize: 10.5 }}
@@ -182,7 +182,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
             />
             <Tooltip
               content={<VolumeTooltip rows={series} baseRows={base} mode={mode} />}
-              cursor={{ fill: 'rgba(36,87,230,0.05)' }}
+              cursor={{ fill: 'color-mix(in srgb, var(--brand) 5%, transparent)' }}
             />
             {ITEMS.map((item) => (
               <Bar
@@ -216,7 +216,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               dataKey={lineKey}
               stroke={INK}
               strokeWidth={2.25}
-              dot={{ r: 2.5, fill: '#fff', stroke: INK, strokeWidth: 1.5 }}
+              dot={{ r: 2.5, fill: 'var(--card)', stroke: INK, strokeWidth: 1.5 }}
               activeDot={{ r: 4 }}
               isAnimationActive
               animationBegin={300}
@@ -257,7 +257,8 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
 
 /* -------------------------------------------------------------------------- */
 
-const heat = (share: number) => `rgba(36, 87, 230, ${(0.04 + share * 0.3).toFixed(3)})`
+const heat = (share: number) =>
+  `color-mix(in srgb, var(--brand) ${((0.04 + share * 0.3) * 100).toFixed(1)}%, transparent)`
 
 function Matrix({
   series,

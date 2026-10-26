@@ -11,17 +11,22 @@ import {
 } from '@/components/ui/select'
 import { NotificationCenter } from '@/components/shell/notification-center'
 import { useNotifications } from '@/components/shell/notification-provider'
+import { usePreferences } from '@/components/shell/preferences-provider'
 import { cn } from '@/lib/utils'
 
 const FILTERS = [
-  { label: 'GBM', value: 'MX', options: ['MX', 'VD', 'DA'] },
-  { label: 'Product', value: 'HHP', options: ['HHP', 'Tablet', 'Wearable'] },
-  { label: 'Year', value: '2026', options: ['2026', '2025'] },
-]
+  { label: 'gbm', value: 'MX', options: ['MX', 'VD', 'DA'] },
+  { label: 'product', value: 'HHP', options: ['HHP', 'Tablet', 'Wearable'] },
+  { label: 'year', value: '2026', options: ['2026', '2025'] },
+] as const
 
 export function TopBar() {
   const [centerOpen, setCenterOpen] = useState(false)
   const { unreadCount, syncing, syncLabel, sync } = useNotifications()
+  const { t, user, setUserDialogOpen } = usePreferences()
+
+  const copy = t.topBar
+  const updated = syncLabel === 'just now' ? copy.justNow : syncLabel
 
   return (
     <div className="pb-3">
@@ -29,10 +34,10 @@ export function TopBar() {
         <div className="flex min-w-0 items-center gap-4 overflow-x-auto">
           {FILTERS.map((filter) => (
             <div key={filter.label} className="flex shrink-0 items-center gap-2">
-              <span className="eyebrow">{filter.label}</span>
+              <span className="eyebrow">{copy[filter.label]}</span>
               <Select defaultValue={filter.value}>
                 <SelectTrigger
-                  aria-label={filter.label}
+                  aria-label={copy[filter.label]}
                   className="h-8 w-[96px] rounded-md border-input bg-background text-[12px] font-medium shadow-none"
                 >
                   <SelectValue />
@@ -65,7 +70,7 @@ export function TopBar() {
                 syncing ? 'animate-pulse bg-warning' : 'bg-success',
               )}
             />
-            {syncing ? 'Syncing data...' : `October closed. Updated ${syncLabel}`}
+            {syncing ? copy.syncingData : copy.closedUpdated(updated)}
           </p>
 
           <span aria-hidden="true" className="mx-1 hidden h-5 w-px bg-border xl:block" />
@@ -74,7 +79,7 @@ export function TopBar() {
             type="button"
             onClick={sync}
             disabled={syncing}
-            aria-label={syncing ? 'Syncing data' : 'Sync data now'}
+            aria-label={syncing ? copy.syncing : copy.syncNow}
             className="flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-[12px] font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:text-muted-foreground"
           >
             <ArrowsClockwise
@@ -82,14 +87,14 @@ export function TopBar() {
               aria-hidden="true"
               className={cn(syncing && 'animate-spin')}
             />
-            <span className="hidden sm:inline">{syncing ? 'Syncing' : 'Sync'}</span>
+            <span className="hidden sm:inline">{syncing ? copy.syncing : copy.sync}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setCenterOpen(true)}
             aria-label={
-              unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'
+              unreadCount > 0 ? copy.notificationsUnread(unreadCount) : copy.notifications
             }
             aria-haspopup="dialog"
             className="relative flex size-8 items-center justify-center rounded-md border border-input bg-background text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
@@ -103,6 +108,16 @@ export function TopBar() {
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setUserDialogOpen(true)}
+            aria-label={`${user.fullName}. ${copy.account}`}
+            aria-haspopup="dialog"
+            className="font-display flex size-8 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {user.initials}
           </button>
         </div>
       </header>

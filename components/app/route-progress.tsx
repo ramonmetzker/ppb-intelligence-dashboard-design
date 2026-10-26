@@ -7,7 +7,7 @@ export function RouteProgress({ children }: { children: ReactNode }) {
   return (
     <ProgressProvider
       height="3px"
-      color="#2457e6"
+      color="var(--brand)"
       options={{ showSpinner: false, trickleSpeed: 160, minimum: 0.12 }}
       shallowRouting
     >
