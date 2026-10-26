@@ -63,25 +63,25 @@
 :root {
   color-scheme: light;
 
-  --shell: #e5eaf4;
-  --background: #f3f5fb;
-  --foreground: #0a1128;
+  --shell: #ebebed;
+  --background: #f5f5f6;
+  --foreground: #121316;
   --card: #ffffff;
-  --card-foreground: #0a1128;
+  --card-foreground: #121316;
   --popover: #ffffff;
-  --popover-foreground: #0a1128;
+  --popover-foreground: #121316;
 
   --primary: #2457e6;
   --primary-foreground: #ffffff;
-  --secondary: #edf0f8;
-  --secondary-foreground: #0a1128;
-  --muted: #edf0f8;
-  --muted-foreground: #586380;
-  --accent: #edf0f8;
-  --accent-foreground: #0a1128;
+  --secondary: #efeff1;
+  --secondary-foreground: #121316;
+  --muted: #efeff1;
+  --muted-foreground: #62646b;
+  --accent: #efeff1;
+  --accent-foreground: #121316;
   --destructive: #c8382b;
-  --border: #dde3f0;
-  --input: #c9d2e6;
+  --border: #e3e3e6;
+  --input: #d0d0d5;
   --ring: #2457e6;
 
   --brand: #2457e6;
@@ -101,8 +101,8 @@
 
   --radius: 0.25rem;
 
-  --faint: #8793ad;
-  --grid: #e6eaf4;
+  --faint: #8c8e95;
+  --grid: #e9e9ec;
 
   --scrollbar-track: transparent;
   --scrollbar-thumb: color-mix(in srgb, var(--muted-foreground) 38%, var(--card));
@@ -122,20 +122,7 @@
 
 /* Theme palettes. Blue is the default and lives in :root. */
 :root[data-theme='green'] {
-  --shell: #e1eee7;
-  --background: #f1f7f3;
-  --foreground: #0a1f17;
-  --card-foreground: #0a1f17;
-  --popover-foreground: #0a1f17;
   --primary: #0f7a55;
-  --secondary: #e9f2ed;
-  --secondary-foreground: #0a1f17;
-  --muted: #e9f2ed;
-  --muted-foreground: #4f685b;
-  --accent: #e9f2ed;
-  --accent-foreground: #0a1f17;
-  --border: #d5e4db;
-  --input: #bfd4c8;
   --ring: #0f7a55;
   --brand: #0f7a55;
   --brand-deep: #0a4d37;
@@ -159,20 +146,7 @@
 }
 
 :root[data-theme='pink'] {
-  --shell: #f3e4eb;
-  --background: #faf2f6;
-  --foreground: #2a0d19;
-  --card-foreground: #2a0d19;
-  --popover-foreground: #2a0d19;
   --primary: #c2255c;
-  --secondary: #f6eaf0;
-  --secondary-foreground: #2a0d19;
-  --muted: #f6eaf0;
-  --muted-foreground: #765263;
-  --accent: #f6eaf0;
-  --accent-foreground: #2a0d19;
-  --border: #ebd8e1;
-  --input: #dcc1ce;
   --ring: #c2255c;
   --brand: #c2255c;
   --brand-deep: #8a1640;
@@ -196,20 +170,7 @@
 }
 
 :root[data-theme='purple'] {
-  --shell: #e9e4f4;
-  --background: #f5f2fb;
-  --foreground: #160b33;
-  --card-foreground: #160b33;
-  --popover-foreground: #160b33;
   --primary: #6d3fd6;
-  --secondary: #eeeaf8;
-  --secondary-foreground: #160b33;
-  --muted: #eeeaf8;
-  --muted-foreground: #5e5688;
-  --accent: #eeeaf8;
-  --accent-foreground: #160b33;
-  --border: #ddd6ee;
-  --input: #cbc1e4;
   --ring: #6d3fd6;
   --brand: #6d3fd6;
   --brand-deep: #43238f;
@@ -233,20 +194,7 @@
 }
 
 :root[data-theme='terracotta'] {
-  --shell: #efe2d9;
-  --background: #f8f1ec;
-  --foreground: #2b1409;
-  --card-foreground: #2b1409;
-  --popover-foreground: #2b1409;
   --primary: #c2542d;
-  --secondary: #f3eae3;
-  --secondary-foreground: #2b1409;
-  --muted: #f3eae3;
-  --muted-foreground: #765a4a;
-  --accent: #f3eae3;
-  --accent-foreground: #2b1409;
-  --border: #e7d8cc;
-  --input: #d7c3b3;
   --ring: #c2542d;
   --brand: #c2542d;
   --brand-deep: #8a3418;

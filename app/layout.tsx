@@ -24,7 +24,7 @@ export async function generateViewport(): Promise<Viewport> {
   const { theme } = readPreferences(await cookies())
   return {
     colorScheme: 'light',
-    themeColor: THEMES.find((option) => option.id === theme)?.chrome ?? '#e5eaf4',
+    themeColor: THEMES.find((option) => option.id === theme)?.chrome ?? '#ebebed',
   }
 }
 

@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils'
 
 const INK = 'var(--ink)'
 const BRAND = 'var(--brand)'
-const MUTED = '#8793ad'
+const MUTED = '#8c8e95'
 const GRID = 'var(--grid)'
 const AXIS = 'var(--muted-foreground)'
 

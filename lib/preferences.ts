@@ -10,27 +10,27 @@ export const THEMES: {
   {
     id: 'blue',
     swatch: { brand: '#2457e6', deep: '#14308f', soft: '#e8eeff', sidebar: '#0b1330' },
-    chrome: '#e5eaf4',
+    chrome: '#ebebed',
   },
   {
     id: 'green',
     swatch: { brand: '#0f7a55', deep: '#0a4d37', soft: '#e0f3ea', sidebar: '#0a2018' },
-    chrome: '#e1eee7',
+    chrome: '#ebebed',
   },
   {
     id: 'pink',
     swatch: { brand: '#c2255c', deep: '#8a1640', soft: '#fde6ee', sidebar: '#2b0f1c' },
-    chrome: '#f3e4eb',
+    chrome: '#ebebed',
   },
   {
     id: 'purple',
     swatch: { brand: '#6d3fd6', deep: '#43238f', soft: '#eee8fd', sidebar: '#170d36' },
-    chrome: '#e9e4f4',
+    chrome: '#ebebed',
   },
   {
     id: 'terracotta',
     swatch: { brand: '#c2542d', deep: '#8a3418', soft: '#fbeae1', sidebar: '#2a150c' },
-    chrome: '#efe2d9',
+    chrome: '#ebebed',
   },
 ]
 
