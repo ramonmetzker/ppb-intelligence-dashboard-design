@@ -24,7 +24,7 @@ export function TopBar() {
   const { unreadCount, syncing, syncLabel, sync } = useNotifications()
 
   return (
-    <div className="sticky top-0 z-30 -mt-2 bg-shell pt-2 pb-3">
+    <div className="pb-3">
       <header className="flex h-12 items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 shadow-xs">
         <div className="flex min-w-0 items-center gap-4 overflow-x-auto">
           {FILTERS.map((filter) => (

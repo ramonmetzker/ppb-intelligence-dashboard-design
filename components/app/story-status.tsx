@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CaretRight } from '@phosphor-icons/react'
 import {
   BASE_FORECAST,
@@ -40,9 +40,27 @@ function useIntroPhase() {
   return phase
 }
 
+/** True once the observed element has fully scrolled above the viewport. */
+function useScrolledPast(ref: React.RefObject<HTMLElement | null>, offset: number) {
+  const [past, setPast] = useState(false)
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setPast(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { rootMargin: `-${offset}px 0px 0px 0px` },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [ref, offset])
+  return past
+}
+
 export function StoryStatus() {
   const { sim, planName } = usePlan()
   const phase = useIntroPhase()
+  const cardRef = useRef<HTMLElement>(null)
+  const compact = useScrolledPast(cardRef, 8)
   const toGo = REQUIRED_SCORE - CURRENT_SCORE
   const forecastGap = BASE_FORECAST - REQUIRED_SCORE
   const closedForecast = ((BASE_FORECAST - CURRENT_SCORE) / toGo) * 100
@@ -55,7 +73,12 @@ export function StoryStatus() {
     sim.status === 'Compliant' ? 'bg-success' : sim.status === 'At risk' ? 'bg-warning' : 'bg-critical'
 
   return (
-    <section aria-label="PPB score story" className="rounded-lg border border-border bg-card">
+    <>
+    <section
+      ref={cardRef}
+      aria-label="PPB score story"
+      className="rounded-lg border border-border bg-card"
+    >
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
         <p className="flex items-center gap-2 text-[11.5px] text-muted-foreground">
           <span className="relative flex size-2" aria-hidden="true">
@@ -262,6 +285,121 @@ export function StoryStatus() {
         </div>
       </div>
     </section>
+    <CompactStatus visible={compact} />
+    </>
+  )
+}
+
+/**
+ * Zero-height sticky anchor placed right after the full card. The bar hangs off it,
+ * so showing it never changes page layout and nothing jumps when it appears.
+ */
+function CompactStatus({ visible }: { visible: boolean }) {
+  const { sim, planName } = usePlan()
+  const scenarioFill =
+    sim.status === 'Compliant' ? 'bg-success' : sim.status === 'At risk' ? 'bg-warning' : 'bg-critical'
+
+  return (
+    <div className="sticky top-2 z-30 -mt-3 h-0">
+      <section
+        aria-label="PPB score summary"
+        inert={!visible}
+        className={cn(
+          'absolute inset-x-0 top-0 flex h-14 items-center gap-5 rounded-lg border border-border bg-card px-4 shadow-md transition-[opacity,translate] duration-300',
+          visible ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
+        )}
+        style={{ transitionTimingFunction: EASE }}
+      >
+        <div className="hidden min-w-0 shrink-0 flex-col 2xl:flex">
+          <p className="eyebrow">PPB score</p>
+          <p className="max-w-[140px] truncate text-[12px] font-medium">{planName}</p>
+        </div>
+
+        <div className="flex min-w-0 flex-1 items-center divide-x divide-border">
+          <CompactStat label="Now" value={fmt(CURRENT_SCORE)} />
+          <CompactStat label="Required" value={String(REQUIRED_SCORE)} />
+          <CompactStat
+            label="Forecast"
+            value={fmt(BASE_FORECAST)}
+            valueClass="text-brand"
+            note={`${fmtSigned(BASE_FORECAST - REQUIRED_SCORE)} pts`}
+            noteClass="text-warning"
+          />
+          <CompactStat
+            label="Scenario"
+            value={fmt(sim.yearEnd)}
+            valueClass={statusText(sim.status)}
+            note={`${fmtSigned(sim.gap)} pts`}
+            noteClass={statusText(sim.status)}
+            chip={<StatusChip status={sim.status} />}
+          />
+        </div>
+
+        <div
+          className="relative hidden h-8 w-56 shrink-0 xl:block"
+          role="img"
+          aria-label={`Score ruler. Now ${fmt(CURRENT_SCORE)}, forecast ${fmt(BASE_FORECAST)}, scenario ${fmt(sim.yearEnd)}, required ${REQUIRED_SCORE}.`}
+        >
+          <div aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px bg-border" />
+          <div
+            aria-hidden="true"
+            className="absolute top-1/2 right-0 h-3 -translate-y-1/2 bg-success/10"
+            style={{ left: pos(REQUIRED_SCORE) }}
+          />
+          <div
+            aria-hidden="true"
+            className="absolute top-1 bottom-1 w-px bg-foreground"
+            style={{ left: pos(REQUIRED_SCORE) }}
+          />
+          <span
+            aria-hidden="true"
+            className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-[2px] bg-foreground"
+            style={{ left: pos(CURRENT_SCORE) }}
+          />
+          <span
+            aria-hidden="true"
+            className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-[2px] bg-card ring-2 ring-brand"
+            style={{ left: pos(BASE_FORECAST) }}
+          />
+          <span
+            aria-hidden="true"
+            className={cn(
+              'absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-[2px] transition-[left,background-color] duration-500',
+              scenarioFill,
+              sim.changes.length === 0 && 'opacity-0',
+            )}
+            style={{ left: pos(sim.yearEnd), transitionTimingFunction: EASE }}
+          />
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function CompactStat({
+  label,
+  value,
+  valueClass,
+  note,
+  noteClass,
+  chip,
+}: {
+  label: string
+  value: string
+  valueClass?: string
+  note?: string
+  noteClass?: string
+  chip?: React.ReactNode
+}) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-4 first:pl-0">
+      <p className="eyebrow">{label}</p>
+      <p className="flex items-baseline gap-2 whitespace-nowrap">
+        <span className={cn('num text-[18px] leading-5 font-semibold', valueClass)}>{value}</span>
+        {note && <span className={cn('num text-[11.5px] font-medium', noteClass)}>{note}</span>}
+        {chip && <span className="hidden lg:inline-flex">{chip}</span>}
+      </p>
+    </div>
   )
 }
 
