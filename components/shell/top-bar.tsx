@@ -32,7 +32,7 @@ export function TopBar() {
   const updated = syncLabel === 'just now' ? copy.justNow : syncLabel
 
   return (
-    <div className="bg-ink-raised text-sidebar-foreground">
+    <div className="bg-sidebar text-sidebar-foreground">
       <header className="flex h-16 items-center justify-between gap-3 px-3 lg:px-4">
         <div className="flex shrink-0 items-center gap-1.5">
           <button
