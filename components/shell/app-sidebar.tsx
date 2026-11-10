@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -8,14 +7,13 @@ import {
   CaretUpDown,
   ChartBar,
   GitBranch,
-  SidebarSimple,
   SquaresFour,
   Tag,
   WarningDiamond,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { PpbMark } from '@/components/brand/ppb-mark'
-import { SidebarPlanSwitcher } from '@/components/app/plan-switcher'
+import { useShell } from '@/components/shell/shell-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
 import type { Dictionary } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -49,7 +47,7 @@ const GROUPS: {
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const { collapsed } = useShell()
   const { t, user, setUserDialogOpen } = usePreferences()
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -146,8 +144,7 @@ export function AppSidebar() {
         </div>
       </nav>
 
-      <div className="flex shrink-0 flex-col gap-2 p-3">
-        {!collapsed && <SidebarPlanSwitcher />}
+      <div className="shrink-0 p-3">
         <button
           type="button"
           onClick={() => setUserDialogOpen(true)}
@@ -155,7 +152,7 @@ export function AppSidebar() {
           aria-label={`${user.fullName}. ${t.topBar.account}`}
           title={collapsed ? user.fullName : undefined}
           className={cn(
-            'flex h-10 items-center rounded-md text-left transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-ring',
+            'flex h-10 w-full items-center rounded-md text-left transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-ring',
             collapsed ? 'justify-center px-0' : 'gap-2.5 px-2',
           )}
         >
@@ -182,20 +179,6 @@ export function AppSidebar() {
               />
             </>
           )}
-        </button>
-        <button
-          type="button"
-          onClick={() => setCollapsed((current) => !current)}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-expanded={!collapsed}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={cn(
-            'flex h-9 items-center rounded-md border border-sidebar-border text-[11px] font-medium text-sidebar-foreground/65 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-2 focus-visible:outline-ring',
-            collapsed ? 'justify-center' : 'gap-2.5 px-2.5',
-          )}
-        >
-          <SidebarSimple size={17} weight="regular" aria-hidden="true" />
-          {!collapsed && <span>Collapse sidebar</span>}
         </button>
       </div>
     </aside>

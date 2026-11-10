@@ -192,7 +192,13 @@ function PlanMenuPopup({
 /* Sidebar: a live card that opens the plan menu                               */
 /* -------------------------------------------------------------------------- */
 
-export function SidebarPlanSwitcher() {
+export function SidebarPlanSwitcher({
+  compact = false,
+  topbar = false,
+}: {
+  compact?: boolean
+  topbar?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const { sim, planName } = usePlan()
 
@@ -200,7 +206,15 @@ export function SidebarPlanSwitcher() {
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger
         aria-label={`Active plan: ${planName}. Change plan`}
-        className="group relative w-full overflow-hidden rounded-md border border-sidebar-border bg-ink-raised px-2.5 py-2 text-left transition-colors hover:border-brand/60 focus-visible:outline-2 focus-visible:outline-ring data-popup-open:border-brand"
+        title={compact ? `Active plan: ${planName}` : undefined}
+        className={cn(
+          'group relative w-full overflow-hidden rounded-md border border-sidebar-border bg-ink-raised text-left transition-colors hover:border-brand/60 focus-visible:outline-2 focus-visible:outline-ring data-popup-open:border-brand',
+          topbar
+            ? 'flex h-9 items-center gap-2 px-2.5'
+            : compact
+              ? 'flex h-11 items-center justify-center px-1'
+              : 'px-2.5 py-2',
+        )}
       >
         <span
           aria-hidden="true"
@@ -209,28 +223,62 @@ export function SidebarPlanSwitcher() {
             barTone(sim.status),
           )}
         />
-        <span className="flex items-center justify-between">
-          <span className="text-[10px] tracking-[0.08em] text-sidebar-foreground/50 uppercase">
-            Active plan
+        {topbar ? (
+          <>
+            <span className="text-[9px] font-semibold tracking-[0.12em] text-sidebar-foreground/45 uppercase">
+              Plan
+            </span>
+            <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-white">
+              {planName}
+            </span>
+            <CountUp
+              value={sim.yearEnd}
+              duration={800}
+              className="num text-[12px] font-semibold text-white"
+            />
+            <CaretUpDown size={12} className="shrink-0 text-sidebar-foreground/45" aria-hidden="true" />
+          </>
+        ) : compact ? (
+          <span className="flex flex-col items-center gap-0.5">
+            <span className="text-[8px] font-medium tracking-[0.12em] text-sidebar-foreground/45 uppercase">
+              Plan
+            </span>
+            <CountUp
+              value={sim.yearEnd}
+              duration={800}
+              className="num text-[12px] font-semibold text-white"
+            />
           </span>
-          <CaretUpDown size={12} className="text-sidebar-foreground/50" aria-hidden="true" />
-        </span>
-        <span
-          key={planName}
-          className="animate-in fade-in slide-in-from-bottom-1 mt-0.5 block truncate text-[12px] font-medium text-white duration-300"
-        >
-          {planName}
-        </span>
-        <span className="mt-1.5 flex items-center justify-between">
-          <CountUp
-            value={sim.yearEnd}
-            duration={800}
-            className="num text-[16px] font-semibold text-white"
-          />
-          <StatusChip status={sim.status} className="bg-white/10" />
-        </span>
+        ) : (
+          <>
+            <span className="flex items-center justify-between">
+              <span className="text-[10px] tracking-[0.08em] text-sidebar-foreground/50 uppercase">
+                Active plan
+              </span>
+              <CaretUpDown size={12} className="text-sidebar-foreground/50" aria-hidden="true" />
+            </span>
+            <span
+              key={planName}
+              className="animate-in fade-in slide-in-from-bottom-1 mt-0.5 block truncate text-[12px] font-medium text-white duration-300"
+            >
+              {planName}
+            </span>
+            <span className="mt-1.5 flex items-center justify-between">
+              <CountUp
+                value={sim.yearEnd}
+                duration={800}
+                className="num text-[16px] font-semibold text-white"
+              />
+              <StatusChip status={sim.status} className="bg-white/10" />
+            </span>
+          </>
+        )}
       </Popover.Trigger>
-      <PlanMenuPopup side="right" align="end" onClose={() => setOpen(false)} />
+      <PlanMenuPopup
+        side={topbar ? 'bottom' : 'right'}
+        align="end"
+        onClose={() => setOpen(false)}
+      />
     </Popover.Root>
   )
 }

@@ -19,9 +19,16 @@ export function BootProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<BootPhase>('splash')
 
   useEffect(() => {
+    document.body.style.overflow = phase === 'done' ? '' : 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [phase])
+
+  useEffect(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const lift = setTimeout(() => setPhase('leaving'), reduce ? 200 : 1600)
-    const remove = setTimeout(() => setPhase('done'), reduce ? 400 : 2250)
+    const lift = setTimeout(() => setPhase('leaving'), reduce ? 200 : 2200)
+    const remove = setTimeout(() => setPhase('done'), reduce ? 400 : 2850)
     return () => {
       clearTimeout(lift)
       clearTimeout(remove)
@@ -42,35 +49,41 @@ function Splash({ leaving }: { leaving: boolean }) {
       role="status"
       aria-label="Loading PPB Intelligence"
       className={cn(
-        'splash fixed inset-0 z-[100] flex items-center justify-center bg-sidebar text-sidebar-foreground',
+        'splash fixed inset-0 z-[100] flex items-center justify-center bg-sidebar/45 p-4 text-sidebar-foreground backdrop-blur-xl backdrop-saturate-50',
         leaving && 'splash-leaving',
       )}
     >
-      <div className="splash-content flex w-[300px] flex-col gap-6">
-        <div className="flex items-center gap-3">
-          <PpbMark size={40} />
-          <div>
-            <p className="font-display text-[22px] leading-6 font-semibold tracking-tight text-white">
+      <div className="splash-content relative flex w-full max-w-[380px] flex-col overflow-hidden rounded-2xl border border-sidebar-border bg-sidebar/95 shadow-2xl">
+        <div className="splash-scan absolute inset-x-0 top-0 h-px bg-brand" aria-hidden="true" />
+        <div className="flex items-center gap-3.5 px-5 pt-5 pb-4">
+          <span className="splash-mark flex size-12 items-center justify-center rounded-xl border border-sidebar-border bg-sidebar-accent">
+            <PpbMark size={34} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-[20px] leading-6 font-semibold tracking-tight text-white">
               PPB Intelligence
             </p>
-            <p className="mt-0.5 text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/60 uppercase">
-              MX 2026 compliance
+            <p className="mt-0.5 text-[9.5px] font-medium tracking-[0.14em] text-sidebar-foreground/55 uppercase">
+              MX 2026 compliance workspace
             </p>
           </div>
+          <span className="splash-pulse size-2 rounded-full bg-success" aria-hidden="true" />
         </div>
 
-        <div className="flex flex-col gap-2.5">
-          <div className="relative h-px w-full bg-sidebar-border" aria-hidden="true">
-            <div className="splash-fill absolute inset-y-[-1px] left-0 h-[3px] bg-brand">
-              <span className="absolute top-1/2 right-0 size-[7px] -translate-y-1/2 translate-x-1/2 rounded-[1px] bg-white" />
-            </div>
+        <div className="border-t border-sidebar-border bg-sidebar-accent/35 px-5 py-4">
+          <div className="flex items-center justify-between text-[10px] font-medium tracking-[0.1em] text-sidebar-foreground/45 uppercase">
+            <span>Preparing workspace</span>
+            <span className="tnum">03 / 03</span>
           </div>
-          <div className="relative h-4 text-[11.5px] text-sidebar-foreground/70">
+          <div className="relative mt-3 h-1 overflow-hidden rounded-full bg-sidebar-border" aria-hidden="true">
+            <div className="splash-fill absolute inset-y-0 left-0 rounded-full bg-brand" />
+          </div>
+          <div className="relative mt-3 h-4 text-[11.5px] text-sidebar-foreground/70">
             {MESSAGES.map((message, index) => (
               <span
                 key={message}
                 className="splash-msg"
-                style={{ '--d': `${index * 0.55}s` } as React.CSSProperties}
+                style={{ '--d': `${index * 0.65}s` } as React.CSSProperties}
               >
                 {message}
               </span>

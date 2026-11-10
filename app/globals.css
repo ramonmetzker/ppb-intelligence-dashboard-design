@@ -438,11 +438,51 @@ input[type='range'].lever:focus-visible {
 }
 .splash-fill {
   width: 0;
-  animation: splash-fill 1.9s cubic-bezier(0.25, 0.8, 0.25, 1) 0.1s forwards;
+  animation: splash-fill 2.5s cubic-bezier(0.25, 0.8, 0.25, 1) 0.1s forwards;
+}
+.splash-mark {
+  animation: splash-mark-breathe 1.8s ease-in-out infinite;
+}
+.splash-pulse {
+  animation: splash-status-pulse 1.35s ease-in-out infinite;
+}
+.splash-scan {
+  transform-origin: left;
+  animation: splash-scan 2.5s cubic-bezier(0.25, 0.8, 0.25, 1) both;
 }
 @keyframes splash-fill {
   to {
-    width: 88%;
+    width: 100%;
+  }
+}
+@keyframes splash-mark-breathe {
+  0%, 100% {
+    transform: scale(1);
+    border-color: var(--sidebar-border);
+  }
+  50% {
+    transform: scale(1.035);
+    border-color: var(--brand);
+  }
+}
+@keyframes splash-status-pulse {
+  0%, 100% {
+    opacity: 0.45;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 35%, transparent);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 0 5px transparent;
+  }
+}
+@keyframes splash-scan {
+  from {
+    transform: scaleX(0);
+    opacity: 0.35;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
   }
 }
 .splash-msg {
