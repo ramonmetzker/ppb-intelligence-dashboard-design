@@ -10,7 +10,6 @@ export const metadata: Metadata = { title: 'Overview | PPB Intelligence' }
 export default function OverviewPage() {
   return (
     <>
-      <hr aria-hidden="true" className="mb-4 border-0 border-t border-border" />
       <div className="flex flex-col gap-3">
         <StoryStatus />
         <Reveal>

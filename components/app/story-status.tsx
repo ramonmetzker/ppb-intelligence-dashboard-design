@@ -63,8 +63,6 @@ export function StoryStatus() {
   const compact = useScrolledPast(cardRef, 8)
   const toGo = REQUIRED_SCORE - CURRENT_SCORE
   const forecastGap = BASE_FORECAST - REQUIRED_SCORE
-  const closedForecast = ((BASE_FORECAST - CURRENT_SCORE) / toGo) * 100
-  const closedPlan = ((sim.yearEnd - CURRENT_SCORE) / toGo) * 100
   const unchanged = sim.changes.length === 0
   const ready = phase >= 1
   const intro = (ms: number) => (phase === 2 ? 0 : ms)
@@ -102,33 +100,33 @@ export function StoryStatus() {
         <Step
           index={0}
           eyebrow="Now"
-          caption="Where we are"
+          caption="October actual"
           value={<CountUp value={CURRENT_SCORE} delay={150} duration={1400} />}
           valueClass="text-foreground"
-          foot={<span className="text-muted-foreground">Accumulated through the October close</span>}
+          foot={<span className="text-muted-foreground">Closed accumulated score</span>}
         />
         <Step
           index={1}
           eyebrow="Required"
-          caption="What the regulation asks"
+          caption="Compliance threshold"
           value={<CountUp value={REQUIRED_SCORE} decimals={0} delay={300} duration={1400} />}
           valueClass="text-foreground"
           foot={
             <span className="text-muted-foreground">
-              <CountUp value={toGo} delay={500} /> pts still to earn
+              <CountUp value={toGo} delay={500} /> pts above current
             </span>
           }
         />
         <Step
           index={2}
           eyebrow="Forecast"
-          caption="Where the AI lands the year"
+          caption="Baseline year-end"
           value={<CountUp value={BASE_FORECAST} delay={450} duration={1400} />}
           valueClass="text-brand"
           foot={
             <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
               <span className="font-medium text-warning">
-                <CountUp value={forecastGap} signed delay={700} suffix=" pts" className="num" />
+                <CountUp value={forecastGap} signed delay={700} suffix=" pts vs required" className="num" />
               </span>
               <StatusChip status={statusFor(BASE_FORECAST)} />
             </span>
@@ -145,7 +143,7 @@ export function StoryStatus() {
           foot={
             <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
               <span className={cn('font-medium', statusText(sim.status))}>
-                <CountUp value={sim.gap} signed delay={900} suffix=" pts" className="num" />
+                <CountUp value={sim.gain} signed delay={900} suffix=" pts vs forecast" className="num" />
               </span>
               <span
                 key={sim.status}
@@ -158,43 +156,7 @@ export function StoryStatus() {
         />
       </div>
 
-      <div className="grid gap-x-8 gap-y-3 border-t border-border px-4 pt-3 md:grid-cols-[minmax(0,1fr)_300px]">
-        <p className="text-[13px] leading-5 text-balance">
-          We stand at <span className="num font-semibold">{fmt(CURRENT_SCORE)}</span> and need{' '}
-          <span className="num font-semibold">{REQUIRED_SCORE}</span>. The forecast earns{' '}
-          {Math.round(closedForecast)}% of the remaining distance and lands{' '}
-          <span className="num font-semibold text-warning">{fmt(Math.abs(forecastGap))}</span> pts short.{' '}
-          {unchanged ? (
-            'No changes are planned for the open months yet.'
-          ) : (
-            <>
-              Your simulation lands at{' '}
-              <span className={cn('num font-semibold', statusText(sim.status))}>
-                {fmt(sim.yearEnd)}
-              </span>
-              , {fmtSigned(sim.gain)} pts versus the forecast.
-            </>
-          )}
-        </p>
-        <div className="flex flex-col gap-2" aria-label="Share of the remaining distance closed">
-          <Meter
-            label="Forecast closes"
-            value={closedForecast}
-            ready={ready}
-            delay={500}
-            fillClass="bg-brand"
-          />
-          <Meter
-            label="Simulation closes"
-            value={closedPlan}
-            ready={ready}
-            delay={800}
-            fillClass={scenarioFill}
-          />
-        </div>
-      </div>
-
-      <div className="px-4 pt-2 pb-2">
+      <div className="border-t border-border px-4 pt-3 pb-2">
         <div
           className="relative h-12"
           role="img"
@@ -399,46 +361,6 @@ function CompactStat({
         {note && <span className={cn('num text-[11.5px] font-medium', noteClass)}>{note}</span>}
         {chip && <span className="hidden lg:inline-flex">{chip}</span>}
       </p>
-    </div>
-  )
-}
-
-function Meter({
-  label,
-  value,
-  ready,
-  delay,
-  fillClass,
-}: {
-  label: string
-  value: number
-  ready: boolean
-  delay: number
-  fillClass: string
-}) {
-  return (
-    <div>
-      <div className="flex items-baseline justify-between text-[11.5px]">
-        <span className="text-muted-foreground">{label}</span>
-        <CountUp
-          value={value}
-          decimals={0}
-          suffix="% of the gap"
-          delay={delay}
-          duration={1300}
-          className="num font-semibold"
-        />
-      </div>
-      <div className="mt-1 h-1.5 bg-border" aria-hidden="true">
-        <div
-          className={cn('h-full transition-[width,background-color] duration-[1100ms]', fillClass)}
-          style={{
-            width: ready ? `${Math.min(100, Math.max(0, value))}%` : '0%',
-            transitionDelay: `${delay}ms`,
-            transitionTimingFunction: EASE,
-          }}
-        />
-      </div>
     </div>
   )
 }
