@@ -11,27 +11,34 @@ import {
   type ReactNode,
 } from 'react'
 import { useRouter } from 'next/navigation'
-
-export type Severity = 'info' | 'success' | 'warning' | 'critical'
+import {
+  serializeAcknowledgements,
+  type Acknowledgements,
+  type NotificationType,
+} from '@/lib/notifications'
 
 export type AppNotification = {
   id: string
-  severity: Severity
+  type: NotificationType
   title: string
   body: string
   time: string
   read: boolean
+  requiresAck?: boolean
+  acknowledgedAt?: string
   href?: string
   hrefLabel?: string
 }
 
-type NewNotification = Omit<AppNotification, 'id' | 'read' | 'time'>
+type NewNotification = Omit<AppNotification, 'id' | 'read' | 'time' | 'acknowledgedAt'>
 
 type NotificationsContext = {
   notifications: AppNotification[]
   unreadCount: number
+  pendingAckCount: number
   markRead: (id: string) => void
   markAllRead: () => void
+  acknowledge: (id: string) => void
   dismiss: (id: string) => void
   clearRead: () => void
   push: (notification: NewNotification) => void
@@ -42,8 +49,30 @@ type NotificationsContext = {
 
 const SEED: AppNotification[] = [
   {
-    id: 'seed-1',
-    severity: 'warning',
+    id: 'seed-sop-1',
+    type: 'sop',
+    title: 'Tablet SOP moved to Dec 02',
+    body: 'The start of production for the Tablet line shifted by two weeks. Planned volumes for the first month were re-spread.',
+    time: '09:05',
+    read: false,
+    requiresAck: true,
+    href: '/production',
+    hrefLabel: 'Open production',
+  },
+  {
+    id: 'seed-bom-1',
+    type: 'bom',
+    title: 'BOM revision C released for Mobile',
+    body: 'Three PPB items changed supplier and one was replaced. Confirm that you reviewed the new item list.',
+    time: '08:50',
+    read: false,
+    requiresAck: true,
+    href: '/items',
+    hrefLabel: 'Review PPB items',
+  },
+  {
+    id: 'seed-pricing-1',
+    type: 'pricing',
     title: 'Imported memory is above last year',
     body: 'Most imported memory vendors are priced higher than a year ago. A larger local share may cut spend.',
     time: '08:42',
@@ -52,18 +81,8 @@ const SEED: AppNotification[] = [
     hrefLabel: 'Review material prices',
   },
   {
-    id: 'seed-2',
-    severity: 'critical',
-    title: 'PPB items at risk in the last quarter',
-    body: 'The current plan leaves a gap against the annual target in the closing months.',
-    time: '08:10',
-    read: false,
-    href: '/risks',
-    hrefLabel: 'Open risks and data',
-  },
-  {
-    id: 'seed-3',
-    severity: 'info',
+    id: 'seed-automation-1',
+    type: 'automation',
     title: 'Planner agent has a new proposal',
     body: 'A lower-spend plan that still reaches the target is ready to compare with the active one.',
     time: 'Yesterday',
@@ -72,8 +91,19 @@ const SEED: AppNotification[] = [
     hrefLabel: 'Open simulation',
   },
   {
-    id: 'seed-4',
-    severity: 'success',
+    id: 'seed-pricing-2',
+    type: 'pricing',
+    title: 'Panel price list approved for Q1',
+    body: 'The approved Q1 panel prices replace the draft list. Plans using panels were recalculated.',
+    time: 'Yesterday',
+    read: false,
+    requiresAck: true,
+    href: '/materials',
+    hrefLabel: 'View material prices',
+  },
+  {
+    id: 'seed-sop-2',
+    type: 'sop',
     title: 'October closed',
     body: 'Actual production and spend for October were consolidated into the simulation.',
     time: 'Nov 03',
@@ -81,20 +111,47 @@ const SEED: AppNotification[] = [
     href: '/',
     hrefLabel: 'Go to overview',
   },
+  {
+    id: 'seed-automation-2',
+    type: 'automation',
+    title: 'Nightly data sync completed',
+    body: 'Production actuals and plan were refreshed from the corporate systems.',
+    time: 'Nov 02',
+    read: true,
+  },
 ]
 
 const INITIAL_SYNC_LABEL = 'Nov 06, 08:42'
 const SYNC_DURATION_MS = 1600
 
+function withAcknowledgements(
+  list: AppNotification[],
+  acks: Acknowledgements,
+): AppNotification[] {
+  return list.map((n) => {
+    const acknowledgedAt = n.requiresAck ? acks[n.id] : undefined
+    return acknowledgedAt ? { ...n, read: true, acknowledgedAt } : n
+  })
+}
+
 const Context = createContext<NotificationsContext | null>(null)
 
-export function NotificationProvider({ children }: { children: ReactNode }) {
+export function NotificationProvider({
+  children,
+  initialAcknowledgements,
+}: {
+  children: ReactNode
+  initialAcknowledgements: Acknowledgements
+}) {
   const router = useRouter()
-  const [notifications, setNotifications] = useState<AppNotification[]>(SEED)
+  const [notifications, setNotifications] = useState<AppNotification[]>(() =>
+    withAcknowledgements(SEED, initialAcknowledgements),
+  )
   const [syncing, setSyncing] = useState(false)
   const [syncLabel, setSyncLabel] = useState(INITIAL_SYNC_LABEL)
   const counter = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const acks = useRef<Acknowledgements>(initialAcknowledgements)
 
   useEffect(
     () => () => {
@@ -115,15 +172,34 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const markRead = useCallback((id: string) => {
-    setNotifications((current) => current.map((n) => (n.id === id ? { ...n, read: true } : n)))
+    setNotifications((current) =>
+      current.map((n) => (n.id === id && !n.requiresAck ? { ...n, read: true } : n)),
+    )
   }, [])
 
   const markAllRead = useCallback(() => {
-    setNotifications((current) => current.map((n) => (n.read ? n : { ...n, read: true })))
+    setNotifications((current) =>
+      current.map((n) => (n.read || n.requiresAck ? n : { ...n, read: true })),
+    )
+  }, [])
+
+  const acknowledge = useCallback((id: string) => {
+    const at = new Date().toISOString()
+    acks.current = { ...acks.current, [id]: at }
+    document.cookie = serializeAcknowledgements(acks.current)
+    setNotifications((current) =>
+      current.map((n) =>
+        n.id === id && n.requiresAck && !n.acknowledgedAt
+          ? { ...n, read: true, acknowledgedAt: at }
+          : n,
+      ),
+    )
   }, [])
 
   const dismiss = useCallback((id: string) => {
-    setNotifications((current) => current.filter((n) => n.id !== id))
+    setNotifications((current) =>
+      current.filter((n) => n.id !== id || (n.requiresAck && !n.acknowledgedAt)),
+    )
   }, [])
 
   const clearRead = useCallback(() => {
@@ -139,7 +215,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       setSyncing(false)
       setSyncLabel('just now')
       push({
-        severity: 'success',
+        type: 'automation',
         title: 'Data synced',
         body: 'Production actuals, plan and material prices were refreshed.',
       })
@@ -147,13 +223,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [router, push])
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications])
+  const pendingAckCount = useMemo(
+    () => notifications.filter((n) => n.requiresAck && !n.acknowledgedAt).length,
+    [notifications],
+  )
 
   const value = useMemo<NotificationsContext>(
     () => ({
       notifications,
       unreadCount,
+      pendingAckCount,
       markRead,
       markAllRead,
+      acknowledge,
       dismiss,
       clearRead,
       push,
@@ -161,7 +243,20 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       syncLabel,
       sync,
     }),
-    [notifications, unreadCount, markRead, markAllRead, dismiss, clearRead, push, syncing, syncLabel, sync],
+    [
+      notifications,
+      unreadCount,
+      pendingAckCount,
+      markRead,
+      markAllRead,
+      acknowledge,
+      dismiss,
+      clearRead,
+      push,
+      syncing,
+      syncLabel,
+      sync,
+    ],
   )
 
   return <Context.Provider value={value}>{children}</Context.Provider>

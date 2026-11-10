@@ -11,13 +11,16 @@ import { AgentProvider } from '@/components/agent/agent-provider'
 import { AgentLauncher } from '@/components/agent/agent-launcher'
 import { AgentDialog } from '@/components/agent/agent-dialog'
 import { readPreferences } from '@/lib/preferences'
+import { ACK_COOKIE, parseAcknowledgements } from '@/lib/notifications'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const preferences = readPreferences(await cookies())
+  const store = await cookies()
+  const preferences = readPreferences(store)
+  const acknowledgements = parseAcknowledgements(store.get(ACK_COOKIE)?.value)
 
   return (
     <PreferencesProvider initial={preferences}>
-      <NotificationProvider>
+      <NotificationProvider initialAcknowledgements={acknowledgements}>
         <PlanProvider>
           <MaterialProvider>
             <AgentProvider>

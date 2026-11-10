@@ -40,8 +40,8 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
     setBook((current) => applyPreview(current, preview))
     setLastImport(summary)
     push({
-      severity: 'success',
-      title: 'Price list imported',
+  type: 'pricing',
+  title: 'Price list imported',
       body: `${summary.fileName}: ${summary.added} new and ${summary.updated} updated prices.`,
       href: '/materials',
       hrefLabel: 'View material prices',

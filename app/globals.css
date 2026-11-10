@@ -48,6 +48,10 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-critical: var(--critical);
+  --color-cat-sop: var(--cat-sop);
+  --color-cat-bom: var(--cat-bom);
+  --color-cat-pricing: var(--cat-pricing);
+  --color-cat-automation: var(--cat-automation);
   --color-ink: var(--ink);
   --color-ink-raised: var(--ink-raised);
 
@@ -90,6 +94,10 @@
   --success: #0f8a5f;
   --warning: #b26a00;
   --critical: #c8382b;
+  --cat-sop: #2f62d9;
+  --cat-bom: #cc5f0a;
+  --cat-pricing: #0f8a5f;
+  --cat-automation: #7c4ddb;
   --ink: #0b1330;
   --ink-raised: #141d40;
 
