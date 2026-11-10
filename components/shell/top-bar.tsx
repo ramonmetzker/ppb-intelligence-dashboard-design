@@ -29,16 +29,21 @@ export function TopBar() {
   const updated = syncLabel === 'just now' ? copy.justNow : syncLabel
 
   return (
-    <div>
-      <header className="flex h-14 items-center justify-between gap-3 border-b border-border bg-card px-4">
-        <div className="flex min-w-0 items-center gap-4 overflow-x-auto">
+    <div className="bg-sidebar text-sidebar-foreground">
+      <header className="flex h-16 items-center justify-between gap-3 px-4 lg:px-5">
+        <div className="scroll-dark flex min-w-0 items-center gap-2 overflow-x-auto">
           {FILTERS.map((filter) => (
-            <div key={filter.label} className="flex shrink-0 items-center gap-2">
-              <span className="eyebrow">{copy[filter.label]}</span>
+            <div
+              key={filter.label}
+              className="flex h-9 shrink-0 items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent px-2.5"
+            >
+              <span className="text-[9px] font-semibold tracking-[0.14em] text-sidebar-foreground/45 uppercase">
+                {copy[filter.label]}
+              </span>
               <Select defaultValue={filter.value}>
                 <SelectTrigger
                   aria-label={copy[filter.label]}
-                  className="h-8 w-[96px] rounded-md border-input bg-background text-[12px] font-medium shadow-none"
+                  className="h-7 w-[76px] border-0 bg-transparent px-1 text-[12px] font-semibold text-sidebar-foreground shadow-none hover:bg-transparent focus-visible:ring-sidebar-ring"
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -61,7 +66,7 @@ export function TopBar() {
         <div className="flex shrink-0 items-center gap-2">
           <p
             role="status"
-            className="tnum hidden items-center gap-2 text-[12px] text-muted-foreground xl:flex"
+            className="tnum hidden items-center gap-2 text-[11px] text-sidebar-foreground/55 xl:flex"
           >
             <span
               aria-hidden="true"
@@ -73,14 +78,17 @@ export function TopBar() {
             {syncing ? copy.syncingData : copy.closedUpdated(updated)}
           </p>
 
-          <span aria-hidden="true" className="mx-1 hidden h-5 w-px bg-border xl:block" />
+          <span
+            aria-hidden="true"
+            className="mx-1 hidden h-5 w-px bg-sidebar-border xl:block"
+          />
 
           <button
             type="button"
             onClick={sync}
             disabled={syncing}
             aria-label={syncing ? copy.syncing : copy.syncNow}
-            className="flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-[12px] font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring disabled:pointer-events-none disabled:text-muted-foreground"
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 text-[11px] font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 hover:text-white focus-visible:outline-2 focus-visible:outline-sidebar-ring disabled:pointer-events-none disabled:opacity-50"
           >
             <ArrowsClockwise
               size={14}
@@ -97,13 +105,13 @@ export function TopBar() {
               unreadCount > 0 ? copy.notificationsUnread(unreadCount) : copy.notifications
             }
             aria-haspopup="dialog"
-            className="relative flex size-8 items-center justify-center rounded-md border border-input bg-background text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+            className="relative flex size-9 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 hover:text-white focus-visible:outline-2 focus-visible:outline-sidebar-ring"
           >
             <Bell size={15} aria-hidden="true" />
             {unreadCount > 0 && (
               <span
                 aria-hidden="true"
-                className="tnum absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] leading-none font-semibold text-primary-foreground ring-2 ring-card"
+                className="tnum absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] leading-none font-semibold text-primary-foreground ring-2 ring-sidebar"
               >
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
@@ -115,7 +123,7 @@ export function TopBar() {
             onClick={() => setUserDialogOpen(true)}
             aria-label={`${user.fullName}. ${copy.account}`}
             aria-haspopup="dialog"
-            className="font-display flex size-8 items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="font-display flex size-9 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar-accent text-[11px] font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent/70 hover:text-white focus-visible:outline-2 focus-visible:outline-sidebar-ring"
           >
             {user.initials}
           </button>

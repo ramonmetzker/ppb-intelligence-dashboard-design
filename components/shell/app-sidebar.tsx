@@ -59,11 +59,11 @@ export function AppSidebar() {
       aria-label={t.nav.primary}
       data-collapsed={collapsed}
       className={cn(
-        'sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-out lg:flex',
-        collapsed ? 'w-[72px]' : 'w-60',
+        'sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-out lg:flex',
+        collapsed ? 'w-[76px]' : 'w-64',
       )}
     >
-      <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-4">
+      <div className="flex h-16 shrink-0 items-center px-4">
         <Link
           href="/"
           aria-label="PPB Intelligence"
@@ -85,7 +85,10 @@ export function AppSidebar() {
 
       <nav
         aria-label={t.nav.pages}
-        className={cn('scroll-dark flex-1 overflow-y-auto py-4', collapsed ? 'px-2.5' : 'px-3')}
+        className={cn(
+          'scroll-dark mx-2 flex-1 overflow-y-auto rounded-xl border border-sidebar-border bg-sidebar-accent/35 py-3',
+          collapsed ? 'px-1.5' : 'px-2',
+        )}
       >
         <div className="flex flex-col gap-5">
           {GROUPS.map((group) => (
@@ -143,7 +146,7 @@ export function AppSidebar() {
         </div>
       </nav>
 
-      <div className="flex shrink-0 flex-col gap-2 border-t border-sidebar-border p-3">
+      <div className="flex shrink-0 flex-col gap-2 p-3">
         {!collapsed && <SidebarPlanSwitcher />}
         <button
           type="button"
