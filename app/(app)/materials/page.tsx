@@ -4,7 +4,7 @@ import { PriceActions } from '@/components/materials/price-actions'
 import { PriceSummary } from '@/components/materials/price-summary'
 import { PriceTable } from '@/components/materials/price-table'
 
-export const metadata: Metadata = { title: 'Material prices | PPB Intelligence' }
+export const metadata: Metadata = { title: 'Material prices | PPB' }
 
 export default function MaterialPricesPage() {
   return (

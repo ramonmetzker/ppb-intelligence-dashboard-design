@@ -64,14 +64,14 @@ export function AppSidebar() {
       <div className="flex h-16 shrink-0 items-center px-4">
         <Link
           href="/"
-          aria-label="PPB Intelligence"
+          aria-label="PPB"
           className={cn('flex min-w-0 flex-1 items-center', collapsed ? 'justify-center' : 'gap-3')}
         >
           <PpbMark size={30} className="shrink-0" />
           {!collapsed && (
             <div className="min-w-0 leading-tight">
               <p className="font-display truncate text-[14px] font-semibold tracking-tight text-white">
-                PPB Intelligence
+                PPB
               </p>
               <p className="truncate text-[10.5px] text-sidebar-foreground/55">
                 {t.nav.appSubtitle}

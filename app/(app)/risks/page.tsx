@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/app/page-header'
 import { DriversClient } from '@/components/app/drivers-client'
 import { ReadinessPanel } from '@/components/app/readiness-panel'
 
-export const metadata: Metadata = { title: 'Risks and data | PPB Intelligence' }
+export const metadata: Metadata = { title: 'Risks and data | PPB' }
 
 export default function RisksPage() {
   return (

@@ -47,7 +47,7 @@ function Splash({ leaving }: { leaving: boolean }) {
   return (
     <div
       role="status"
-      aria-label="Loading PPB Intelligence"
+      aria-label="Loading PPB"
       className={cn(
         'splash fixed inset-0 z-[100] flex items-center justify-center bg-sidebar/45 p-4 text-sidebar-foreground backdrop-blur-xl backdrop-saturate-50',
         leaving && 'splash-leaving',
@@ -61,7 +61,7 @@ function Splash({ leaving }: { leaving: boolean }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="font-display text-[20px] leading-6 font-semibold tracking-tight text-white">
-              PPB Intelligence
+              PPB
             </p>
             <p className="mt-0.5 text-[9.5px] font-medium tracking-[0.14em] text-sidebar-foreground/55 uppercase">
               MX 2026 compliance workspace

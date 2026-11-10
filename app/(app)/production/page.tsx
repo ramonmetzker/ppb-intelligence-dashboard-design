@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/app/page-header'
 import { ProductionKpis } from '@/components/app/production-kpis'
 import { VolumePanel } from '@/components/app/volume-panel'
 
-export const metadata: Metadata = { title: 'Production | PPB Intelligence' }
+export const metadata: Metadata = { title: 'Production | PPB' }
 
 export default function ProductionPage() {
   return (

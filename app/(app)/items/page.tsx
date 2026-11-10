@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/app/page-header'
 import { ItemsScoreboard } from '@/components/app/items-scoreboard'
 import { ItemTrends } from '@/components/app/item-trends'
 
-export const metadata: Metadata = { title: 'PPB items | PPB Intelligence' }
+export const metadata: Metadata = { title: 'PPB items | PPB' }
 
 export default function ItemsPage() {
   return (

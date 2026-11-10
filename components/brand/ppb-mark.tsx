@@ -9,16 +9,26 @@ export function PpbMark({
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 32 32"
       fill="none"
       role="img"
-      aria-label="PPB Intelligence"
+      aria-label="PPB"
       className={className}
     >
-      <rect x="0.5" y="0.5" width="23" height="23" rx="3" fill="#141d40" stroke="#26336e" />
-      <rect x="4" y="14" width="6" height="6" rx="0.75" fill="#e8eeff" />
-      <rect x="9.75" y="9.75" width="4.5" height="4.5" rx="0.5" stroke="#7fa2ff" strokeWidth="1.5" />
-      <rect x="14" y="4" width="6" height="6" rx="0.75" fill="#2457e6" />
+      <path
+        d="M8.5 27V11.5C8.5 8.46 10.96 6 14 6h1.5a5.5 5.5 0 0 1 0 11H8.5"
+        stroke="var(--sidebar-foreground)"
+        strokeWidth="3.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M23.5 5v15.5c0 3.04-2.46 5.5-5.5 5.5h-1.5a5.5 5.5 0 0 1 0-11h7"
+        stroke="var(--brand)"
+        strokeWidth="3.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }

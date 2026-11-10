@@ -6,7 +6,7 @@ import { DICTIONARIES } from '@/lib/i18n'
 import { readPreferences } from '@/lib/preferences'
 
 export const metadata: Metadata = {
-  title: 'Signed out | PPB Intelligence',
+  title: 'Signed out | PPB',
   robots: { index: false },
 }
 

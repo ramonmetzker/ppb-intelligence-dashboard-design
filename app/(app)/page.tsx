@@ -5,7 +5,7 @@ import { TrajectoryPanel } from '@/components/app/trajectory-client'
 import { PlanSummary } from '@/components/app/plan-summary'
 import { Reveal } from '@/components/app/reveal'
 
-export const metadata: Metadata = { title: 'Overview | PPB Intelligence' }
+export const metadata: Metadata = { title: 'Overview | PPB' }
 
 export default function OverviewPage() {
   return (

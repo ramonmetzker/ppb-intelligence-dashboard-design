@@ -6,7 +6,7 @@ import { PlanResult } from '@/components/app/plan-result'
 import { BridgeClient } from '@/components/app/bridge-client'
 import { TrajectoryPanel } from '@/components/app/trajectory-client'
 
-export const metadata: Metadata = { title: 'Simulation | PPB Intelligence' }
+export const metadata: Metadata = { title: 'Simulation | PPB' }
 
 export default function SimulationPage() {
   return (
