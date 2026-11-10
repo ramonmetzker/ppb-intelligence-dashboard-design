@@ -2,25 +2,13 @@
 
 import { useState } from 'react'
 import { Bell, SidebarSimple } from '@phosphor-icons/react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { SidebarPlanSwitcher } from '@/components/app/plan-switcher'
+import { ProductContextSelector } from '@/components/shell/product-context-selector'
 import { NotificationCenter } from '@/components/shell/notification-center'
 import { useShell } from '@/components/shell/shell-provider'
 import { useNotifications } from '@/components/shell/notification-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
 import { cn } from '@/lib/utils'
-
-const FILTERS = [
-  { label: 'gbm', value: 'MX', options: ['MX', 'VD', 'DA'] },
-  { label: 'product', value: 'HHP', options: ['HHP', 'Tablet', 'Wearable'] },
-  { label: 'year', value: '2026', options: ['2026', '2025'] },
-] as const
 
 export function TopBar() {
   const [centerOpen, setCenterOpen] = useState(false)
@@ -87,31 +75,7 @@ export function TopBar() {
           <div className="w-48 shrink-0">
             <SidebarPlanSwitcher topbar />
           </div>
-          {FILTERS.map((filter) => (
-            <div
-              key={filter.label}
-              className="flex h-9 shrink-0 items-center gap-2 border-l border-sidebar-border pl-4"
-            >
-              <span className="text-[10px] font-semibold tracking-[0.12em] text-sidebar-foreground/75 uppercase">
-                {copy[filter.label]}
-              </span>
-              <Select defaultValue={filter.value}>
-                <SelectTrigger
-                  aria-label={copy[filter.label]}
-                  className="h-7 w-[80px] border-0 bg-transparent px-1 text-[12px] font-semibold text-sidebar-foreground shadow-none hover:bg-sidebar-accent focus-visible:ring-sidebar-ring"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent alignItemWithTrigger={false}>
-                  {filter.options.map((option) => (
-                    <SelectItem key={option} value={option} disabled={option !== filter.value}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
+          <ProductContextSelector />
         </div>
       </header>
 
