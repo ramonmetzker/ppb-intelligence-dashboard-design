@@ -100,7 +100,7 @@ export function StoryStatus() {
         <Step
           index={0}
           eyebrow="Now"
-          caption="October actual"
+          caption="Jan – Oct"
           value={<CountUp value={CURRENT_SCORE} delay={150} duration={1400} />}
           valueClass="text-foreground"
           foot={<span className="text-muted-foreground">Closed accumulated score</span>}
@@ -108,7 +108,7 @@ export function StoryStatus() {
         <Step
           index={1}
           eyebrow="Required"
-          caption="Compliance threshold"
+          caption="Target"
           value={<CountUp value={REQUIRED_SCORE} decimals={0} delay={300} duration={1400} />}
           valueClass="text-foreground"
           foot={
@@ -120,7 +120,7 @@ export function StoryStatus() {
         <Step
           index={2}
           eyebrow="Forecast"
-          caption="Baseline year-end"
+          caption="Jan – Dec (SOP)"
           value={<CountUp value={BASE_FORECAST} delay={450} duration={1400} />}
           valueClass="text-brand"
           foot={
@@ -135,7 +135,7 @@ export function StoryStatus() {
         <Step
           index={3}
           eyebrow="Simulation"
-          caption={planName}
+          caption="Jan – Dec (Simulation)"
           value={<CountUp value={sim.yearEnd} delay={600} duration={1400} />}
           valueClass={statusText(sim.status)}
           highlight
@@ -441,7 +441,7 @@ function Step({
       {!last && (
         <span
           aria-hidden="true"
-          className="absolute top-1/2 right-0 z-10 hidden size-5 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[2px] border border-border bg-card text-muted-foreground md:flex"
+          className="absolute top-1/2 right-0 z-10 hidden size-6 translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border border-brand/30 bg-brand-soft text-brand-deep shadow-sm md:flex"
         >
           <CaretRight size={11} weight="bold" />
         </span>
