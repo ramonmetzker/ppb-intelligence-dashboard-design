@@ -548,3 +548,17 @@ input[type='range'].lever:focus-visible {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Data table: edge dividers and scroll shadows for pinned columns. */
+.dt-cell[data-edge='left'] {
+  border-right: 1px solid var(--border);
+}
+.dt-cell[data-edge='right'] {
+  border-left: 1px solid var(--border);
+}
+.dt-scroller[data-scrolled-left='true'] .dt-cell[data-edge='left'] {
+  box-shadow: 10px 0 10px -10px color-mix(in oklch, var(--foreground) 28%, transparent);
+}
+.dt-scroller[data-scrolled-right='true'] .dt-cell[data-edge='right'] {
+  box-shadow: -10px 0 10px -10px color-mix(in oklch, var(--foreground) 28%, transparent);
+}

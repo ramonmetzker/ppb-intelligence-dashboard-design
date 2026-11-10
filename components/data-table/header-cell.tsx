@@ -1,0 +1,200 @@
+'use client'
+
+import { useState, type CSSProperties } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff, ListFilter, MoreHorizontal, Pin, PinOff } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import type { ColumnFilter, DataTableColumn, SortDirection } from '@/lib/data-table/types'
+import { cn } from '@/lib/utils'
+import { ColumnFilterEditor } from './column-filter'
+import type { DataTableLabels } from './filter-utils'
+
+type Props<T> = {
+  column: DataTableColumn<T>
+  style: CSSProperties
+  pinned: boolean
+  edge?: 'left' | 'right'
+  stickyHeader: boolean
+  sortable: boolean
+  filterable: boolean
+  pinnable: boolean
+  sortDirection: SortDirection | false
+  /** 1-based position when more than one column is sorted, otherwise undefined. */
+  sortIndex?: number
+  filter?: ColumnFilter
+  labels: DataTableLabels
+  onSort: (direction: SortDirection | null, additive: boolean) => void
+  onToggleSort: (additive: boolean) => void
+  onFilter: (filter: ColumnFilter | null) => void
+  onPin: (pin: 'left' | 'right' | null) => void
+  onHide?: () => void
+}
+
+const iconButton =
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-[opacity,background-color] outline-none hover:bg-background hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/th:opacity-100 group-focus-within/th:opacity-100 data-[popup-open]:bg-background data-[popup-open]:opacity-100'
+
+export function HeaderCell<T>({
+  column,
+  style,
+  pinned,
+  edge,
+  stickyHeader,
+  sortable,
+  filterable,
+  pinnable,
+  sortDirection,
+  sortIndex,
+  filter,
+  labels,
+  onSort,
+  onToggleSort,
+  onFilter,
+  onPin,
+  onHide,
+}: Props<T>) {
+  const [filterOpen, setFilterOpen] = useState(false)
+  const align = column.align ?? (column.kind === 'number' ? 'right' : 'left')
+  const hasMenu = sortable || pinnable || Boolean(onHide)
+  const SortIcon = sortDirection === 'asc' ? ArrowUp : sortDirection === 'desc' ? ArrowDown : ArrowUpDown
+
+  const label = column.renderHeader ? (
+    column.renderHeader({ column, sorted: sortDirection })
+  ) : (
+    <span className="truncate">{column.header}</span>
+  )
+
+  return (
+    <th
+      scope="col"
+      style={style}
+      data-edge={edge}
+      aria-sort={sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : undefined}
+      title={column.description}
+      className={cn(
+        'dt-cell group/th h-10 border-b border-border bg-muted px-1.5 text-left text-xs font-medium text-muted-foreground',
+        stickyHeader && 'sticky top-0',
+        pinned ? 'z-30' : 'z-20',
+        column.headerClassName,
+      )}
+    >
+      <div className={cn('flex items-center gap-0.5', align === 'right' && 'flex-row-reverse', align === 'center' && 'justify-center')}>
+        {sortable ? (
+          <button
+            type="button"
+            onClick={(event) => onToggleSort(event.shiftKey)}
+            className={cn(
+              'flex h-7 min-w-0 items-center gap-1 rounded-md px-1.5 outline-none hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+              sortDirection && 'text-foreground',
+            )}
+            aria-label={`${column.header}${
+              sortDirection ? `, ${sortDirection === 'asc' ? labels.sortedAsc : labels.sortedDesc}` : ''
+            }. ${labels.sortHint}`}
+          >
+            {label}
+            <SortIcon
+              aria-hidden="true"
+              className={cn('size-3 shrink-0', sortDirection ? 'text-brand' : 'opacity-0 group-hover/th:opacity-60 group-focus-within/th:opacity-60')}
+            />
+            {sortIndex !== undefined && (
+              <span aria-hidden="true" className="tnum -ml-0.5 text-[10px] text-brand">
+                {sortIndex}
+              </span>
+            )}
+          </button>
+        ) : (
+          <span className="flex h-7 min-w-0 items-center px-1.5">{label}</span>
+        )}
+
+        <div className={cn('flex shrink-0 items-center', align === 'right' && 'flex-row-reverse')}>
+          {filterable && (
+            <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+              <PopoverTrigger
+                className={cn(iconButton, filter && 'bg-brand-soft text-brand-deep opacity-100 hover:bg-brand-soft')}
+                aria-label={filter ? `${labels.filterColumn(column.header)}. ${labels.filterActive}` : labels.filterColumn(column.header)}
+              >
+                <ListFilter aria-hidden="true" className="size-3.5" />
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-64 p-3">
+                <ColumnFilterEditor
+                  schema={column}
+                  filter={filter}
+                  labels={labels}
+                  onApply={(next) => {
+                    onFilter(next)
+                    setFilterOpen(false)
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {hasMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className={iconButton} aria-label={labels.columnMenu(column.header)}>
+                <MoreHorizontal aria-hidden="true" className="size-3.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-44">
+                {sortable && (
+                  <>
+                    <DropdownMenuItem onClick={() => onSort('asc', false)}>
+                      <ArrowUp aria-hidden="true" />
+                      {labels.sortAsc}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSort('desc', false)}>
+                      <ArrowDown aria-hidden="true" />
+                      {labels.sortDesc}
+                    </DropdownMenuItem>
+                    {sortDirection && (
+                      <DropdownMenuItem onClick={() => onSort(null, false)}>
+                        <ArrowUpDown aria-hidden="true" />
+                        {labels.clearSort}
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+                {sortable && (pinnable || onHide) && <DropdownMenuSeparator />}
+                {pinnable && (
+                  <>
+                    {column.pin !== 'left' && (
+                      <DropdownMenuItem onClick={() => onPin('left')}>
+                        <Pin aria-hidden="true" />
+                        {labels.pinLeft}
+                      </DropdownMenuItem>
+                    )}
+                    {column.pin !== 'right' && (
+                      <DropdownMenuItem onClick={() => onPin('right')}>
+                        <Pin aria-hidden="true" className="-scale-x-100" />
+                        {labels.pinRight}
+                      </DropdownMenuItem>
+                    )}
+                    {column.pin && (
+                      <DropdownMenuItem onClick={() => onPin(null)}>
+                        <PinOff aria-hidden="true" />
+                        {labels.unpin}
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+                {onHide && (
+                  <>
+                    {pinnable && <DropdownMenuSeparator />}
+                    <DropdownMenuItem onClick={onHide}>
+                      <EyeOff aria-hidden="true" />
+                      {labels.hideColumn}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+    </th>
+  )
+}
