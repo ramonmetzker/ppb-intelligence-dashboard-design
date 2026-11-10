@@ -109,12 +109,12 @@ export function ScrollControls({
   onJump: (id: string) => void
 }) {
   return (
-    <div className="flex shrink-0 items-center rounded-lg border border-input bg-card">
+    <div className="flex h-9 shrink-0 items-stretch overflow-hidden rounded-lg border border-input bg-card">
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
-        className="rounded-r-none"
+        size="icon"
+        className="h-full w-9 rounded-none"
         disabled={!canScrollLeft}
         aria-label={labels.scrollLeft}
         onClick={() => onScroll(-1)}
@@ -124,10 +124,10 @@ export function ScrollControls({
       {jumpTargets.length > 0 && (
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="inline-flex size-7 items-center justify-center border-x border-input text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-muted"
+            className="inline-flex h-full w-9 items-center justify-center border-x border-input text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-muted"
             aria-label={labels.jumpToColumn}
           >
-            <SlidersHorizontal aria-hidden="true" className="size-3.5" />
+            <SlidersHorizontal aria-hidden="true" className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="max-h-72 min-w-44 overflow-y-auto">
             <DropdownMenuGroup>
@@ -144,8 +144,8 @@ export function ScrollControls({
       <Button
         type="button"
         variant="ghost"
-        size="icon-sm"
-        className="rounded-l-none"
+        size="icon"
+        className="h-full w-9 rounded-none"
         disabled={!canScrollRight}
         aria-label={labels.scrollRight}
         onClick={() => onScroll(1)}

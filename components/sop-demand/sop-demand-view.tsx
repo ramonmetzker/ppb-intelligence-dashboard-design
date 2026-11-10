@@ -181,18 +181,18 @@ export function SopDemandView({ initialMode = 'client' }: { initialMode?: Mode }
         <PageActions
           secondary={
             <>
-              <Button variant="outline">
+              <Button variant="outline" size="lg">
                 <Upload aria-hidden="true" data-icon="inline-start" />
                 Import
               </Button>
-              <Button variant="outline">
+              <Button variant="outline" size="lg">
                 <Download aria-hidden="true" data-icon="inline-start" />
                 Export
               </Button>
             </>
           }
           primary={
-            <Button onClick={create} disabled={!isClient}>
+            <Button size="lg" onClick={create} disabled={!isClient}>
               <Plus aria-hidden="true" data-icon="inline-start" />
               New demand
             </Button>

@@ -167,10 +167,10 @@ export function ColumnFilterEditor<T>({ schema, filter, labels, onApply }: Props
       )}
 
       <div className="flex items-center justify-between gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={() => onApply(null)} disabled={!filter}>
+        <Button type="button" variant="ghost" onClick={() => onApply(null)} disabled={!filter}>
           {labels.clear}
         </Button>
-        <Button type="submit" size="sm">
+        <Button type="submit">
           {labels.apply}
         </Button>
       </div>

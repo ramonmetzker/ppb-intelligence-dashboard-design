@@ -59,10 +59,10 @@ export function Pagination({ page, pageCount, pageSize, total, pageSizeOptions, 
         </label>
 
         <nav className="flex items-center gap-1" aria-label={labels.pageOf(page, pageCount)}>
-          <Button variant="outline" size="icon-sm" disabled={page <= 1} onClick={() => onPageChange(1)} aria-label={labels.firstPage}>
+          <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => onPageChange(1)} aria-label={labels.firstPage}>
             <ChevronsLeft aria-hidden="true" />
           </Button>
-          <Button variant="outline" size="icon-sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)} aria-label={labels.previousPage}>
+          <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => onPageChange(page - 1)} aria-label={labels.previousPage}>
             <ChevronLeft aria-hidden="true" />
           </Button>
 
@@ -76,7 +76,7 @@ export function Pagination({ page, pageCount, pageSize, total, pageSizeOptions, 
                     aria-label={labels.goToPage(entry)}
                     aria-current={entry === page ? 'page' : undefined}
                     className={cn(
-                      'tnum inline-flex size-7 items-center justify-center rounded-lg text-[13px] outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
+                      'tnum inline-flex size-8 items-center justify-center rounded-lg text-[13px] outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50',
                       entry === page ? 'bg-primary font-medium text-primary-foreground' : 'hover:bg-muted',
                     )}
                   >
@@ -92,10 +92,10 @@ export function Pagination({ page, pageCount, pageSize, total, pageSizeOptions, 
           </ul>
           <span className="tnum px-2 text-[13px] text-muted-foreground md:hidden">{labels.pageOf(page, pageCount)}</span>
 
-          <Button variant="outline" size="icon-sm" disabled={page >= pageCount} onClick={() => onPageChange(page + 1)} aria-label={labels.nextPage}>
+          <Button variant="outline" size="icon" disabled={page >= pageCount} onClick={() => onPageChange(page + 1)} aria-label={labels.nextPage}>
             <ChevronRight aria-hidden="true" />
           </Button>
-          <Button variant="outline" size="icon-sm" disabled={page >= pageCount} onClick={() => onPageChange(pageCount)} aria-label={labels.lastPage}>
+          <Button variant="outline" size="icon" disabled={page >= pageCount} onClick={() => onPageChange(pageCount)} aria-label={labels.lastPage}>
             <ChevronsRight aria-hidden="true" />
           </Button>
         </nav>

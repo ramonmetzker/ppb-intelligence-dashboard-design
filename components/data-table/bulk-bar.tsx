@@ -33,7 +33,7 @@ export function BulkBar<T>({
     <div
       role="region"
       aria-label={labels.selectedCount(count)}
-      className="flex min-h-9 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-brand/30 bg-brand-soft px-2.5 py-1 text-[13px] text-brand-deep"
+      className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-brand/30 bg-brand-soft px-3 py-1.5 text-[13px] text-brand-deep"
     >
       <p className="tnum font-medium" aria-live="polite">
         {labels.selectedCount(allMatching ? total : count)}
@@ -54,7 +54,6 @@ export function BulkBar<T>({
           <Button
             key={action.id}
             type="button"
-            size="sm"
             variant={action.tone === 'destructive' ? 'destructive' : 'outline'}
             className={action.tone === 'destructive' ? undefined : 'bg-card'}
             disabled={action.disabled?.(context)}
@@ -64,7 +63,7 @@ export function BulkBar<T>({
             {action.label}
           </Button>
         ))}
-        <Button type="button" size="sm" variant="ghost" onClick={onClear}>
+        <Button type="button" variant="ghost" onClick={onClear}>
           <X aria-hidden="true" />
           {labels.clearSelection}
         </Button>

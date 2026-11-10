@@ -775,7 +775,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                           {hasFilters && (
                             <>
                               <p className="text-[13px] text-muted-foreground">{labels.noResultsHint}</p>
-                              <Button type="button" variant="outline" size="sm" onClick={clearAllFilters}>
+                              <Button type="button" variant="outline" onClick={clearAllFilters}>
                                 {labels.clearAll}
                               </Button>
                             </>
