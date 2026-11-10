@@ -88,14 +88,17 @@ export function TopBar() {
             <SidebarPlanSwitcher topbar />
           </div>
           {FILTERS.map((filter) => (
-            <div key={filter.label} className="flex h-9 shrink-0 items-center gap-1.5">
-              <span className="text-[9px] font-semibold tracking-[0.14em] text-sidebar-foreground/45 uppercase">
+            <div
+              key={filter.label}
+              className="flex h-9 shrink-0 items-center gap-2 border-l border-sidebar-border pl-4"
+            >
+              <span className="text-[10px] font-semibold tracking-[0.12em] text-sidebar-foreground/75 uppercase">
                 {copy[filter.label]}
               </span>
               <Select defaultValue={filter.value}>
                 <SelectTrigger
                   aria-label={copy[filter.label]}
-                  className="h-7 w-[76px] border-0 bg-transparent px-1 text-[12px] font-semibold text-sidebar-foreground shadow-none hover:bg-transparent focus-visible:ring-sidebar-ring"
+                  className="h-7 w-[80px] border-0 bg-transparent px-1 text-[12px] font-semibold text-sidebar-foreground shadow-none hover:bg-sidebar-accent focus-visible:ring-sidebar-ring"
                 >
                   <SelectValue />
                 </SelectTrigger>

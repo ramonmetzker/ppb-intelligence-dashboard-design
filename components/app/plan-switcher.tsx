@@ -227,7 +227,7 @@ export function SidebarPlanSwitcher({
         )}
         {topbar ? (
           <>
-            <span className="text-[9px] font-semibold tracking-[0.12em] text-sidebar-foreground/45 uppercase">
+            <span className="text-[10px] font-semibold tracking-[0.12em] text-sidebar-foreground/75 uppercase">
               Simulation
             </span>
             <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-white">
