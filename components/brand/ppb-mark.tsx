@@ -16,18 +16,18 @@ export function PpbMark({
       className={className}
     >
       <path
-        fill="var(--brand)"
-        fillRule="evenodd"
-        d="M4 29V3h15l10 8.5L19 20H11v9H4Zm7-19v5h6l4-3.5L17 8h-6v2Z"
-        clipRule="evenodd"
-      />
-      <path
-        d="m15 23 4 4 9-9"
-        stroke="var(--sidebar-foreground)"
+        d="M16 3 29 16 16 29 3 16 16 3Z"
+        stroke="var(--brand)"
         strokeWidth="3.5"
-        strokeLinecap="square"
         strokeLinejoin="miter"
       />
+      <path
+        d="m16 8 8 8-8 8-8-8 8-8Z"
+        stroke="var(--sidebar-foreground)"
+        strokeWidth="3.5"
+        strokeLinejoin="miter"
+      />
+      <rect x="13.5" y="13.5" width="5" height="5" fill="var(--brand)" />
     </svg>
   )
 }
