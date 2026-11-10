@@ -20,11 +20,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <PlanProvider>
           <MaterialProvider>
             <AgentProvider>
-              <div className="flex min-h-screen gap-2 p-2">
+              <div className="flex min-h-screen bg-background">
                 <AppSidebar />
-                <div className="flex min-w-0 flex-1 flex-col px-1">
+                <div className="flex min-w-0 flex-1 flex-col">
                   <TopBar />
-                  <main className="flex-1 pb-4">{children}</main>
+                  <main className="min-w-0 flex-1">{children}</main>
                 </div>
               </div>
               <AgentLauncher />

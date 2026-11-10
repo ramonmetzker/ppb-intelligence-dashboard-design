@@ -29,8 +29,8 @@ export function TopBar() {
   const updated = syncLabel === 'just now' ? copy.justNow : syncLabel
 
   return (
-    <div className="pb-3">
-      <header className="flex h-12 items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 shadow-xs">
+    <div>
+      <header className="flex h-14 items-center justify-between gap-3 border-b border-border bg-card px-4">
         <div className="flex min-w-0 items-center gap-4 overflow-x-auto">
           {FILTERS.map((filter) => (
             <div key={filter.label} className="flex shrink-0 items-center gap-2">
