@@ -16,6 +16,7 @@ export function AgentLauncher() {
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [dock, setDock] = useState<'left' | 'right'>('right')
   const [dragLeft, setDragLeft] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState(false)
   const dragStartX = useRef(0)
   const dragged = useRef(false)
 
@@ -68,10 +69,17 @@ export function AgentLauncher() {
       <button
         type="button"
         onClick={handleLauncherClick}
-        onPointerDown={handlePointerDown}
+        onPointerDown={(event) => {
+          setExpanded(false)
+          handlePointerDown(event)
+        }}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
+        onFocus={() => setExpanded(true)}
+        onBlur={() => setExpanded(false)}
         style={dockPosition}
         aria-label={
           running
@@ -87,7 +95,15 @@ export function AgentLauncher() {
           booted ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
       >
-        <span className="max-w-0 overflow-hidden text-right opacity-0 transition-[max-width,opacity,margin] duration-300 group-hover:mr-2.5 group-hover:max-w-48 group-hover:opacity-100 group-focus-visible:mr-2.5 group-focus-visible:max-w-48 group-focus-visible:opacity-100">
+        <span
+          className={cn(
+            'overflow-hidden transition-[max-width,opacity,margin] duration-300',
+            expanded ? 'max-w-48 opacity-100' : 'max-w-0 opacity-0',
+            dock === 'left'
+              ? cn('order-2 text-left', expanded && 'ml-2.5')
+              : cn('order-1 text-right', expanded && 'mr-2.5'),
+          )}
+        >
           <span className="font-display block whitespace-nowrap text-[13px] leading-4 font-semibold tracking-tight">
             Simulation optimizer
           </span>
@@ -99,7 +115,12 @@ export function AgentLauncher() {
                 : 'Ask the AI agent'}
           </span>
         </span>
-        <span className="relative flex size-8 shrink-0 items-center justify-center rounded-[5px] bg-brand">
+        <span
+          className={cn(
+            'relative flex size-8 shrink-0 items-center justify-center rounded-[5px] bg-brand',
+            dock === 'left' ? 'order-1' : 'order-2',
+          )}
+        >
           {(running || unseen > 0) && (
             <span
               aria-hidden="true"
