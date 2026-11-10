@@ -16,16 +16,15 @@ export function PpbMark({
       className={className}
     >
       <path
-        d="M6.5 28V9.5L15 4l8.5 5.5v4L15 19l-8.5-5.5"
-        stroke="var(--brand)"
-        strokeWidth="4"
-        strokeLinecap="square"
-        strokeLinejoin="miter"
+        fill="var(--brand)"
+        fillRule="evenodd"
+        d="M4 29V3h15l10 8.5L19 20H11v9H4Zm7-19v5h6l4-3.5L17 8h-6v2Z"
+        clipRule="evenodd"
       />
       <path
-        d="M25.5 4v18.5L17 28l-8.5-5.5v-4L17 13l8.5 5.5"
-        stroke="var(--brand)"
-        strokeWidth="4"
+        d="m15 23 4 4 9-9"
+        stroke="var(--sidebar-foreground)"
+        strokeWidth="3.5"
         strokeLinecap="square"
         strokeLinejoin="miter"
       />
