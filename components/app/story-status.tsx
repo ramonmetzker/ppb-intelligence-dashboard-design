@@ -428,6 +428,7 @@ function Step({
     <div
       className={cn(
         'rise relative flex min-w-0 flex-col gap-1 px-4 py-3',
+        !last && 'z-10',
         highlight && 'bg-brand-soft/60',
       )}
       style={{ '--rise-delay': `${index * 110}ms` } as React.CSSProperties}
