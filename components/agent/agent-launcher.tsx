@@ -19,10 +19,10 @@ export function AgentLauncher() {
       onClick={() => setOpen(true)}
       aria-label={
         running
-          ? 'Open the plan optimizer, a run is in progress'
+          ? 'Open the simulation optimizer, a run is in progress'
           : unseen > 0
-            ? `Open the plan optimizer, ${unseen} new ${unseen === 1 ? 'plan' : 'plans'}`
-            : 'Open the plan optimizer'
+            ? `Open the simulation optimizer, ${unseen} new ${unseen === 1 ? 'simulation' : 'simulations'}`
+            : 'Open the simulation optimizer'
       }
       className={cn(
         'group fixed right-5 bottom-5 z-40 flex h-11 items-center gap-2.5 rounded-md bg-ink pr-4 pl-1.5 text-white shadow-lg ring-1 ring-white/10 transition-[transform,box-shadow,opacity] duration-500 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
@@ -44,13 +44,13 @@ export function AgentLauncher() {
       </span>
       <span className="text-left">
         <span className="font-display block text-[13px] leading-4 font-semibold tracking-tight">
-          Plan optimizer
+          Simulation optimizer
         </span>
         <span className="block text-[11px] leading-3.5 text-white/60">
           {running
             ? `Solving, round ${round || 1}`
             : unseen > 0
-              ? `${unseen} new ${unseen === 1 ? 'plan' : 'plans'} ready`
+              ? `${unseen} new ${unseen === 1 ? 'simulation' : 'simulations'} ready`
               : 'Ask the AI agent'}
         </span>
       </span>

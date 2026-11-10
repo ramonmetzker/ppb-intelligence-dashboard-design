@@ -84,8 +84,8 @@ export function AppSidebar() {
       <nav
         aria-label={t.nav.pages}
         className={cn(
-          'scroll-dark mx-2 flex-1 overflow-y-auto rounded-xl border border-sidebar-border bg-sidebar-accent/35 py-3',
-          collapsed ? 'px-1.5' : 'px-2',
+          'scroll-dark flex-1 overflow-y-auto py-3',
+          collapsed ? 'px-2.5' : 'px-3',
         )}
       >
         <div className="flex flex-col gap-5">

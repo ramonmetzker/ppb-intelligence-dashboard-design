@@ -211,7 +211,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         if (current?.status === 'running') {
           push({
             role: 'agent',
-            text: 'I am still solving. Stop the run or wait for the plan, then send the next instruction.',
+            text: 'I am still solving. Stop the run or wait for the simulation, then send the next instruction.',
           })
           return
         }

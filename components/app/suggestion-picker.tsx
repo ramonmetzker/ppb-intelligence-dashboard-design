@@ -30,7 +30,7 @@ export function SuggestionPicker() {
         activeId === 'custom' ? (
           <div className="flex items-center gap-2">
             <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 text-[11px] font-medium text-brand-deep">
-              Edited plan
+              Edited simulation
             </span>
             <button
               type="button"

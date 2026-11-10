@@ -13,7 +13,8 @@ function statusLine(run: ReturnType<typeof useAgent>['run']) {
     const step = run.data.steps[run.stepIndex]
     return `Running, ${step ? step.title.toLowerCase() : 'working'}`
   }
-  if (run.status === 'done') return run.data.satisfied ? 'Plan delivered' : 'Closest plan delivered'
+  if (run.status === 'done')
+    return run.data.satisfied ? 'Simulation delivered' : 'Closest simulation delivered'
   return 'Stopped'
 }
 
@@ -39,7 +40,7 @@ export function AgentDialog() {
               </span>
               <div className="min-w-0">
                 <Dialog.Title className="font-display text-[15px] leading-5 font-semibold tracking-tight">
-                  Plan optimizer
+                  Simulation optimizer
                 </Dialog.Title>
                 <Dialog.Description className="flex items-center gap-1.5 truncate text-[11.5px] leading-4 text-white/60">
                   <span

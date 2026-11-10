@@ -301,7 +301,7 @@ function Matrix({
                 {row.month}
                 {row.projected && (
                   <span className="block text-[9px] leading-3 font-medium tracking-[0.08em] uppercase">
-                    Plan
+                    Simulation
                   </span>
                 )}
               </th>

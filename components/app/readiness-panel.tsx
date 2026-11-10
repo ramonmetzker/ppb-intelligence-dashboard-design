@@ -23,7 +23,7 @@ export function ReadinessPanel() {
     <Panel
       id="readiness"
       title="October closing"
-      description={`${done} of ${STEPS.length} steps complete. Data feeding every scenario.`}
+      description={`${done} of ${STEPS.length} steps complete. Data feeding every simulation.`}
       className="h-full"
       bodyClassName="flex flex-col gap-4 p-4"
     >

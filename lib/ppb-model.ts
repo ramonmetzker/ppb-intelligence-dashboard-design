@@ -380,7 +380,7 @@ export const SUGGESTIONS: Suggestion[] = [
   suggestion(
     {
       id: 'balanced',
-      name: 'Balanced plan',
+      name: 'Balanced simulation',
       tag: 'Recommended',
       blurb: 'Raises every item a little. Clears the target with room to spare.',
     },
@@ -680,7 +680,7 @@ export function simulate(plan: Plan): Simulation {
       running = round2(running + r.delta)
       return { label: r.name, start, end: running, kind: r.delta >= 0 ? 'up' : 'down' }
     }),
-    { label: 'Plan', start: 0, end: yearEnd, kind: 'total' },
+    { label: 'Simulation', start: 0, end: yearEnd, kind: 'total' },
   ]
 
   const drivers: DriverRow[] = DRIVERS.map((d) => {

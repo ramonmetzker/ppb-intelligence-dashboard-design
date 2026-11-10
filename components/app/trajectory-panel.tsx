@@ -257,7 +257,7 @@ export function TrajectoryPanel({
         <ul className="flex items-center gap-4 text-[11.5px] text-muted-foreground">
           <Legend color={INK} label="Actual" />
           <Legend color={MUTED} label="Forecast" dashed />
-          <Legend color={BRAND} label="Plan" />
+          <Legend color={BRAND} label="Simulation" />
         </ul>
       }
       bodyClassName="flex px-3 pt-4 pb-3"

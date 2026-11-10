@@ -75,7 +75,7 @@ const SEED: AppNotification[] = [
     id: 'seed-4',
     severity: 'success',
     title: 'October closed',
-    body: 'Actual production and spend for October were consolidated into the plan.',
+    body: 'Actual production and spend for October were consolidated into the simulation.',
     time: 'Nov 03',
     read: true,
     href: '/',

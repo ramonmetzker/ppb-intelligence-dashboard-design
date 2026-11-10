@@ -32,7 +32,7 @@ export function TopBar() {
   const updated = syncLabel === 'just now' ? copy.justNow : syncLabel
 
   return (
-    <div className="border-b border-sidebar-border bg-ink-raised text-sidebar-foreground">
+    <div className="bg-ink-raised text-sidebar-foreground">
       <header className="flex h-16 items-center justify-between gap-3 px-3 lg:px-4">
         <div className="flex shrink-0 items-center gap-1.5">
           <button
@@ -83,15 +83,12 @@ export function TopBar() {
           </p>
         </div>
 
-        <div className="scroll-dark flex min-w-0 items-center justify-end gap-2 overflow-x-auto">
+        <div className="scroll-dark flex min-w-0 items-center justify-end gap-4 overflow-x-auto">
           <div className="w-48 shrink-0">
             <SidebarPlanSwitcher topbar />
           </div>
           {FILTERS.map((filter) => (
-            <div
-              key={filter.label}
-              className="flex h-9 shrink-0 items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar px-2.5 shadow-sm"
-            >
+            <div key={filter.label} className="flex h-9 shrink-0 items-center gap-1.5">
               <span className="text-[9px] font-semibold tracking-[0.14em] text-sidebar-foreground/45 uppercase">
                 {copy[filter.label]}
               </span>

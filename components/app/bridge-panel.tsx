@@ -34,7 +34,7 @@ export function BridgePanel({ sim }: { sim: Simulation }) {
             const lo = isTotal ? MIN : Math.min(step.start, step.end)
             const hi = Math.max(step.start, step.end)
             const delta = step.end - step.start
-            const isScenario = step.label === 'Plan'
+            const isScenario = step.label === 'Simulation'
             return (
               <li
                 key={step.label}

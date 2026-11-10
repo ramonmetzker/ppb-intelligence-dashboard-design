@@ -42,7 +42,7 @@ function usePlanOptions() {
     ? null
     : {
         id: 'custom',
-        name: 'Custom plan',
+        name: 'Custom simulation',
         tag: 'Edited by you',
         blurb: 'Your own local share for the open months.',
         sim,
@@ -55,7 +55,7 @@ const barTone = (status: Simulation['status']) =>
   status === 'Compliant' ? 'bg-success' : status === 'At risk' ? 'bg-warning' : 'bg-critical'
 
 /* -------------------------------------------------------------------------- */
-/* Shared popup: the plan menu used by every trigger                           */
+/* Shared popup: the simulation menu used by every trigger                           */
 /* -------------------------------------------------------------------------- */
 
 function PlanMenuPopup({
@@ -78,10 +78,10 @@ function PlanMenuPopup({
         <Popover.Popup className="w-[348px] max-w-[calc(100vw-24px)] origin-(--transform-origin) rounded-lg border border-border bg-popover text-popover-foreground shadow-xl outline-none transition-[opacity,scale] duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
           <div className="border-b border-border px-3.5 py-2.5">
             <Popover.Title className="font-display text-[13.5px] font-semibold tracking-tight">
-              Switch plan
+              Switch simulation
             </Popover.Title>
             <Popover.Description className="mt-0.5 text-[11.5px] leading-4 text-muted-foreground">
-              Every page recalculates with the plan you pick. Required score is {REQUIRED_SCORE}.
+              Every page recalculates with the simulation you pick. Required score is {REQUIRED_SCORE}.
             </Popover.Description>
           </div>
           <ul className="flex max-h-[min(52vh,420px)] flex-col gap-0.5 overflow-y-auto p-1.5">
@@ -169,7 +169,7 @@ function PlanMenuPopup({
             >
               <span className="flex items-center gap-1.5">
                 <Sparkle size={13} weight="fill" aria-hidden="true" />
-                Ask the AI agent for a new plan
+                Ask the AI agent for a new simulation
               </span>
               <ArrowRight size={13} aria-hidden="true" />
             </button>
@@ -189,7 +189,7 @@ function PlanMenuPopup({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Sidebar: a live card that opens the plan menu                               */
+/* Sidebar: a live card that opens the simulation menu                               */
 /* -------------------------------------------------------------------------- */
 
 export function SidebarPlanSwitcher({
@@ -205,28 +205,30 @@ export function SidebarPlanSwitcher({
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger
-        aria-label={`Active plan: ${planName}. Change plan`}
-        title={compact ? `Active plan: ${planName}` : undefined}
+        aria-label={`Active simulation: ${planName}. Change simulation`}
+        title={compact ? `Active simulation: ${planName}` : undefined}
         className={cn(
-          'group relative w-full overflow-hidden rounded-md border border-sidebar-border bg-ink-raised text-left transition-colors hover:border-brand/60 focus-visible:outline-2 focus-visible:outline-ring data-popup-open:border-brand',
+          'group relative w-full overflow-hidden rounded-md text-left transition-colors focus-visible:outline-2 focus-visible:outline-ring',
           topbar
-            ? 'flex h-9 items-center gap-2 px-2.5'
+            ? 'flex h-9 items-center gap-2 bg-transparent px-1 hover:text-white'
             : compact
-              ? 'flex h-11 items-center justify-center px-1'
-              : 'px-2.5 py-2',
+              ? 'flex h-11 items-center justify-center border border-sidebar-border bg-ink-raised px-1 hover:border-brand/60'
+              : 'border border-sidebar-border bg-ink-raised px-2.5 py-2 hover:border-brand/60',
         )}
       >
-        <span
-          aria-hidden="true"
-          className={cn(
-            'absolute inset-x-0 top-0 h-[2px] transition-colors duration-500',
-            barTone(sim.status),
-          )}
-        />
+        {!topbar && (
+          <span
+            aria-hidden="true"
+            className={cn(
+              'absolute inset-x-0 top-0 h-[2px] transition-colors duration-500',
+              barTone(sim.status),
+            )}
+          />
+        )}
         {topbar ? (
           <>
             <span className="text-[9px] font-semibold tracking-[0.12em] text-sidebar-foreground/45 uppercase">
-              Plan
+              Simulation
             </span>
             <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-white">
               {planName}
@@ -241,7 +243,7 @@ export function SidebarPlanSwitcher({
         ) : compact ? (
           <span className="flex flex-col items-center gap-0.5">
             <span className="text-[8px] font-medium tracking-[0.12em] text-sidebar-foreground/45 uppercase">
-              Plan
+              Simulation
             </span>
             <CountUp
               value={sim.yearEnd}
@@ -253,7 +255,7 @@ export function SidebarPlanSwitcher({
           <>
             <span className="flex items-center justify-between">
               <span className="text-[10px] tracking-[0.08em] text-sidebar-foreground/50 uppercase">
-                Active plan
+                Active simulation
               </span>
               <CaretUpDown size={12} className="text-sidebar-foreground/50" aria-hidden="true" />
             </span>
@@ -297,7 +299,7 @@ export function InlinePlanSwitcher() {
     <div className="px-3 py-2.5">
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger
-          aria-label={`Selected plan: ${planName}. Change plan`}
+          aria-label={`Selected simulation: ${planName}. Change simulation`}
           className="group relative flex h-12 w-full items-center gap-3 overflow-hidden rounded-md border border-border bg-card px-3 text-left transition-colors hover:border-input hover:bg-secondary/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring data-popup-open:border-brand data-popup-open:bg-brand-soft/60"
         >
           <span
@@ -309,7 +311,7 @@ export function InlinePlanSwitcher() {
           />
           <span className="min-w-0 flex-1">
             <span className="block text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
-              {current?.tag ?? 'Plan'}
+              {current?.tag ?? 'Simulation'}
             </span>
             <span
               key={planName}

@@ -13,7 +13,7 @@ export function useBooted() {
   return useContext(BootContext)
 }
 
-const MESSAGES = ['Loading the October close', 'Calibrating the forecast', 'Preparing plans and scenarios']
+const MESSAGES = ['Loading the October close', 'Calibrating the forecast', 'Preparing simulations']
 
 export function BootProvider({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<BootPhase>('splash')

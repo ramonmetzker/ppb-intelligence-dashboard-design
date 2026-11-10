@@ -15,8 +15,8 @@ export function PlanSummary() {
   return (
     <Panel
       id="plan"
-      title="Plan for November and December"
-      description="Pick a plan and the whole app recalculates."
+      title="Simulation for November and December"
+      description="Pick a simulation and the whole app recalculates."
       className="h-full"
       action={
         <span className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">

@@ -136,7 +136,7 @@ export function StoryStatus() {
         />
         <Step
           index={3}
-          eyebrow="Scenario"
+          eyebrow="Simulation"
           caption={planName}
           value={<CountUp value={sim.yearEnd} delay={600} duration={1400} />}
           valueClass={statusText(sim.status)}
@@ -168,7 +168,7 @@ export function StoryStatus() {
             'No changes are planned for the open months yet.'
           ) : (
             <>
-              Your plan lands at{' '}
+              Your simulation lands at{' '}
               <span className={cn('num font-semibold', statusText(sim.status))}>
                 {fmt(sim.yearEnd)}
               </span>
@@ -185,7 +185,7 @@ export function StoryStatus() {
             fillClass="bg-brand"
           />
           <Meter
-            label="Plan closes"
+            label="Simulation closes"
             value={closedPlan}
             ready={ready}
             delay={800}
@@ -198,7 +198,7 @@ export function StoryStatus() {
         <div
           className="relative h-12"
           role="img"
-          aria-label={`Score ruler. Now ${fmt(CURRENT_SCORE)}, forecast ${fmt(BASE_FORECAST)}, scenario ${fmt(sim.yearEnd)}, required ${REQUIRED_SCORE}.`}
+          aria-label={`Score ruler. Now ${fmt(CURRENT_SCORE)}, forecast ${fmt(BASE_FORECAST)}, simulation ${fmt(sim.yearEnd)}, required ${REQUIRED_SCORE}.`}
         >
           <div
             aria-hidden="true"
@@ -326,7 +326,7 @@ function CompactStatus({ visible }: { visible: boolean }) {
             noteClass="text-warning"
           />
           <CompactStat
-            label="Scenario"
+            label="Simulation"
             value={fmt(sim.yearEnd)}
             valueClass={statusText(sim.status)}
             note={`${fmtSigned(sim.gap)} pts`}
@@ -338,7 +338,7 @@ function CompactStatus({ visible }: { visible: boolean }) {
         <div
           className="relative hidden h-8 w-56 shrink-0 xl:block"
           role="img"
-          aria-label={`Score ruler. Now ${fmt(CURRENT_SCORE)}, forecast ${fmt(BASE_FORECAST)}, scenario ${fmt(sim.yearEnd)}, required ${REQUIRED_SCORE}.`}
+          aria-label={`Score ruler. Now ${fmt(CURRENT_SCORE)}, forecast ${fmt(BASE_FORECAST)}, simulation ${fmt(sim.yearEnd)}, required ${REQUIRED_SCORE}.`}
         >
           <div aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px bg-border" />
           <div

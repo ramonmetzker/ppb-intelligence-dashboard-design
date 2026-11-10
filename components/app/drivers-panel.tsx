@@ -9,7 +9,7 @@ export function DriversPanel({ sim }: { sim: Simulation }) {
     <Panel
       id="drivers"
       title="Risk drivers"
-      description="Points each driver costs the year-end score, before and after this scenario."
+      description="Points each driver costs the year-end score, before and after this simulation."
       className="h-full"
       action={
         <ul className="flex items-center gap-3 text-[11px] text-muted-foreground">
@@ -19,7 +19,7 @@ export function DriversPanel({ sim }: { sim: Simulation }) {
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden="true" className="size-2 rounded-[1px] bg-warning" />
-            Scenario
+              Simulation
           </li>
         </ul>
       }

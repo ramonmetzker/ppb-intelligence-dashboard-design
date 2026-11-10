@@ -161,7 +161,7 @@ function IdleState() {
             <span aria-hidden="true" className="absolute -inset-1 rounded-lg border border-brand/30" />
           </div>
           <div>
-            <p className="eyebrow">Plan optimizer</p>
+            <p className="eyebrow">Simulation optimizer</p>
             <h3 className="font-display text-[22px] leading-7 font-semibold tracking-tight text-balance">
               Reach {TARGET_SCORE.toFixed(0)} at the lowest spend
             </h3>
@@ -571,7 +571,9 @@ function Delivered({ run }: { run: RunState }) {
             ) : (
               <Warning size={12} weight="fill" className="text-warning" aria-hidden="true" />
             )}
-            {run.data.satisfied ? 'Plan delivered' : 'Closest feasible plan delivered'},{' '}
+            {run.data.satisfied
+                    ? 'Simulation delivered'
+                    : 'Closest feasible simulation delivered'},{' '}
             {fmtCreated(suggestion.createdAt)}
           </p>
           <p className="font-display mt-0.5 text-[18px] leading-7 font-semibold tracking-tight">

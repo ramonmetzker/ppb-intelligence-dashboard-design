@@ -21,7 +21,7 @@ export function ProductionKpis() {
   const items = [
     { label: 'Produced through Oct', value: fmtVolume(oct.volume), note: 'Units across all PPB items' },
     { label: 'Local share through Oct', value: fmtPercent(oct.share), note: 'Volume-weighted' },
-    { label: 'Projected year volume', value: fmtVolume(dec.volume), note: 'Plan holds volume fixed' },
+    { label: 'Projected year volume', value: fmtVolume(dec.volume), note: 'Simulation holds volume fixed' },
     {
       label: 'Year-end local share',
       value: fmtPercent(dec.share),
