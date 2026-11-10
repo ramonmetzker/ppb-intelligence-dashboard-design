@@ -6,6 +6,7 @@ import {
   Cube,
   CaretUpDown,
   ChartBar,
+  Database,
   GitBranch,
   SquaresFour,
   Table,
@@ -44,6 +45,10 @@ const GROUPS: {
   {
     label: 'monitor',
     items: [{ label: 'risks', href: '/risks', icon: WarningDiamond }],
+  },
+  {
+    label: 'rawData',
+    items: [{ label: 'products', href: '/products', icon: Database }],
   },
 ]
 

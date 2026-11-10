@@ -7,6 +7,7 @@ import { PreferencesProvider } from '@/components/shell/preferences-provider'
 import { UserDialog } from '@/components/shell/user-dialog'
 import { PlanProvider } from '@/components/app/plan-provider'
 import { MaterialProvider } from '@/components/materials/material-provider'
+import { ProductsProvider } from '@/components/products/products-provider'
 import { AgentProvider } from '@/components/agent/agent-provider'
 import { AgentLauncher } from '@/components/agent/agent-launcher'
 import { AgentDialog } from '@/components/agent/agent-dialog'
@@ -23,22 +24,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <NotificationProvider initialAcknowledgements={acknowledgements}>
         <PlanProvider>
           <MaterialProvider>
-            <AgentProvider>
-              <ShellProvider>
-                <div className="flex min-h-screen bg-sidebar">
-                  <AppSidebar />
-                  <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
-                    <TopBar />
-                    <main className="min-w-0 flex-1 rounded-tl-2xl bg-shell p-3 shadow-[inset_1px_1px_0_var(--border)]">
-                      {children}
-                    </main>
+            <ProductsProvider>
+              <AgentProvider>
+                <ShellProvider>
+                  <div className="flex min-h-screen bg-sidebar">
+                    <AppSidebar />
+                    <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
+                      <TopBar />
+                      <main className="min-w-0 flex-1 rounded-tl-2xl bg-shell p-3 shadow-[inset_1px_1px_0_var(--border)]">
+                        {children}
+                      </main>
+                    </div>
                   </div>
-                </div>
-                <AgentLauncher />
-                <AgentDialog />
-                <UserDialog />
-              </ShellProvider>
-            </AgentProvider>
+                  <AgentLauncher />
+                  <AgentDialog />
+                  <UserDialog />
+                </ShellProvider>
+              </AgentProvider>
+            </ProductsProvider>
           </MaterialProvider>
         </PlanProvider>
       </NotificationProvider>

@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { Bell, SidebarSimple } from '@phosphor-icons/react'
 import { SidebarPlanSwitcher } from '@/components/app/plan-switcher'
+import { GbmSelector } from '@/components/shell/gbm-selector'
 import { ProductContextSelector } from '@/components/shell/product-context-selector'
 import { NotificationCenter } from '@/components/shell/notification-center'
 import { useShell } from '@/components/shell/shell-provider'
@@ -12,6 +14,7 @@ import { cn } from '@/lib/utils'
 
 export function TopBar() {
   const [centerOpen, setCenterOpen] = useState(false)
+  const gbmOnly = usePathname().startsWith('/products')
   const { unreadCount, syncing, syncLabel } = useNotifications()
   const { collapsed, toggleSidebar } = useShell()
   const { t } = usePreferences()
@@ -72,10 +75,16 @@ export function TopBar() {
         </div>
 
         <div className="scroll-dark flex min-w-0 items-center justify-end gap-4 overflow-x-auto">
-          <div className="w-48 shrink-0">
-            <SidebarPlanSwitcher topbar />
-          </div>
-          <ProductContextSelector />
+          {gbmOnly ? (
+            <GbmSelector />
+          ) : (
+            <>
+              <div className="w-48 shrink-0">
+                <SidebarPlanSwitcher topbar />
+              </div>
+              <ProductContextSelector />
+            </>
+          )}
         </div>
       </header>
 

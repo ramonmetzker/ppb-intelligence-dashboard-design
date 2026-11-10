@@ -1,19 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import {
-  AirVent,
-  Check,
-  ChevronDown,
-  Fan,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Tv,
-  Watch,
-  type LucideIcon,
-} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ProductIcon } from '@/components/products/product-icon'
+import { useProducts } from '@/components/products/products-provider'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
@@ -33,69 +24,43 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { GBMS, type Gbm, type Product } from '@/lib/products/data'
 
-type Gbm = 'MX' | 'VD' | 'DA'
-type Product = { value: string; name: string; icon: LucideIcon }
-type Family = { gbm: Gbm; products: readonly Product[] }
 type Context = { product: string; year: string }
-
-const FAMILIES: readonly Family[] = [
-  {
-    gbm: 'MX',
-    products: [
-      { value: 'Mobile', name: 'Mobile', icon: Smartphone },
-      { value: 'Tablet', name: 'Tablet', icon: Tablet },
-      { value: 'Wearables', name: 'Wearables', icon: Watch },
-    ],
-  },
-  {
-    gbm: 'VD',
-    products: [
-      { value: 'TV', name: 'TV', icon: Tv },
-      { value: 'Monitor', name: 'Monitor', icon: Monitor },
-    ],
-  },
-  {
-    gbm: 'DA',
-    products: [
-      { value: 'Indoor Unit', name: 'Indoor Unit', icon: AirVent },
-      { value: 'Outdoor Unit', name: 'Outdoor Unit', icon: Fan },
-    ],
-  },
-]
+type Draft = Context & { gbm: Gbm }
 
 const YEARS = ['2026', '2025'] as const
 
-function findFamily(product: string) {
-  return FAMILIES.find((family) => family.products.some((item) => item.value === product)) ?? FAMILIES[0]
-}
-
 export function ProductContextSelector() {
+  const { products } = useProducts()
   const [open, setOpen] = useState(false)
-  const [applied, setApplied] = useState<Context>({ product: 'Mobile', year: '2026' })
-  const [draft, setDraft] = useState<Context>(applied)
+  const [applied, setApplied] = useState<Context>({ product: 'mobile', year: '2026' })
+  const [draft, setDraft] = useState<Draft>({ ...applied, gbm: 'MX' })
 
-  const appliedFamily = findFamily(applied.product)
-  const appliedProduct =
-    appliedFamily.products.find((item) => item.value === applied.product) ?? appliedFamily.products[0]
-  const AppliedIcon = appliedProduct.icon
+  const byGbm = useMemo(
+    () =>
+      Object.fromEntries(
+        GBMS.map((gbm) => [gbm, products.filter((item) => item.gbm === gbm).sort((a, b) => a.order - b.order)]),
+      ) as Record<Gbm, Product[]>,
+    [products],
+  )
 
-  const draftFamily = findFamily(draft.product)
+  const appliedProduct = products.find((item) => item.id === applied.product) ?? byGbm.MX[0] ?? products[0]
+  const draftProducts = byGbm[draft.gbm]
   const hasChanges = draft.product !== applied.product || draft.year !== applied.year
 
   const handleOpenChange = (next: boolean) => {
-    if (next) setDraft(applied)
+    if (next) setDraft({ ...applied, gbm: appliedProduct?.gbm ?? 'MX' })
     setOpen(next)
   }
 
   const changeGbm = (gbm: Gbm | undefined) => {
-    if (!gbm || gbm === draftFamily.gbm) return
-    const family = FAMILIES.find((item) => item.gbm === gbm)
-    if (family) setDraft((current) => ({ ...current, product: family.products[0].value }))
+    if (!gbm || gbm === draft.gbm) return
+    setDraft((current) => ({ ...current, gbm, product: byGbm[gbm][0]?.id ?? '' }))
   }
 
   const apply = () => {
-    setApplied(draft)
+    setApplied({ product: draft.product, year: draft.year })
     setOpen(false)
   }
 
@@ -105,21 +70,21 @@ export function ProductContextSelector() {
         render={
           <Button
             variant="outline"
-            aria-label={`Product context: ${appliedProduct.name}, ${appliedFamily.gbm}, ${applied.year}`}
+            aria-label={`Product context: ${appliedProduct?.name ?? 'None'}, ${appliedProduct?.gbm ?? ''}, ${applied.year}`}
             className="h-10 w-64 justify-between border-sidebar-border bg-sidebar-accent/55 px-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-foreground"
           />
         }
       >
         <span className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand text-primary-foreground">
-            <AppliedIcon aria-hidden="true" />
+            <ProductIcon slug={appliedProduct?.slug ?? ''} />
           </span>
           <span className="flex min-w-0 flex-col items-start gap-0.5">
             <span className="truncate text-xs font-semibold leading-none">
-              {appliedProduct.name}
+              {appliedProduct?.name ?? 'No products'}
             </span>
             <span className="text-[10px] leading-none font-medium text-sidebar-foreground/55">
-              {appliedFamily.gbm} · {applied.year}
+              {appliedProduct?.gbm} · {applied.year}
             </span>
           </span>
         </span>
@@ -141,41 +106,39 @@ export function ProductContextSelector() {
             GBM
           </span>
           <ToggleGroup
-            value={[draftFamily.gbm]}
+            value={[draft.gbm]}
             onValueChange={(values) => changeGbm(values[values.length - 1] as Gbm | undefined)}
             variant="outline"
             spacing={0}
             aria-label="GBM"
             className="w-48"
           >
-            {FAMILIES.map((family) => (
+            {GBMS.map((gbm) => (
               <ToggleGroupItem
-                key={family.gbm}
-                value={family.gbm}
-                aria-label={`${family.gbm} products`}
+                key={gbm}
+                value={gbm}
+                aria-label={`${gbm} products`}
                 className="flex-1 font-semibold data-pressed:bg-brand data-pressed:text-primary-foreground"
               >
-                {family.gbm}
+                {gbm}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
         </div>
 
-        <div
-          role="radiogroup"
-          aria-label={`${draftFamily.gbm} products`}
-          className="flex flex-col gap-1 px-2 pb-2"
-        >
-          {draftFamily.products.map((item) => {
-            const Icon = item.icon
-            const selected = draft.product === item.value
+        <div role="radiogroup" aria-label={`${draft.gbm} products`} className="flex flex-col gap-1 px-2 pb-2">
+          {draftProducts.length === 0 && (
+            <p className="px-2 py-3 text-sm text-muted-foreground">No products for {draft.gbm} yet.</p>
+          )}
+          {draftProducts.map((item) => {
+            const selected = draft.product === item.id
             return (
               <button
-                key={item.value}
+                key={item.id}
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => setDraft((current) => ({ ...current, product: item.value }))}
+                onClick={() => setDraft((current) => ({ ...current, product: item.id }))}
                 className={cn(
                   'flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
                   selected ? 'bg-accent' : 'hover:bg-muted',
@@ -187,7 +150,7 @@ export function ProductContextSelector() {
                     selected ? 'bg-brand text-primary-foreground' : 'bg-muted text-muted-foreground',
                   )}
                 >
-                  <Icon className="size-4" aria-hidden="true" />
+                  <ProductIcon slug={item.slug} className="size-4" />
                 </span>
                 <span className="flex-1 font-medium">{item.name}</span>
                 {selected ? <Check className="size-4 text-brand" aria-hidden="true" /> : null}
@@ -227,7 +190,7 @@ export function ProductContextSelector() {
           <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button size="sm" onClick={apply} disabled={!hasChanges}>
+          <Button size="sm" onClick={apply} disabled={!hasChanges || !draft.product}>
             Apply filters
           </Button>
         </div>
