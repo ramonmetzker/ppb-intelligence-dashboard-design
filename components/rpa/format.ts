@@ -16,4 +16,5 @@ const timeFormat = new Intl.DateTimeFormat('en-GB', {
 
 export const formatDate = (value: string | Date) => dateFormat.format(new Date(value))
 export const formatTime = (value: string | Date) => `${timeFormat.format(new Date(value))} UTC`
+export const formatDateTime = (value: string | Date) => `${formatDate(value)}, ${formatTime(value)}`
 export const formatNextRun = (value: Date) => `${shortDateFormat.format(value)}, ${formatTime(value)}`

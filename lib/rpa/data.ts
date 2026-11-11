@@ -33,15 +33,30 @@ export const STATUS_OPTIONS: readonly SelectOption[] = [
 
 export const RPA_SCHEMA: ColumnSchema<Rpa>[] = [
   { id: 'id', header: 'ID', kind: 'text' },
-  { id: 'name', header: 'RPA', kind: 'text', searchText: (row) => `${row.name} ${row.description}` },
+  { id: 'name', header: 'RPA', kind: 'text' },
+  { id: 'description', header: 'Description', kind: 'text' },
   { id: 'schedule', header: 'Schedule', kind: 'text' },
+  {
+    id: 'nextRun',
+    header: 'Next run',
+    accessor: () => null,
+    kind: 'date',
+    filterable: false,
+    searchable: false,
+  },
   { id: 'lastRunAt', header: 'Last update', kind: 'date', searchable: false },
   {
     id: 'status',
     header: 'Last status',
     kind: 'select',
     options: STATUS_OPTIONS,
-    searchText: (row) => `${STATUS_OPTIONS.find((option) => option.value === row.status)?.label ?? ''} ${row.detail ?? ''}`,
+    searchText: (row) => STATUS_OPTIONS.find((option) => option.value === row.status)?.label ?? '',
+  },
+  {
+    id: 'statusMessage',
+    header: 'Status message',
+    accessor: (row) => row.detail ?? '',
+    kind: 'text',
   },
 ]
 

@@ -16,16 +16,16 @@ import {
 import { describeCron, nextRun } from '@/lib/rpa/cron'
 import { nextRpaId, RPA_SCHEMA, RPA_SEED, type Rpa, type RpaNotifications } from '@/lib/rpa/data'
 import { cn } from '@/lib/utils'
-import { formatDate, formatNextRun, formatTime } from './format'
+import { formatDateTime, formatNextRun } from './format'
 import { RpaFormDialog, type RpaFormValues } from './rpa-form-dialog'
 import { RpaNotificationsDialog } from './rpa-notifications-dialog'
 import { RpaScheduleDialog } from './rpa-schedule-dialog'
-import { RpaStatusCell } from './rpa-status'
+import { RpaStatusBadge } from './rpa-status'
 import { RpaStatusSummary } from './rpa-status-summary'
 import { useNow } from './use-now'
 
 const schemaById = new Map(RPA_SCHEMA.map((schema) => [schema.id, schema]))
-const base = (id: keyof Rpa) => schemaById.get(id)!
+const base = (id: string) => schemaById.get(id)!
 
 const DEFAULT_RPA_QUERY: DataTableQuery = { ...DEFAULT_QUERY, sort: [{ id: 'id', direction: 'asc' }] }
 
@@ -63,60 +63,81 @@ export function RpaMonitorView() {
       },
       {
         ...base('name'),
-        width: 320,
-        grow: true,
+        width: 190,
         hideable: false,
         cell: ({ row }) => (
-          <span className="flex min-w-0 flex-col gap-0.5">
-            <span className="flex items-center gap-2 font-medium">
-              {row.name}
-              {!row.enabled && (
-                <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] leading-none font-medium text-muted-foreground">
-                  Disabled
-                </span>
-              )}
-            </span>
-            <span className="truncate text-xs text-muted-foreground" title={row.description}>
-              {row.description}
-            </span>
+          <span className="inline-flex min-w-0 items-center gap-2 font-medium">
+            <span className="truncate">{row.name}</span>
+            {!row.enabled && (
+              <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[11px] leading-none font-medium text-muted-foreground">
+                Disabled
+              </span>
+            )}
+          </span>
+        ),
+      },
+      {
+        ...base('description'),
+        width: 300,
+        grow: true,
+        cell: ({ row }) => (
+          <span className="block truncate text-muted-foreground" title={row.description}>
+            {row.description || '—'}
           </span>
         ),
       },
       {
         ...base('schedule'),
-        width: 250,
+        width: 180,
         sortable: false,
-        description: 'Cron expression in UTC: minute, hour, day of month, month, day of week.',
+        description: 'Human-readable schedule. Hover a value to see its cron expression in UTC.',
+        cell: ({ row }) => (
+          <span
+            className="cursor-help border-b border-dashed border-muted-foreground/50 font-medium"
+            title={`Cron (UTC): ${row.schedule}`}
+          >
+            {describeCron(row.schedule)}
+          </span>
+        ),
+      },
+      {
+        ...base('nextRun'),
+        width: 190,
+        sortable: false,
         cell: ({ row }) => {
           const next = row.enabled && now !== null ? nextRun(row.schedule, new Date(now)) : null
-          return (
-            <span className="flex min-w-0 flex-col gap-0.5">
-              <span className="font-medium">{describeCron(row.schedule)}</span>
-              <span className="truncate text-xs text-muted-foreground">
-                <code className="font-mono">{row.schedule}</code>
-                {row.enabled ? (next ? ` · next ${formatNextRun(next)}` : '') : ' · paused'}
-              </span>
-            </span>
+          return row.enabled ? (
+            next ? (
+              <time dateTime={next.toISOString()}>{formatNextRun(next)}</time>
+            ) : (
+              <span className="text-muted-foreground">Calculating…</span>
+            )
+          ) : (
+            <span className="text-muted-foreground">Paused</span>
           )
         },
       },
       {
         ...base('lastRunAt'),
-        width: 170,
+        width: 205,
         description: 'When the last run started. All times are UTC.',
         cell: ({ row }) =>
           row.lastRunAt ? (
-            <span className="flex flex-col gap-0.5">
-              <time dateTime={row.lastRunAt} className="font-medium">
-                {formatDate(row.lastRunAt)}
-              </time>
-              <span className="text-xs text-muted-foreground">{formatTime(row.lastRunAt)}</span>
-            </span>
+            <time dateTime={row.lastRunAt}>{formatDateTime(row.lastRunAt)}</time>
           ) : (
             <span className="text-muted-foreground">Never</span>
           ),
       },
-      { ...base('status'), width: 250, cell: ({ row }) => <RpaStatusCell row={row} /> },
+      { ...base('status'), width: 145, cell: ({ row }) => <RpaStatusBadge status={row.status} /> },
+      {
+        ...base('statusMessage'),
+        width: 280,
+        cell: ({ row }) => (
+          <span className={cn('block truncate', row.detail ? 'text-foreground' : 'text-muted-foreground')} title={row.detail}>
+            {row.detail || '—'}
+          </span>
+        ),
+      },
     ],
     [now],
   )
