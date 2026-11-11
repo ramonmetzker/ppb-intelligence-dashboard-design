@@ -14,7 +14,7 @@ import {
   type Ref,
 } from 'react'
 import { MoreHorizontal, SearchX, Inbox } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   DropdownMenu,
@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { usePreferences } from '@/components/shell/preferences-provider'
+import { useDataTableLabels, type DataTableLocale } from './locale'
 import {
   clampPage,
   getValue,
@@ -118,6 +118,9 @@ export interface DataTableProps<T> {
   maxHeight?: CSSProperties['maxHeight']
 
   emptyState?: ReactNode
+  /** 'en' | 'pt-BR' | 'ko', or a custom label set. Falls back to the nearest DataTableLocaleProvider, then English. */
+  locale?: DataTableLocale
+  /** Per-table tweaks applied on top of the resolved locale. */
   labels?: Partial<DataTableLabels>
   apiRef?: Ref<DataTableHandle<T>>
   className?: string
@@ -164,13 +167,13 @@ export function DataTable<T>(props: DataTableProps<T>) {
     stickyHeader = true,
     maxHeight = 'min(70dvh, 720px)',
     emptyState,
+    locale,
     labels: labelOverrides,
     apiRef,
     className,
   } = props
 
-  const { t } = usePreferences()
-  const labels = useMemo<DataTableLabels>(() => ({ ...t.dataTable, ...labelOverrides }), [t.dataTable, labelOverrides])
+  const labels = useDataTableLabels(locale, labelOverrides)
 
   /* ----------------------------- query state ----------------------------- */
 
@@ -541,7 +544,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
             key={action.id}
             type="button"
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             aria-label={action.label}
             title={action.label}
             disabled={action.disabled}
@@ -554,14 +557,14 @@ export function DataTable<T>(props: DataTableProps<T>) {
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label={labels.rowActions}
-              className="inline-flex size-7 items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 data-[popup-open]:bg-muted"
+              className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-muted-foreground data-[popup-open]:bg-muted')}
             >
-              <MoreHorizontal aria-hidden="true" className="size-4" />
+              <MoreHorizontal aria-hidden="true" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-40">
-              {menu.map((action) => (
+              {menu.map((action, index) => (
                 <div key={action.id}>
-                  {action.separatorBefore && <DropdownMenuSeparator />}
+                  {action.separatorBefore && index > 0 && <DropdownMenuSeparator />}
                   <DropdownMenuItem
                     disabled={action.disabled}
                     variant={action.tone === 'destructive' ? 'destructive' : 'default'}

@@ -4,6 +4,7 @@ import { TopBar } from '@/components/shell/top-bar'
 import { ShellProvider } from '@/components/shell/shell-provider'
 import { NotificationProvider } from '@/components/shell/notification-provider'
 import { PreferencesProvider } from '@/components/shell/preferences-provider'
+import { AppDataTableLocale } from '@/components/shell/app-data-table-locale'
 import { UserDialog } from '@/components/shell/user-dialog'
 import { PlanProvider } from '@/components/app/plan-provider'
 import { MaterialProvider } from '@/components/materials/material-provider'
@@ -21,6 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <PreferencesProvider initial={preferences}>
+      <AppDataTableLocale>
       <NotificationProvider initialAcknowledgements={acknowledgements}>
         <PlanProvider>
           <MaterialProvider>
@@ -45,6 +47,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </MaterialProvider>
         </PlanProvider>
       </NotificationProvider>
+      </AppDataTableLocale>
     </PreferencesProvider>
   )
 }

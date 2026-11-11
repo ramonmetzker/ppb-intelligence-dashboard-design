@@ -198,8 +198,7 @@ export function RpaMonitorView() {
           rowActions={rowActions}
           actionsWidth={112}
           getRowClassName={(row) => cn(!row.enabled && 'text-muted-foreground')}
-          densityControl={false}
-        />
+          />
       </div>
 
       <RpaFormDialog

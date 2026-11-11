@@ -1,8 +1,8 @@
 import { kindOf } from '@/lib/data-table/query'
+import type { DataTableLabels } from '@/lib/data-table/locales'
 import type { ColumnFilter, ColumnSchema } from '@/lib/data-table/types'
-import type { Dictionary } from '@/lib/i18n'
 
-export type DataTableLabels = Dictionary['dataTable']
+export type { DataTableLabels }
 
 export function describeFilterValue<T>(schema: ColumnSchema<T>, filter: ColumnFilter, labels: DataTableLabels): string {
   const { value, op } = filter

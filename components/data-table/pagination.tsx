@@ -1,7 +1,9 @@
 'use client'
 
+import { useId } from 'react'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import type { DataTableLabels } from './filter-utils'
 
@@ -32,6 +34,7 @@ function pageWindow(page: number, count: number): (number | 'gap-start' | 'gap-e
 }
 
 export function Pagination({ page, pageCount, pageSize, total, pageSizeOptions, labels, onPageChange, onPageSizeChange }: Props) {
+  const uid = useId()
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1
   const to = Math.min(total, page * pageSize)
 
@@ -42,21 +45,26 @@ export function Pagination({ page, pageCount, pageSize, total, pageSizeOptions, 
       </p>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <label className="flex items-center gap-2 text-[13px] text-muted-foreground">
-          <span className="hidden sm:inline">{labels.rowsPerPage}</span>
-          <select
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-            className="tnum h-8 rounded-lg border border-input bg-card px-2 text-[13px] text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            aria-label={labels.rowsPerPage}
+        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+          <span id={`${uid}-rows`} className="hidden sm:inline">
+            {labels.rowsPerPage}
+          </span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(value) => value && onPageSizeChange(Number(value))}
           >
-            {pageSizeOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
+            <SelectTrigger aria-labelledby={`${uid}-rows`} aria-label={labels.rowsPerPage} className="tnum min-w-16 bg-card">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent alignItemWithTrigger={false} align="end" className="min-w-20">
+              {pageSizeOptions.map((option) => (
+                <SelectItem key={option} value={String(option)} className="tnum">
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <nav className="flex items-center gap-1" aria-label={labels.pageOf(page, pageCount)}>
           <Button variant="outline" size="icon" disabled={page <= 1} onClick={() => onPageChange(1)} aria-label={labels.firstPage}>

@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group'
 import { kindOf, resolveColumn } from '@/lib/data-table/query'
 import type { ColumnSchema } from '@/lib/data-table/types'
 import { cn } from '@/lib/utils'
@@ -120,9 +121,11 @@ export function PowerSearch<T>({ value, onChange, schemas, labels, placeholder, 
 
   return (
     <div className={cn('relative min-w-0', className)}>
-      <div className="flex h-9 items-center gap-2 rounded-lg border border-input bg-card px-2.5 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
-        <Search aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
-        <input
+      <InputGroup className="h-9 bg-card">
+        <InputGroupAddon align="inline-start">
+          <Search aria-hidden="true" />
+        </InputGroupAddon>
+        <InputGroupInput
           ref={inputRef}
           type="text"
           role="combobox"
@@ -172,23 +175,24 @@ export function PowerSearch<T>({ value, onChange, schemas, labels, placeholder, 
               }
             }
           }}
-          className="h-full min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-muted-foreground"
+          className="h-full min-w-0 text-[13px] md:text-[13px]"
         />
         {draft && (
-          <button
-            type="button"
-            aria-label={labels.clearSearch}
-            onClick={() => {
-              setDraft('')
-              commitNow('')
-              inputRef.current?.focus()
-            }}
-            className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <X aria-hidden="true" className="size-3.5" />
-          </button>
+          <InputGroupAddon align="inline-end">
+            <InputGroupButton
+              size="icon-xs"
+              aria-label={labels.clearSearch}
+              onClick={() => {
+                setDraft('')
+                commitNow('')
+                inputRef.current?.focus()
+              }}
+            >
+              <X aria-hidden="true" />
+            </InputGroupButton>
+          </InputGroupAddon>
         )}
-      </div>
+      </InputGroup>
 
       {showList && (
         <ul
