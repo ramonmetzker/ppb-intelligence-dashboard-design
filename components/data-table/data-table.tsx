@@ -586,6 +586,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
     'dt-cell overflow-hidden border-b border-border bg-card px-3 text-ellipsis whitespace-nowrap',
     'group-hover/row:bg-muted group-data-[selected=true]/row:bg-brand-soft',
   )
+  const pinnedCell =
+    'isolate z-20 !bg-card group-hover/row:!bg-muted group-data-[selected=true]/row:!bg-brand-soft'
 
   const totalColumns = layout.placed.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)
   const showSkeleton = loading && rows.length === 0
@@ -753,13 +755,21 @@ export function DataTable<T>(props: DataTableProps<T>) {
               {showSkeleton &&
                 Array.from({ length: Math.min(pageSize, 8) }, (_, index) => (
                   <tr key={index} aria-hidden="true">
-                    {selectable && <td className={cn(cellBase, rowHeight)} style={{ position: 'sticky', left: 0 }} />}
+                    {selectable && (
+                      <td className={cn(cellBase, rowHeight, pinnedCell)} style={{ position: 'sticky', left: 0 }} />
+                    )}
                     {layout.placed.map((placed) => (
-                      <td key={placed.column.id} className={cn(cellBase, rowHeight)} style={stickyStyle(placed)}>
+                      <td
+                        key={placed.column.id}
+                        className={cn(cellBase, rowHeight, placed.pin && pinnedCell)}
+                        style={stickyStyle(placed)}
+                      >
                         <div className="h-3 w-3/4 animate-pulse rounded bg-muted" />
                       </td>
                     ))}
-                    {hasActions && <td className={cn(cellBase, rowHeight)} style={{ position: 'sticky', right: 0 }} />}
+                    {hasActions && (
+                      <td className={cn(cellBase, rowHeight, pinnedCell)} style={{ position: 'sticky', right: 0 }} />
+                    )}
                   </tr>
                 ))}
 
@@ -810,7 +820,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       <td
                         data-edge={layout.leftEdgeOnSelect ? 'left' : undefined}
                         style={{ position: 'sticky', left: 0 }}
-                        className={cn(cellBase, rowHeight, 'z-10')}
+                        className={cn(cellBase, rowHeight, pinnedCell)}
                         onClickCapture={(event) => {
                           shiftHeld.current = event.shiftKey
                         }}
@@ -835,13 +845,15 @@ export function DataTable<T>(props: DataTableProps<T>) {
                           className={cn(
                             cellBase,
                             rowHeight,
-                            placed.pin ? 'z-10' : undefined,
+                            placed.pin ? pinnedCell : undefined,
                             align === 'right' && 'tnum text-right',
                             align === 'center' && 'text-center',
                             column.className,
                           )}
                         >
-                          {renderCellContent(row, rowIndex, column)}
+                          <div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                            {renderCellContent(row, rowIndex, column)}
+                          </div>
                         </td>
                       )
                     })}
@@ -850,7 +862,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       <td
                         data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
                         style={{ position: 'sticky', right: 0 }}
-                        className={cn(cellBase, rowHeight, 'z-10 px-2')}
+                        className={cn(cellBase, rowHeight, pinnedCell, 'px-2')}
                       >
                         {renderRowActions(row)}
                       </td>

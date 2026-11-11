@@ -222,7 +222,8 @@ export function RpaMonitorView() {
           getRowClassName={(row) =>
             cn(
               !row.enabled && 'text-muted-foreground',
-              row.status === 'failed' && '[&>td]:!border-critical/20 [&>td]:!bg-critical/5 hover:[&>td]:!bg-critical/10',
+              row.status === 'failed' &&
+                '[&>td]:!border-critical/20 [&>td]:!bg-[color-mix(in_oklab,var(--card)_94%,var(--critical))] hover:[&>td]:!bg-[color-mix(in_oklab,var(--card)_89%,var(--critical))]',
             )
           }
           />

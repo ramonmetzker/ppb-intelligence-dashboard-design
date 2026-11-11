@@ -148,7 +148,7 @@ export function AppSidebar() {
                             aria-label={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
                             title={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
                             className={cn(
-                              'tnum flex h-5 min-w-5 items-center justify-center rounded-full bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
+                              'tnum flex h-5 min-w-5 items-center justify-center rounded-md bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
                               collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
                             )}
                           >
