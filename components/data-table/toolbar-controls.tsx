@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Columns3, Rows3, SlidersHorizontal, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Columns3, Download, Loader2, Rows3, SlidersHorizontal, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -153,6 +153,49 @@ export function ScrollControls({
         <ChevronRight aria-hidden="true" />
       </Button>
     </div>
+  )
+}
+
+export type ExportKind = 'raw' | 'page' | 'all' | 'view'
+
+export function ExportMenu({
+  labels,
+  busy,
+  canExportAll,
+  onExport,
+}: {
+  labels: DataTableLabels
+  busy: boolean
+  canExportAll: boolean
+  onExport: (kind: ExportKind) => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className={triggerClass} aria-label={labels.export} disabled={busy}>
+        {busy ? (
+          <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+        ) : (
+          <Download aria-hidden="true" className="size-4" />
+        )}
+        <span className="hidden lg:inline">{busy ? labels.exporting : labels.export}</span>
+        <ChevronDown aria-hidden="true" className="size-3.5 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-56">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{labels.export}</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => onExport('raw')}>{labels.exportRaw}</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onExport('page')}>{labels.exportCurrentPage}</DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!canExportAll}
+            title={!canExportAll ? labels.exportAllUnavailable : undefined}
+            onClick={() => onExport('all')}
+          >
+            {labels.exportAll}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onExport('view')}>{labels.exportView}</DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

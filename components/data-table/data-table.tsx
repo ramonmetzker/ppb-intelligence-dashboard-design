@@ -41,8 +41,11 @@ import {
   type BulkAction,
   type ColumnFilter,
   type DataTableColumn,
+  type DataTableColumnDefinition,
+  type DataTableColumnGroup,
   type DataTableQuery,
   type Density,
+  isDataTableColumnGroup,
   type QueryChangeReason,
   type RowAction,
   type SelectionContext,
@@ -50,6 +53,7 @@ import {
 } from '@/lib/data-table/types'
 import { cn } from '@/lib/utils'
 import { BulkBar } from './bulk-bar'
+import { downloadCsv, downloadJson, type ExportColumn } from './export-utils'
 import { describeFilter, type DataTableLabels } from './filter-utils'
 import { HeaderCell } from './header-cell'
 import { Pagination } from './pagination'
@@ -59,7 +63,15 @@ import {
   writeDataTableSettings,
 } from './persistence'
 import { PowerSearch } from './power-search'
-import { ActiveFilters, ColumnsMenu, DensityMenu, ScrollControls, type FilterChip } from './toolbar-controls'
+import {
+  ActiveFilters,
+  ColumnsMenu,
+  DensityMenu,
+  ExportMenu,
+  ScrollControls,
+  type ExportKind,
+  type FilterChip,
+} from './toolbar-controls'
 
 const SELECT_WIDTH = 44
 const DEFAULT_COLUMN_WIDTH = 160
@@ -81,9 +93,16 @@ export type DataTableHandle<T> = {
   getSelection: () => SelectionContext<T>
 }
 
+export type DataTableExportOptions<T> = {
+  fileName?: string
+  /** Required for “Export all” when server mode has more rows than the current payload. */
+  getAllRows?: (query: DataTableQuery) => Promise<readonly T[]> | readonly T[]
+  onError?: (error: unknown) => void
+}
+
 export interface DataTableProps<T> {
-  /** Define outside the component or memoise: the table recomputes layout when this identity changes. */
-  columns: readonly DataTableColumn<T>[]
+  /** Leaf columns or one-level groups with child columns. Define outside the component or memoise. */
+  columns: readonly DataTableColumnDefinition<T>[]
   /** Client mode: every row. Server mode: only the current page. */
   data: readonly T[]
   getRowId: (row: T) => string
@@ -129,6 +148,10 @@ export interface DataTableProps<T> {
   columnPinning?: boolean
   columnResizing?: boolean
   columnReordering?: boolean
+  /** Merge adjacent equal values with native rowSpan. Pass column ids to limit the feature. */
+  mergeEqualRows?: boolean | readonly string[]
+  /** Enabled by default. Pass options for a custom file name or server-side all-rows loader. */
+  exporter?: boolean | DataTableExportOptions<T>
   /** Stable key used to persist this table's view configuration for the current user. */
   persistenceKey?: string
   defaultDensity?: Density
@@ -146,6 +169,7 @@ export interface DataTableProps<T> {
 }
 
 type Placed<T> = { column: DataTableColumn<T>; width: number; pin?: 'left' | 'right'; offset?: number; edge?: 'left' | 'right'; grow?: boolean }
+type HeaderSegment<T> = { group?: DataTableColumnGroup<T>; columns: Placed<T>[] }
 
 const ROW_HEIGHT: Record<Density, string> = {
   compact: 'h-8',
@@ -155,7 +179,7 @@ const ROW_HEIGHT: Record<Density, string> = {
 
 export function DataTable<T>(props: DataTableProps<T>) {
   const {
-    columns,
+    columns: columnDefinitions,
     data,
     getRowId,
     caption,
@@ -184,6 +208,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
     columnPinning = true,
     columnResizing = true,
     columnReordering = true,
+    mergeEqualRows = false,
+    exporter = true,
     persistenceKey,
     defaultDensity = 'default',
     stickyHeader = true,
@@ -197,6 +223,19 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   const labels = useDataTableLabels(locale, labelOverrides)
   const storageKey = useDataTableStorageKey(persistenceKey)
+  const columns = useMemo(
+    () => columnDefinitions.flatMap((definition) => (isDataTableColumnGroup(definition) ? definition.children : [definition])),
+    [columnDefinitions],
+  )
+  const columnGroupById = useMemo(() => {
+    const groups = new Map<string, DataTableColumnGroup<T>>()
+    for (const definition of columnDefinitions) {
+      if (!isDataTableColumnGroup(definition)) continue
+      for (const child of definition.children) groups.set(child.id, definition)
+    }
+    return groups
+  }, [columnDefinitions])
+  const hasColumnGroups = columnGroupById.size > 0
 
   /* ----------------------------- query state ----------------------------- */
 
@@ -255,6 +294,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   const [draggedColumn, setDraggedColumn] = useState<string | null>(null)
   const draggedColumnRef = useRef<string | null>(null)
   const [dragTarget, setDragTarget] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   const orderedColumns = useMemo(() => {
     const byId = new Map(columns.map((column) => [column.id, column]))
@@ -270,6 +310,33 @@ export function DataTable<T>(props: DataTableProps<T>) {
     () => orderedColumns.filter((column) => !hidden[column.id]),
     [orderedColumns, hidden],
   )
+
+  const rowSpans = useMemo(() => {
+    if (!mergeEqualRows || rows.length < 2) return null
+    const requested = Array.isArray(mergeEqualRows) ? new Set(mergeEqualRows) : null
+    const mergeColumns = visibleColumns.filter(
+      (column) => column.mergeRows !== false && (!requested || requested.has(column.id)),
+    )
+    if (mergeColumns.length === 0) return null
+
+    const spans = new Map<string, number[]>()
+    for (const column of mergeColumns) {
+      const values = rows.map((row) => (column.getMergeValue ? column.getMergeValue(row) : getValue(row, column)))
+      const columnSpans = Array.from({ length: rows.length }, () => 1)
+      let runStart = 0
+      for (let index = 1; index <= values.length; index += 1) {
+        const previousValue = values[index - 1]
+        const hasContent = previousValue !== null && previousValue !== undefined && previousValue !== ''
+        if (index < values.length && hasContent && Object.is(values[index], previousValue)) continue
+        const span = index - runStart
+        columnSpans[runStart] = span
+        for (let mergedIndex = runStart + 1; mergedIndex < index; mergedIndex += 1) columnSpans[mergedIndex] = 0
+        runStart = index
+      }
+      spans.set(column.id, columnSpans)
+    }
+    return spans
+  }, [mergeEqualRows, rows, visibleColumns])
 
   useEffect(() => {
     if (!storageKey) {
@@ -342,7 +409,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
       const override = pins[c.id]
       return override === 'none' ? undefined : (override ?? c.pin)
     }
-    const widthOf = (c: DataTableColumn<T>) => columnWidths[c.id] ?? c.width ?? DEFAULT_COLUMN_WIDTH
+    const widthOf = (c: DataTableColumn<T>) =>
+      clampColumnWidth(c, columnWidths[c.id] ?? c.width ?? DEFAULT_COLUMN_WIDTH)
     const left = visibleColumns.filter((c) => pinOf(c) === 'left')
     const right = visibleColumns.filter((c) => pinOf(c) === 'right')
     const middle = visibleColumns.filter((c) => !pinOf(c))
@@ -398,6 +466,25 @@ export function DataTable<T>(props: DataTableProps<T>) {
       ),
     }
   }, [visibleColumns, pins, columnWidths, selectable, hasActions, resolvedActionsWidth])
+
+  const headerSegments = useMemo(() => {
+    const segments: HeaderSegment<T>[] = []
+    for (const placed of layout.placed) {
+      const group = columnGroupById.get(placed.column.id)
+      const previous = segments[segments.length - 1]
+      if (group && previous?.group?.id === group.id && previous.columns[0]?.pin === placed.pin) {
+        previous.columns.push(placed)
+      } else {
+        segments.push({ group, columns: [placed] })
+      }
+    }
+    return segments
+  }, [columnGroupById, layout.placed])
+  const placedIndexById = useMemo(
+    () => new Map(layout.placed.map((placed, index) => [placed.column.id, index])),
+    [layout.placed],
+  )
+  const hasVisibleColumnGroups = hasColumnGroups && headerSegments.some((segment) => segment.group)
 
   const effectivePin = (column: DataTableColumn<T>) => {
     const override = pins[column.id]
@@ -687,6 +774,59 @@ export function DataTable<T>(props: DataTableProps<T>) {
     [scrollToColumn, scrollBy, clearSelection, resetQuery, query, buildContext, live, allMatching],
   )
 
+  const exportOptions = typeof exporter === 'object' ? exporter : {}
+  const canExportAll = mode === 'client' || total <= data.length || Boolean(exportOptions.getAllRows)
+
+  const rawExportColumns = (exportColumns: readonly DataTableColumn<T>[]): ExportColumn<T>[] =>
+    exportColumns.map((column) => ({ header: column.id, value: (row) => getValue(row, column) }))
+
+  const visualExportColumns = (exportColumns: readonly DataTableColumn<T>[]): ExportColumn<T>[] =>
+    exportColumns.map((column) => ({
+      header: column.header,
+      value: (row) => {
+        const value = getValue(row, column)
+        if (column.exportValue) return column.exportValue(row, value)
+        if (value === null || value === undefined) return ''
+        switch (kindOf(column)) {
+          case 'number':
+            return typeof value === 'number' ? value.toLocaleString('en-US') : String(value)
+          case 'boolean':
+            return value ? labels.yes : labels.no
+          case 'select':
+            return column.options?.find((option) => option.value === String(value))?.label ?? String(value)
+          default:
+            return value
+        }
+      },
+    }))
+
+  const handleExport = async (kind: ExportKind) => {
+    if (exporting) return
+    setExporting(true)
+    const fileName = exportOptions.fileName ?? caption
+    try {
+      if (kind === 'raw') {
+        downloadJson(data, `${fileName}-raw`)
+      } else if (kind === 'page') {
+        downloadCsv(rows, rawExportColumns(columns), `${fileName}-page-${page}`)
+      } else if (kind === 'view') {
+        downloadCsv(rows, visualExportColumns(layout.placed.map((placed) => placed.column)), `${fileName}-view`)
+      } else {
+        const allRows =
+          mode === 'client'
+            ? (result?.filtered ?? data)
+            : exportOptions.getAllRows
+              ? await exportOptions.getAllRows(query)
+              : data
+        downloadCsv(allRows, rawExportColumns(columns), `${fileName}-all`)
+      }
+    } catch (error) {
+      exportOptions.onError?.(error)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   /* -------------------------------- render -------------------------------- */
 
   const rowHeight = ROW_HEIGHT[density]
@@ -699,6 +839,62 @@ export function DataTable<T>(props: DataTableProps<T>) {
       : placed.pin === 'right'
         ? { position: 'sticky', right: placed.offset }
         : {}
+
+  const renderHeaderCell = (placed: Placed<T>, index: number, rowSpan?: number, groupedChild = false) => {
+    const { column } = placed
+    const sort = sortOf(column.id)
+    const sortable = column.sortable !== false
+    const reorderable = columnReordering && column.reorderable !== false
+    const style: CSSProperties = {
+      ...stickyStyle(placed),
+      ...(groupedChild && (stickyHeader || placed.pin) ? { top: 40 } : {}),
+    }
+
+    return (
+      <HeaderCell
+        key={column.id}
+        column={{ ...column, pin: placed.pin }}
+        style={style}
+        pinned={Boolean(placed.pin)}
+        edge={placed.edge}
+        rowSpan={rowSpan}
+        stickyHeader={stickyHeader || Boolean(placed.pin)}
+        sortable={sortable}
+        filterable={column.filterable !== false}
+        pinnable={columnPinning}
+        resizable={columnResizing && column.resizable !== false}
+        reorderable={reorderable}
+        dragging={draggedColumn === column.id}
+        dragTarget={dragTarget === column.id}
+        canMoveLeft={reorderable && index > 0}
+        canMoveRight={reorderable && index < layout.placed.length - 1}
+        sortDirection={sort?.direction ?? false}
+        sortIndex={sort && query.sort.length > 1 ? query.sort.indexOf(sort) + 1 : undefined}
+        filter={query.filters.find((filter) => filter.id === column.id)}
+        labels={labels}
+        onSort={(direction, additive) => setSort(column.id, direction, additive)}
+        onToggleSort={(additive) => toggleSort(column.id, additive)}
+        onFilter={(filter) => setColumnFilter(column.id, filter)}
+        onPin={(pin) => setPins((previous) => ({ ...previous, [column.id]: pin ?? 'none' }))}
+        onMove={(direction) => moveColumn(column.id, direction)}
+        onDragStart={(event) => startColumnDrag(event, column.id)}
+        onDragOver={(event) => dragOverColumn(event, column.id)}
+        onDrop={(event) => dropColumn(event, column.id)}
+        onDragEnd={() => {
+          draggedColumnRef.current = null
+          setDraggedColumn(null)
+          setDragTarget(null)
+        }}
+        onResizeStart={(event) => startColumnResize(event, column)}
+        onResizeBy={(direction) => resizeColumnBy(column, direction)}
+        onHide={
+          column.hideable !== false && hideableCount > 1
+            ? () => setHidden((previous) => ({ ...previous, [column.id]: true }))
+            : undefined
+        }
+      />
+    )
+  }
 
   const renderCellContent = (row: T, rowIndex: number, column: DataTableColumn<T>): ReactNode => {
     const value = getValue(row, column)
@@ -854,6 +1050,14 @@ export function DataTable<T>(props: DataTableProps<T>) {
               />
             )}
             {densityControl && <DensityMenu value={density} labels={labels} onChange={setDensity} />}
+            {exporter !== false && (
+              <ExportMenu
+                labels={labels}
+                busy={exporting}
+                canExportAll={canExportAll}
+                onExport={(kind) => void handleExport(kind)}
+              />
+            )}
             {toolbarEnd}
           </div>
         </div>
@@ -898,6 +1102,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                 {selectable && (
                   <th
                     scope="col"
+                    rowSpan={hasVisibleColumnGroups ? 2 : undefined}
                     data-edge={layout.leftEdgeOnSelect ? 'left' : undefined}
                     style={{ position: 'sticky', left: 0 }}
                     className={cn('dt-cell z-30 h-10 border-b border-border bg-muted px-3', stickyHeader && 'top-0')}
@@ -912,59 +1117,41 @@ export function DataTable<T>(props: DataTableProps<T>) {
                   </th>
                 )}
 
-                {layout.placed.map((placed, index) => {
-                  const { column } = placed
-                  const sort = sortOf(column.id)
-                  const sortable = column.sortable !== false
-                  const reorderable = columnReordering && column.reorderable !== false
-                  return (
-                    <HeaderCell
-                      key={column.id}
-                      column={{ ...column, pin: placed.pin }}
-                      style={stickyStyle(placed)}
-                      pinned={Boolean(placed.pin)}
-                      edge={placed.edge}
-                      stickyHeader={stickyHeader || Boolean(placed.pin)}
-                      sortable={sortable}
-                      filterable={column.filterable !== false}
-                      pinnable={columnPinning}
-                      resizable={columnResizing && column.resizable !== false}
-                      reorderable={reorderable}
-                      dragging={draggedColumn === column.id}
-                      dragTarget={dragTarget === column.id}
-                      canMoveLeft={reorderable && index > 0}
-                      canMoveRight={reorderable && index < layout.placed.length - 1}
-                      sortDirection={sort?.direction ?? false}
-                      sortIndex={sort && query.sort.length > 1 ? query.sort.indexOf(sort) + 1 : undefined}
-                      filter={query.filters.find((f) => f.id === column.id)}
-                      labels={labels}
-                      onSort={(direction, additive) => setSort(column.id, direction, additive)}
-                      onToggleSort={(additive) => toggleSort(column.id, additive)}
-                      onFilter={(filter) => setColumnFilter(column.id, filter)}
-                      onPin={(pin) => setPins((prev) => ({ ...prev, [column.id]: pin ?? 'none' }))}
-                      onMove={(direction) => moveColumn(column.id, direction)}
-                      onDragStart={(event) => startColumnDrag(event, column.id)}
-                      onDragOver={(event) => dragOverColumn(event, column.id)}
-                      onDrop={(event) => dropColumn(event, column.id)}
-                      onDragEnd={() => {
-                        draggedColumnRef.current = null
-                        setDraggedColumn(null)
-                        setDragTarget(null)
-                      }}
-                      onResizeStart={(event) => startColumnResize(event, column)}
-                      onResizeBy={(direction) => resizeColumnBy(column, direction)}
-                      onHide={
-                        column.hideable !== false && hideableCount > 1
-                          ? () => setHidden((prev) => ({ ...prev, [column.id]: true }))
-                          : undefined
+                {hasVisibleColumnGroups
+                  ? headerSegments.map((segment, segmentIndex) => {
+                      if (!segment.group) {
+                        const placed = segment.columns[0]
+                        return renderHeaderCell(placed, placedIndexById.get(placed.column.id) ?? 0, 2)
                       }
-                    />
-                  )
-                })}
+                      const first = segment.columns[0]
+                      const last = segment.columns[segment.columns.length - 1]
+                      const reference = first.pin === 'right' ? last : first
+                      return (
+                        <th
+                          key={`${segment.group.id}-${segmentIndex}`}
+                          scope="colgroup"
+                          colSpan={segment.columns.length}
+                          title={segment.group.description}
+                          style={{
+                            ...stickyStyle(reference),
+                            ...(stickyHeader || reference.pin ? { position: 'sticky', top: 0 } : {}),
+                          }}
+                          className={cn(
+                            'dt-cell h-10 border-b border-border bg-muted px-3 text-left text-xs font-semibold text-foreground',
+                            reference.pin ? 'z-30' : 'z-20',
+                            segment.group.headerClassName,
+                          )}
+                        >
+                          {segment.group.header}
+                        </th>
+                      )
+                    })
+                  : layout.placed.map((placed, index) => renderHeaderCell(placed, index))}
 
                 {hasActions && (
                   <th
                     scope="col"
+                    rowSpan={hasVisibleColumnGroups ? 2 : undefined}
                     data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
                     style={{ position: 'sticky', right: 0 }}
                     className={cn('dt-cell z-30 h-10 border-b border-border bg-muted', stickyHeader && 'top-0')}
@@ -973,6 +1160,17 @@ export function DataTable<T>(props: DataTableProps<T>) {
                   </th>
                 )}
               </tr>
+              {hasVisibleColumnGroups && (
+                <tr>
+                  {headerSegments.flatMap((segment) =>
+                    segment.group
+                      ? segment.columns.map((placed) =>
+                          renderHeaderCell(placed, placedIndexById.get(placed.column.id) ?? 0, undefined, true),
+                        )
+                      : [],
+                  )}
+                </tr>
+              )}
             </thead>
 
             <tbody className={cn(loading && !showSkeleton && 'opacity-60 transition-opacity')}>
@@ -1035,7 +1233,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     onClick={onRowClick ? (event) => onRowPointer(event, row) : undefined}
                     onKeyDown={onRowClick ? (event) => onRowKey(event, row) : undefined}
                     className={cn(
-                      'group/row outline-none focus-visible:[&>td]:bg-muted',
+                      'group/row bg-card outline-none hover:bg-muted data-[selected=true]:bg-brand-soft focus-visible:[&>td]:bg-muted',
                       onRowClick && 'cursor-pointer',
                       getRowClassName?.(row),
                     )}
@@ -1060,16 +1258,21 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
                     {layout.placed.map((placed) => {
                       const { column } = placed
+                      const rowSpan = rowSpans?.get(column.id)?.[rowIndex] ?? 1
+                      if (rowSpan === 0) return null
                       const align = column.align ?? (column.kind === 'number' ? 'right' : 'left')
                       return (
                         <td
                           key={column.id}
+                          rowSpan={rowSpan > 1 ? rowSpan : undefined}
                           data-edge={placed.edge}
+                          data-merged-rows={rowSpan > 1 ? rowSpan : undefined}
                           style={stickyStyle(placed)}
                           className={cn(
                             cellBase,
                             rowHeight,
                             placed.pin ? pinnedCell : undefined,
+                            rowSpan > 1 && !placed.pin && '!bg-transparent group-hover/row:!bg-transparent',
                             align === 'right' && 'tnum text-right',
                             align === 'center' && 'text-center',
                             column.className,

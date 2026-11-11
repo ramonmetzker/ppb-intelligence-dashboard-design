@@ -97,8 +97,30 @@ export interface DataTableColumn<T> extends ColumnSchema<T> {
   renderHeader?: (ctx: HeaderContext<T>) => ReactNode
   /** Short help text shown as the header tooltip. */
   description?: string
+  /** Opt out of automatic equal-value row merging for this column. */
+  mergeRows?: boolean
+  /** Stable comparison value for row merging when the accessor returns a complex value. */
+  getMergeValue?: (row: T) => unknown
+  /** Plain value used by visual exports instead of the rendered React cell. */
+  exportValue?: (row: T, value: unknown) => string | number | boolean | null | undefined
   className?: string
   headerClassName?: string
+}
+
+export type DataTableColumnGroup<T> = {
+  id: string
+  header: string
+  description?: string
+  headerClassName?: string
+  children: readonly DataTableColumn<T>[]
+}
+
+export type DataTableColumnDefinition<T> = DataTableColumn<T> | DataTableColumnGroup<T>
+
+export function isDataTableColumnGroup<T>(
+  column: DataTableColumnDefinition<T>,
+): column is DataTableColumnGroup<T> {
+  return 'children' in column
 }
 
 export type RowAction<T> = {

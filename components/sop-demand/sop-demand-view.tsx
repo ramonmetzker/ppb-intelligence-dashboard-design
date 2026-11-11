@@ -2,16 +2,16 @@
 
 import { useMemo, useState } from 'react'
 import useSWR from 'swr'
-import { CheckCheck, Copy, Download, Eye, Lock, LockOpen, Plus, Trash2, Upload } from 'lucide-react'
+import { CheckCheck, Copy, Eye, Lock, LockOpen, Plus, Trash2, Upload } from 'lucide-react'
 import { PageActions } from '@/components/app/page-actions'
 import { PageHeader } from '@/components/app/page-header'
-import { DataTable } from '@/components/data-table/data-table'
+import { DataTable, type DataTableExportOptions } from '@/components/data-table/data-table'
 import { Button } from '@/components/ui/button'
 import { queryToParams } from '@/lib/data-table/query'
 import {
   DEFAULT_QUERY,
   type BulkAction,
-  type DataTableColumn,
+  type DataTableColumnDefinition,
   type DataTableQuery,
   type RowAction,
 } from '@/lib/data-table/types'
@@ -24,6 +24,25 @@ const number = new Intl.NumberFormat('en-US')
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 const formatDate = (value: string) =>
   new Date(`${value}T00:00:00Z`).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' })
+
+const exportOptions: DataTableExportOptions<SopDemand> = {
+  fileName: 'sop-demand',
+  getAllRows: async (query) => {
+    const pageSize = 100
+    const loadPage = async (page: number) => {
+      const response = await fetch(`/api/sop-demand?${queryToParams({ ...query, page, pageSize })}`)
+      if (!response.ok) throw new Error('Unable to export SOP demand rows')
+      return response.json() as Promise<{ rows: SopDemand[]; total: number }>
+    }
+    const first = await loadPage(1)
+    const pageCount = Math.ceil(first.total / pageSize)
+    if (pageCount <= 1) return first.rows
+    const remaining = await Promise.all(
+      Array.from({ length: pageCount - 1 }, (_, index) => loadPage(index + 2)),
+    )
+    return [first, ...remaining].flatMap((result) => result.rows)
+  },
+}
 
 const schemaById = new Map(SOP_SCHEMA.map((schema) => [schema.id, schema]))
 const base = (id: keyof SopDemand) => schemaById.get(id)!
@@ -38,10 +57,11 @@ export function StatusBadge({ status }: { status: SopStatus }) {
   )
 }
 
-const COLUMNS: DataTableColumn<SopDemand>[] = [
+const COLUMNS: DataTableColumnDefinition<SopDemand>[] = [
   {
     ...base('itemCode'),
     width: 150,
+    minWidth: 132,
     pin: 'left',
     cell: ({ row }) => (
       <span className="inline-flex items-center gap-2 font-mono text-xs font-medium">
@@ -51,15 +71,34 @@ const COLUMNS: DataTableColumn<SopDemand>[] = [
       </span>
     ),
   },
-  { ...base('description'), width: 220, grow: true },
-  { ...base('family'), width: 130 },
-  { ...base('product'), width: 140 },
-  { ...base('region'), width: 150 },
-  { ...base('plant'), width: 120 },
-  { ...base('owner'), width: 150 },
-  { ...base('status'), width: 130, cell: ({ row }) => <StatusBadge status={row.status} /> },
-  { ...base('demand'), width: 135, cell: ({ row }) => number.format(row.demand) },
-  { ...base('supply'), width: 135, cell: ({ row }) => number.format(row.supply) },
+  { ...base('description'), width: 220, minWidth: 180, grow: true },
+  {
+    id: 'context',
+    header: 'Planning context',
+    children: [
+      { ...base('family'), width: 130 },
+      { ...base('product'), width: 140 },
+      { ...base('region'), width: 150 },
+      { ...base('plant'), width: 120 },
+      { ...base('owner'), width: 150 },
+      { ...base('status'), width: 130, cell: ({ row }) => <StatusBadge status={row.status} /> },
+    ],
+  },
+  {
+    id: 'volumes',
+    header: 'Volumes',
+    children: [
+      { ...base('demand'), width: 135, cell: ({ row }) => number.format(row.demand) },
+      { ...base('supply'), width: 135, cell: ({ row }) => number.format(row.supply) },
+      {
+        ...base('accuracy'),
+        width: 120,
+        cell: ({ row }) => `${row.accuracy.toFixed(1)}%`,
+        exportValue: (row) => `${row.accuracy.toFixed(1)}%`,
+        defaultHidden: true,
+      },
+    ],
+  },
   {
     ...base('gap'),
     width: 130,
@@ -72,11 +111,44 @@ const COLUMNS: DataTableColumn<SopDemand>[] = [
       </span>
     ),
   },
-  { ...base('accuracy'), width: 120, cell: ({ row }) => `${row.accuracy.toFixed(1)}%`, defaultHidden: true },
-  { ...base('unitPrice'), width: 120, cell: ({ row }) => `$${row.unitPrice.toFixed(2)}`, defaultHidden: true },
-  { ...base('revenue'), width: 145, cell: ({ row }) => currency.format(row.revenue) },
-  { ...base('needDate'), width: 130, cell: ({ row }) => formatDate(row.needDate) },
-  { ...base('updatedAt'), width: 130, cell: ({ row }) => formatDate(row.updatedAt), defaultHidden: true },
+  {
+    id: 'commercial',
+    header: 'Commercial',
+    children: [
+      {
+        ...base('unitPrice'),
+        width: 120,
+        cell: ({ row }) => `$${row.unitPrice.toFixed(2)}`,
+        exportValue: (row) => `$${row.unitPrice.toFixed(2)}`,
+        defaultHidden: true,
+      },
+      {
+        ...base('revenue'),
+        width: 145,
+        cell: ({ row }) => currency.format(row.revenue),
+        exportValue: (row) => currency.format(row.revenue),
+      },
+    ],
+  },
+  {
+    id: 'schedule',
+    header: 'Schedule',
+    children: [
+      {
+        ...base('needDate'),
+        width: 130,
+        cell: ({ row }) => formatDate(row.needDate),
+        exportValue: (row) => formatDate(row.needDate),
+      },
+      {
+        ...base('updatedAt'),
+        width: 130,
+        cell: ({ row }) => formatDate(row.updatedAt),
+        exportValue: (row) => formatDate(row.updatedAt),
+        defaultHidden: true,
+      },
+    ],
+  },
   {
     ...base('critical'),
     width: 100,
@@ -185,10 +257,6 @@ export function SopDemandView({ initialMode = 'client' }: { initialMode?: Mode }
                 <Upload aria-hidden="true" data-icon="inline-start" />
                 Import
               </Button>
-              <Button variant="outline" size="lg">
-                <Download aria-hidden="true" data-icon="inline-start" />
-                Export
-              </Button>
             </>
           }
           primary={
@@ -206,7 +274,9 @@ export function SopDemandView({ initialMode = 'client' }: { initialMode?: Mode }
         <DataTable<SopDemand>
           caption="SOP demand lines"
           persistenceKey="sop-demand"
+          exporter={exportOptions}
           columns={COLUMNS}
+          mergeEqualRows={['family', 'product']}
           data={isClient ? rows : (remote?.rows ?? [])}
           totalRows={remote?.total}
           mode={mode}

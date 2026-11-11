@@ -32,6 +32,7 @@ type Props<T> = {
   style: CSSProperties
   pinned: boolean
   edge?: 'left' | 'right'
+  rowSpan?: number
   stickyHeader: boolean
   sortable: boolean
   filterable: boolean
@@ -69,6 +70,7 @@ export function HeaderCell<T>({
   style,
   pinned,
   edge,
+  rowSpan,
   stickyHeader,
   sortable,
   filterable,
@@ -110,6 +112,7 @@ export function HeaderCell<T>({
   return (
     <th
       scope="col"
+      rowSpan={rowSpan}
       style={style}
       data-edge={edge}
       data-drag-target={dragTarget || undefined}
