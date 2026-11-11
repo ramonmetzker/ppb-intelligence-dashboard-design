@@ -33,6 +33,8 @@ type Props<T> = {
   pinned: boolean
   edge?: 'left' | 'right'
   rowSpan?: number
+  groupStart?: boolean
+  groupEnd?: boolean
   stickyHeader: boolean
   sortable: boolean
   filterable: boolean
@@ -63,7 +65,7 @@ type Props<T> = {
 }
 
 const iconButton =
-  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-[opacity,background-color] outline-none hover:bg-background hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover/th:opacity-100 group-focus-within/th:opacity-100 data-[popup-open]:bg-background data-[popup-open]:opacity-100'
+  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-background data-[popup-open]:text-foreground'
 
 export function HeaderCell<T>({
   column,
@@ -71,6 +73,8 @@ export function HeaderCell<T>({
   pinned,
   edge,
   rowSpan,
+  groupStart,
+  groupEnd,
   stickyHeader,
   sortable,
   filterable,
@@ -117,39 +121,29 @@ export function HeaderCell<T>({
       data-edge={edge}
       data-drag-target={dragTarget || undefined}
       aria-sort={sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : undefined}
-      title={column.description}
+      title={column.description ? `${column.header} — ${column.description}` : column.header}
       onDragOver={onDragOver}
       onDrop={onDrop}
       className={cn(
         'dt-cell group/th h-10 border-b border-border bg-muted px-1.5 text-left text-xs font-medium text-muted-foreground',
         stickyHeader ? 'sticky top-0' : 'relative',
         pinned ? 'z-30' : 'z-20',
+        groupStart && 'border-l border-border',
+        groupEnd && 'border-r border-border',
         dragTarget && 'ring-2 ring-inset ring-brand',
         dragging && 'opacity-60',
         column.headerClassName,
       )}
     >
-      <div className={cn('flex items-center gap-0.5', align === 'right' && 'flex-row-reverse', align === 'center' && 'justify-center')}>
-        {reorderable && (
-          <button
-            type="button"
-            draggable
-            data-no-row-click
-            aria-label={labels.moveColumn(column.header)}
-            title={labels.moveColumn(column.header)}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            className={cn(iconButton, 'cursor-grab touch-none active:cursor-grabbing')}
-          >
-            <GripVertical aria-hidden="true" className="size-3.5" />
-          </button>
-        )}
+      <div className="relative flex min-w-0 items-center overflow-hidden">
         {sortable ? (
           <button
             type="button"
             onClick={(event) => onToggleSort(event.shiftKey)}
             className={cn(
-              'flex h-7 min-w-0 items-center gap-1 rounded-md px-1.5 outline-none hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+              'flex h-7 w-full min-w-0 items-center gap-1 rounded-md px-1.5 outline-none hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+              align === 'right' && 'justify-end',
+              align === 'center' && 'justify-center',
               sortDirection && 'text-foreground',
             )}
             aria-label={`${column.header}${
@@ -157,10 +151,7 @@ export function HeaderCell<T>({
             }. ${labels.sortHint}`}
           >
             {label}
-            <SortIcon
-              aria-hidden="true"
-              className={cn('size-3 shrink-0', sortDirection ? 'text-brand' : 'opacity-0 group-hover/th:opacity-60 group-focus-within/th:opacity-60')}
-            />
+            {sortDirection && <SortIcon aria-hidden="true" className="size-3 shrink-0 text-brand" />}
             {sortIndex !== undefined && (
               <span aria-hidden="true" className="tnum -ml-0.5 text-[10px] text-brand">
                 {sortIndex}
@@ -168,10 +159,32 @@ export function HeaderCell<T>({
             )}
           </button>
         ) : (
-          <span className="flex h-7 min-w-0 items-center px-1.5">{label}</span>
+          <span
+            className={cn(
+              'flex h-7 w-full min-w-0 items-center px-1.5',
+              align === 'right' && 'justify-end',
+              align === 'center' && 'justify-center',
+            )}
+          >
+            {label}
+          </span>
         )}
 
-        <div className={cn('flex shrink-0 items-center', align === 'right' && 'flex-row-reverse')}>
+        <div className="absolute inset-y-0 right-1 z-30 flex shrink-0 items-center rounded-l-md border-l border-border/80 bg-muted/85 px-1 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover/th:opacity-100 group-focus-within/th:opacity-100 has-data-[popup-open]:opacity-100">
+          {reorderable && (
+            <button
+              type="button"
+              draggable
+              data-no-row-click
+              aria-label={labels.moveColumn(column.header)}
+              title={labels.moveColumn(column.header)}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              className={cn(iconButton, 'cursor-grab touch-none active:cursor-grabbing')}
+            >
+              <GripVertical aria-hidden="true" className="size-3.5" />
+            </button>
+          )}
           {filterable && (
             <Popover open={filterOpen} onOpenChange={setFilterOpen}>
               <PopoverTrigger

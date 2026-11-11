@@ -402,7 +402,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
     actionsWidth ??
     (Array.isArray(rowActions)
       ? 16 + Math.min(rowActions.filter((a) => a.inline).length, 2) * 32 + (rowActions.some((a) => !a.inline) ? 32 : 0)
-      : 56)
+      : 80)
 
   const layout = useMemo(() => {
     const pinOf = (c: DataTableColumn<T>) => {
@@ -840,7 +840,14 @@ export function DataTable<T>(props: DataTableProps<T>) {
         ? { position: 'sticky', right: placed.offset }
         : {}
 
-  const renderHeaderCell = (placed: Placed<T>, index: number, rowSpan?: number, groupedChild = false) => {
+  const renderHeaderCell = (
+    placed: Placed<T>,
+    index: number,
+    rowSpan?: number,
+    groupedChild = false,
+    groupStart = false,
+    groupEnd = false,
+  ) => {
     const { column } = placed
     const sort = sortOf(column.id)
     const sortable = column.sortable !== false
@@ -858,6 +865,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
         pinned={Boolean(placed.pin)}
         edge={placed.edge}
         rowSpan={rowSpan}
+        groupStart={groupStart}
+        groupEnd={groupEnd}
         stickyHeader={stickyHeader || Boolean(placed.pin)}
         sortable={sortable}
         filterable={column.filterable !== false}
@@ -944,7 +953,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
             key={action.id}
             type="button"
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             aria-label={action.label}
             title={action.label}
             disabled={action.disabled}
@@ -957,7 +966,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
           <DropdownMenu>
             <DropdownMenuTrigger
               aria-label={labels.rowActions}
-              className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'text-muted-foreground data-[popup-open]:bg-muted')}
+              className={cn(buttonVariants({ variant: 'ghost', size: 'icon-sm' }), 'text-muted-foreground data-[popup-open]:bg-muted')}
             >
               <MoreHorizontal aria-hidden="true" />
             </DropdownMenuTrigger>
@@ -1137,7 +1146,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                             ...(stickyHeader || reference.pin ? { position: 'sticky', top: 0 } : {}),
                           }}
                           className={cn(
-                            'dt-cell h-10 border-b border-border bg-muted px-3 text-left text-xs font-semibold text-foreground',
+                            'dt-cell h-10 overflow-hidden border-x border-b border-border bg-secondary px-3 text-center text-xs font-medium text-muted-foreground',
                             reference.pin ? 'z-30' : 'z-20',
                             segment.group.headerClassName,
                           )}
@@ -1150,13 +1159,13 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
                 {hasActions && (
                   <th
-                    scope="col"
-                    rowSpan={hasVisibleColumnGroups ? 2 : undefined}
+                    scope={hasVisibleColumnGroups ? undefined : 'col'}
+                    aria-hidden={hasVisibleColumnGroups || undefined}
                     data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
-                    style={{ position: 'sticky', right: 0 }}
-                    className={cn('dt-cell z-30 h-10 border-b border-border bg-muted', stickyHeader && 'top-0')}
+                    style={{ position: 'sticky', right: 0, top: stickyHeader ? 0 : undefined }}
+                    className="dt-cell z-40 h-10 border-b border-border bg-muted"
                   >
-                    <span className="sr-only">{labels.rowActions}</span>
+                    {!hasVisibleColumnGroups && <span className="sr-only">{labels.rowActions}</span>}
                   </th>
                 )}
               </tr>
@@ -1164,10 +1173,27 @@ export function DataTable<T>(props: DataTableProps<T>) {
                 <tr>
                   {headerSegments.flatMap((segment) =>
                     segment.group
-                      ? segment.columns.map((placed) =>
-                          renderHeaderCell(placed, placedIndexById.get(placed.column.id) ?? 0, undefined, true),
+                      ? segment.columns.map((placed, childIndex) =>
+                          renderHeaderCell(
+                            placed,
+                            placedIndexById.get(placed.column.id) ?? 0,
+                            undefined,
+                            true,
+                            childIndex === 0,
+                            childIndex === segment.columns.length - 1,
+                          ),
                         )
                       : [],
+                  )}
+                  {hasActions && (
+                    <th
+                      scope="col"
+                      data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
+                      style={{ position: 'sticky', right: 0, top: stickyHeader ? 40 : undefined }}
+                      className="dt-cell z-40 h-10 border-b border-border bg-muted"
+                    >
+                      <span className="sr-only">{labels.rowActions}</span>
+                    </th>
                   )}
                 </tr>
               )}
@@ -1289,7 +1315,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       <td
                         data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
                         style={{ position: 'sticky', right: 0 }}
-                        className={cn(cellBase, rowHeight, pinnedCell, 'px-2')}
+                        className={cn(cellBase, rowHeight, pinnedCell, 'z-30 px-2')}
                       >
                         {renderRowActions(row)}
                       </td>
