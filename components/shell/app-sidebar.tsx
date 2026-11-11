@@ -8,10 +8,10 @@ import {
   ChartBar,
   Database,
   GitBranch,
+  Robot,
   SquaresFour,
   Table,
   Tag,
-  WarningDiamond,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { PpbMark } from '@/components/brand/ppb-mark'
@@ -44,7 +44,7 @@ const GROUPS: {
   },
   {
     label: 'monitor',
-    items: [{ label: 'risks', href: '/risks', icon: WarningDiamond }],
+    items: [{ label: 'rpaMonitor', href: '/rpa-monitor', icon: Robot }],
   },
   {
     label: 'rawData',
