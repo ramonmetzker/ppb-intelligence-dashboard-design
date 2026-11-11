@@ -14,11 +14,12 @@ import {
   type RowAction,
 } from '@/lib/data-table/types'
 import { describeCron, nextRun } from '@/lib/rpa/cron'
-import { nextRpaId, RPA_SCHEMA, RPA_SEED, type Rpa, type RpaNotifications } from '@/lib/rpa/data'
+import { nextRpaId, RPA_SCHEMA, type Rpa, type RpaNotifications } from '@/lib/rpa/data'
 import { cn } from '@/lib/utils'
 import { formatDateTime, formatNextRun } from './format'
 import { RpaFormDialog, type RpaFormValues } from './rpa-form-dialog'
 import { RpaNotificationsDialog } from './rpa-notifications-dialog'
+import { useRpas } from './rpa-provider'
 import { RpaScheduleDialog } from './rpa-schedule-dialog'
 import { RpaStatusBadge } from './rpa-status'
 import { RpaStatusSummary } from './rpa-status-summary'
@@ -31,7 +32,7 @@ const DEFAULT_RPA_QUERY: DataTableQuery = { ...DEFAULT_QUERY, sort: [{ id: 'id',
 
 export function RpaMonitorView() {
   const now = useNow()
-  const [rows, setRows] = useState<Rpa[]>(() => [...RPA_SEED])
+  const { rows, setRows } = useRpas()
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_RPA_QUERY)
   const [formOpen, setFormOpen] = useState(false)
   const [scheduling, setScheduling] = useState<Rpa | null>(null)
@@ -76,6 +77,7 @@ export function RpaMonitorView() {
           </span>
         ),
       },
+      { ...base('status'), width: 140, cell: ({ row }) => <RpaStatusBadge status={row.status} /> },
       {
         ...base('description'),
         width: 300,
@@ -128,7 +130,6 @@ export function RpaMonitorView() {
             <span className="text-muted-foreground">Never</span>
           ),
       },
-      { ...base('status'), width: 145, cell: ({ row }) => <RpaStatusBadge status={row.status} /> },
       {
         ...base('statusMessage'),
         width: 280,
@@ -218,7 +219,12 @@ export function RpaMonitorView() {
           bulkActions={bulkActions}
           rowActions={rowActions}
           actionsWidth={112}
-          getRowClassName={(row) => cn(!row.enabled && 'text-muted-foreground')}
+          getRowClassName={(row) =>
+            cn(
+              !row.enabled && 'text-muted-foreground',
+              row.status === 'failed' && '[&>td]:!border-critical/20 [&>td]:!bg-critical/5 hover:[&>td]:!bg-critical/10',
+            )
+          }
           />
       </div>
 

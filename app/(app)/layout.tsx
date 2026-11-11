@@ -9,6 +9,7 @@ import { UserDialog } from '@/components/shell/user-dialog'
 import { PlanProvider } from '@/components/app/plan-provider'
 import { MaterialProvider } from '@/components/materials/material-provider'
 import { ProductsProvider } from '@/components/products/products-provider'
+import { RpaProvider } from '@/components/rpa/rpa-provider'
 import { AgentProvider } from '@/components/agent/agent-provider'
 import { AgentLauncher } from '@/components/agent/agent-launcher'
 import { AgentDialog } from '@/components/agent/agent-dialog'
@@ -27,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <PlanProvider>
           <MaterialProvider>
             <ProductsProvider>
+              <RpaProvider>
               <AgentProvider>
                 <ShellProvider>
                   <div className="flex min-h-screen bg-sidebar">
@@ -43,6 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   <UserDialog />
                 </ShellProvider>
               </AgentProvider>
+              </RpaProvider>
             </ProductsProvider>
           </MaterialProvider>
         </PlanProvider>

@@ -15,6 +15,7 @@ import {
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { PpbMark } from '@/components/brand/ppb-mark'
+import { useRpas } from '@/components/rpa/rpa-provider'
 import { useShell } from '@/components/shell/shell-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
 import type { Dictionary } from '@/lib/i18n'
@@ -55,6 +56,7 @@ const GROUPS: {
 export function AppSidebar() {
   const pathname = usePathname()
   const { collapsed } = useShell()
+  const { errorCount } = useRpas()
   const { t, user, setUserDialogOpen } = usePreferences()
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -141,6 +143,18 @@ export function AppSidebar() {
                           aria-hidden="true"
                         />
                         {!collapsed && <span className="truncate">{t.nav[label]}</span>}
+                        {href === '/rpa-monitor' && errorCount > 0 && (
+                          <span
+                            aria-label={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+                            title={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+                            className={cn(
+                              'tnum flex h-5 min-w-5 items-center justify-center rounded-full bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
+                              collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
+                            )}
+                          >
+                            {errorCount > 99 ? '99+' : errorCount}
+                          </span>
+                        )}
                       </Link>
                     </li>
                   )
