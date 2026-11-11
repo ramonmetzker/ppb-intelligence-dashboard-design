@@ -75,7 +75,7 @@ import {
 
 const SELECT_WIDTH = 44
 const DEFAULT_COLUMN_WIDTH = 160
-const DEFAULT_MIN_COLUMN_WIDTH = 80
+const DEFAULT_MIN_COLUMN_WIDTH = 112
 const DEFAULT_MAX_COLUMN_WIDTH = 640
 
 function clampColumnWidth<T>(column: DataTableColumn<T>, width: number) {

@@ -65,7 +65,7 @@ type Props<T> = {
 }
 
 const iconButton =
-  'inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-background data-[popup-open]:text-foreground'
+  'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 outline-none transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover/th:text-muted-foreground data-[popup-open]:bg-background data-[popup-open]:text-foreground'
 
 export function HeaderCell<T>({
   column,
@@ -135,7 +135,21 @@ export function HeaderCell<T>({
         column.headerClassName,
       )}
     >
-      <div className="relative flex min-w-0 items-center overflow-hidden">
+      <div className="flex min-w-0 items-center gap-0.5">
+        {reorderable && (
+          <button
+            type="button"
+            draggable
+            data-no-row-click
+            aria-label={labels.moveColumn(column.header)}
+            title={labels.moveColumn(column.header)}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            className={cn(iconButton, 'w-3.5 cursor-grab touch-none active:cursor-grabbing')}
+          >
+            <GripVertical aria-hidden="true" className="size-3" />
+          </button>
+        )}
         {sortable ? (
           <button
             type="button"
@@ -170,21 +184,7 @@ export function HeaderCell<T>({
           </span>
         )}
 
-        <div className="absolute inset-y-0 right-1 z-30 flex shrink-0 items-center rounded-l-md border-l border-border/80 bg-muted/85 px-1 opacity-0 shadow-sm backdrop-blur-sm transition-opacity group-hover/th:opacity-100 group-focus-within/th:opacity-100 has-data-[popup-open]:opacity-100">
-          {reorderable && (
-            <button
-              type="button"
-              draggable
-              data-no-row-click
-              aria-label={labels.moveColumn(column.header)}
-              title={labels.moveColumn(column.header)}
-              onDragStart={onDragStart}
-              onDragEnd={onDragEnd}
-              className={cn(iconButton, 'cursor-grab touch-none active:cursor-grabbing')}
-            >
-              <GripVertical aria-hidden="true" className="size-3.5" />
-            </button>
-          )}
+        <div className="flex shrink-0 items-center">
           {filterable && (
             <Popover open={filterOpen} onOpenChange={setFilterOpen}>
               <PopoverTrigger
