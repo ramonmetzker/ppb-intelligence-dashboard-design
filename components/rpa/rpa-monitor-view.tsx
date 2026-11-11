@@ -210,6 +210,7 @@ export function RpaMonitorView() {
 
         <DataTable<Rpa>
           caption="RPAs"
+          persistenceKey="rpa-monitor"
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}

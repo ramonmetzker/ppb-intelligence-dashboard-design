@@ -1,7 +1,19 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff, ListFilter, MoreHorizontal, Pin, PinOff } from 'lucide-react'
+import { useState, type CSSProperties, type DragEvent, type PointerEvent } from 'react'
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  ArrowUpDown,
+  EyeOff,
+  GripVertical,
+  ListFilter,
+  MoreHorizontal,
+  Pin,
+  PinOff,
+} from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +36,12 @@ type Props<T> = {
   sortable: boolean
   filterable: boolean
   pinnable: boolean
+  resizable: boolean
+  reorderable: boolean
+  dragging: boolean
+  dragTarget: boolean
+  canMoveLeft: boolean
+  canMoveRight: boolean
   sortDirection: SortDirection | false
   /** 1-based position when more than one column is sorted, otherwise undefined. */
   sortIndex?: number
@@ -33,6 +51,13 @@ type Props<T> = {
   onToggleSort: (additive: boolean) => void
   onFilter: (filter: ColumnFilter | null) => void
   onPin: (pin: 'left' | 'right' | null) => void
+  onMove: (direction: -1 | 1) => void
+  onDragStart: (event: DragEvent<HTMLButtonElement>) => void
+  onDragOver: (event: DragEvent<HTMLTableCellElement>) => void
+  onDrop: (event: DragEvent<HTMLTableCellElement>) => void
+  onDragEnd: () => void
+  onResizeStart: (event: PointerEvent<HTMLButtonElement>) => void
+  onResizeBy: (direction: -1 | 1) => void
   onHide?: () => void
 }
 
@@ -48,6 +73,12 @@ export function HeaderCell<T>({
   sortable,
   filterable,
   pinnable,
+  resizable,
+  reorderable,
+  dragging,
+  dragTarget,
+  canMoveLeft,
+  canMoveRight,
   sortDirection,
   sortIndex,
   filter,
@@ -56,11 +87,18 @@ export function HeaderCell<T>({
   onToggleSort,
   onFilter,
   onPin,
+  onMove,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onResizeStart,
+  onResizeBy,
   onHide,
 }: Props<T>) {
   const [filterOpen, setFilterOpen] = useState(false)
   const align = column.align ?? (column.kind === 'number' ? 'right' : 'left')
-  const hasMenu = sortable || pinnable || Boolean(onHide)
+  const hasMenu = sortable || pinnable || reorderable || Boolean(onHide)
   const SortIcon = sortDirection === 'asc' ? ArrowUp : sortDirection === 'desc' ? ArrowDown : ArrowUpDown
 
   const label = column.renderHeader ? (
@@ -74,16 +112,35 @@ export function HeaderCell<T>({
       scope="col"
       style={style}
       data-edge={edge}
+      data-drag-target={dragTarget || undefined}
       aria-sort={sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : undefined}
       title={column.description}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       className={cn(
         'dt-cell group/th h-10 border-b border-border bg-muted px-1.5 text-left text-xs font-medium text-muted-foreground',
-        stickyHeader && 'sticky top-0',
+        stickyHeader ? 'sticky top-0' : 'relative',
         pinned ? 'z-30' : 'z-20',
+        dragTarget && 'ring-2 ring-inset ring-brand',
+        dragging && 'opacity-60',
         column.headerClassName,
       )}
     >
       <div className={cn('flex items-center gap-0.5', align === 'right' && 'flex-row-reverse', align === 'center' && 'justify-center')}>
+        {reorderable && (
+          <button
+            type="button"
+            draggable
+            data-no-row-click
+            aria-label={labels.moveColumn(column.header)}
+            title={labels.moveColumn(column.header)}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            className={cn(iconButton, 'cursor-grab touch-none active:cursor-grabbing')}
+          >
+            <GripVertical aria-hidden="true" className="size-3.5" />
+          </button>
+        )}
         {sortable ? (
           <button
             type="button"
@@ -158,7 +215,7 @@ export function HeaderCell<T>({
                     )}
                   </>
                 )}
-                {sortable && (pinnable || onHide) && <DropdownMenuSeparator />}
+                {sortable && (pinnable || reorderable || onHide) && <DropdownMenuSeparator />}
                 {pinnable && (
                   <>
                     {column.pin !== 'left' && (
@@ -181,9 +238,22 @@ export function HeaderCell<T>({
                     )}
                   </>
                 )}
-                {onHide && (
+                {reorderable && (
                   <>
                     {pinnable && <DropdownMenuSeparator />}
+                    <DropdownMenuItem disabled={!canMoveLeft} onClick={() => onMove(-1)}>
+                      <ArrowLeft aria-hidden="true" />
+                      {labels.moveColumnLeft}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled={!canMoveRight} onClick={() => onMove(1)}>
+                      <ArrowRight aria-hidden="true" />
+                      {labels.moveColumnRight}
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {onHide && (
+                  <>
+                    {(pinnable || reorderable) && <DropdownMenuSeparator />}
                     <DropdownMenuItem onClick={onHide}>
                       <EyeOff aria-hidden="true" />
                       {labels.hideColumn}
@@ -195,6 +265,23 @@ export function HeaderCell<T>({
           )}
         </div>
       </div>
+      {resizable && (
+        <button
+          type="button"
+          data-no-row-click
+          aria-label={labels.resizeColumn(column.header)}
+          title={labels.resizeColumn(column.header)}
+          onPointerDown={onResizeStart}
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+            event.preventDefault()
+            onResizeBy(event.key === 'ArrowLeft' ? -1 : 1)
+          }}
+          className="absolute top-0 right-0 z-40 flex h-full w-2 cursor-col-resize touch-none items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span aria-hidden="true" className="h-5 w-px bg-border transition-colors group-hover/th:bg-brand" />
+        </button>
+      )}
     </th>
   )
 }

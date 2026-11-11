@@ -8,8 +8,10 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type DragEvent,
   type KeyboardEvent,
   type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
 } from 'react'
@@ -51,11 +53,24 @@ import { BulkBar } from './bulk-bar'
 import { describeFilter, type DataTableLabels } from './filter-utils'
 import { HeaderCell } from './header-cell'
 import { Pagination } from './pagination'
+import {
+  readDataTableSettings,
+  useDataTableStorageKey,
+  writeDataTableSettings,
+} from './persistence'
 import { PowerSearch } from './power-search'
 import { ActiveFilters, ColumnsMenu, DensityMenu, ScrollControls, type FilterChip } from './toolbar-controls'
 
 const SELECT_WIDTH = 44
 const DEFAULT_COLUMN_WIDTH = 160
+const DEFAULT_MIN_COLUMN_WIDTH = 80
+const DEFAULT_MAX_COLUMN_WIDTH = 640
+
+function clampColumnWidth<T>(column: DataTableColumn<T>, width: number) {
+  const min = column.minWidth ?? DEFAULT_MIN_COLUMN_WIDTH
+  const max = Math.max(column.maxWidth ?? DEFAULT_MAX_COLUMN_WIDTH, min)
+  return Math.min(Math.max(Math.round(width), min), max)
+}
 
 export type DataTableHandle<T> = {
   scrollToColumn: (id: string) => void
@@ -112,6 +127,10 @@ export interface DataTableProps<T> {
   densityControl?: boolean
   scrollControls?: boolean
   columnPinning?: boolean
+  columnResizing?: boolean
+  columnReordering?: boolean
+  /** Stable key used to persist this table's view configuration for the current user. */
+  persistenceKey?: string
   defaultDensity?: Density
   stickyHeader?: boolean
   /** Height of the scroll area. Use 'none' to let the table grow with the page. */
@@ -163,6 +182,9 @@ export function DataTable<T>(props: DataTableProps<T>) {
     densityControl = true,
     scrollControls = true,
     columnPinning = true,
+    columnResizing = true,
+    columnReordering = true,
+    persistenceKey,
     defaultDensity = 'default',
     stickyHeader = true,
     maxHeight = 'min(70dvh, 720px)',
@@ -174,6 +196,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   } = props
 
   const labels = useDataTableLabels(locale, labelOverrides)
+  const storageKey = useDataTableStorageKey(persistenceKey)
 
   /* ----------------------------- query state ----------------------------- */
 
@@ -219,13 +242,93 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   /* ------------------------------ view state ------------------------------ */
 
-  const [hidden, setHidden] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(columns.filter((c) => c.defaultHidden).map((c) => [c.id, true])),
+  const defaultHidden = useMemo(
+    () => Object.fromEntries(columns.filter((column) => column.defaultHidden).map((column) => [column.id, true])),
+    [columns],
   )
+  const [hidden, setHidden] = useState<Record<string, boolean>>(() => defaultHidden)
   const [pins, setPins] = useState<Record<string, 'left' | 'right' | 'none'>>({})
   const [density, setDensity] = useState<Density>(defaultDensity)
+  const [columnOrder, setColumnOrder] = useState<string[]>(() => columns.map((column) => column.id))
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
+  const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null)
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null)
+  const draggedColumnRef = useRef<string | null>(null)
+  const [dragTarget, setDragTarget] = useState<string | null>(null)
 
-  const visibleColumns = useMemo(() => columns.filter((c) => !hidden[c.id]), [columns, hidden])
+  const orderedColumns = useMemo(() => {
+    const byId = new Map(columns.map((column) => [column.id, column]))
+    const knownOrder = columnOrder.filter((id) => byId.has(id))
+    const seen = new Set(knownOrder)
+    return [
+      ...knownOrder.map((id) => byId.get(id)!),
+      ...columns.filter((column) => !seen.has(column.id)),
+    ]
+  }, [columns, columnOrder])
+
+  const visibleColumns = useMemo(
+    () => orderedColumns.filter((column) => !hidden[column.id]),
+    [orderedColumns, hidden],
+  )
+
+  useEffect(() => {
+    if (!storageKey) {
+      setLoadedStorageKey(null)
+      return
+    }
+
+    const stored = readDataTableSettings(storageKey)
+    const knownIds = new Set(columns.map((column) => column.id))
+    const storedOrder = stored?.columnOrder?.filter((id) => knownIds.has(id)) ?? []
+    const seen = new Set(storedOrder)
+    const nextOrder = [...storedOrder, ...columns.map((column) => column.id).filter((id) => !seen.has(id))]
+    const nextHidden = Object.fromEntries(
+      Object.entries({ ...defaultHidden, ...stored?.hiddenColumns }).filter(([id]) => knownIds.has(id)),
+    )
+    const nextWidths = Object.fromEntries(
+      Object.entries(stored?.columnWidths ?? {}).flatMap(([id, width]) => {
+        const column = columns.find((candidate) => candidate.id === id)
+        return column ? [[id, clampColumnWidth(column, width)]] : []
+      }),
+    )
+    const nextPins = Object.fromEntries(
+      Object.entries(stored?.pinnedColumns ?? {}).filter(([id]) => knownIds.has(id)),
+    )
+
+    setColumnOrder(nextOrder)
+    setColumnWidths(nextWidths)
+    setHidden(columns.every((column) => nextHidden[column.id]) ? defaultHidden : nextHidden)
+    setPins(nextPins)
+    setDensity(stored?.density ?? defaultDensity)
+
+    if (
+      pagination &&
+      stored?.pageSize &&
+      pageSizeOptions.includes(stored.pageSize) &&
+      stored.pageSize !== query.pageSize
+    ) {
+      updateQueryRef.current({ pageSize: stored.pageSize }, 'pageSize')
+    }
+    setLoadedStorageKey(storageKey)
+    // Loading is intentionally keyed to the table schema and storage identity, not the live query.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns, defaultDensity, defaultHidden, pageSizeOptions, pagination, storageKey])
+
+  useEffect(() => {
+    if (!storageKey || loadedStorageKey !== storageKey) return
+    const knownIds = new Set(columns.map((column) => column.id))
+    const timeout = window.setTimeout(() => {
+      writeDataTableSettings(storageKey, {
+        columnOrder: orderedColumns.map((column) => column.id),
+        columnWidths: Object.fromEntries(Object.entries(columnWidths).filter(([id]) => knownIds.has(id))),
+        hiddenColumns: Object.fromEntries(Object.entries(hidden).filter(([id]) => knownIds.has(id))),
+        pinnedColumns: Object.fromEntries(Object.entries(pins).filter(([id]) => knownIds.has(id))),
+        density,
+        pageSize: pagination ? query.pageSize : undefined,
+      })
+    }, 250)
+    return () => window.clearTimeout(timeout)
+  }, [columnWidths, columns, density, hidden, loadedStorageKey, orderedColumns, pagination, pins, query.pageSize, storageKey])
 
   const hasActions = Boolean(rowActions)
   const resolvedActionsWidth =
@@ -239,7 +342,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
       const override = pins[c.id]
       return override === 'none' ? undefined : (override ?? c.pin)
     }
-    const widthOf = (c: DataTableColumn<T>) => c.width ?? DEFAULT_COLUMN_WIDTH
+    const widthOf = (c: DataTableColumn<T>) => columnWidths[c.id] ?? c.width ?? DEFAULT_COLUMN_WIDTH
     const left = visibleColumns.filter((c) => pinOf(c) === 'left')
     const right = visibleColumns.filter((c) => pinOf(c) === 'right')
     const middle = visibleColumns.filter((c) => !pinOf(c))
@@ -294,7 +397,108 @@ export function DataTable<T>(props: DataTableProps<T>) {
         placedMiddle.map((p, i) => [p.column.id, placedMiddle.slice(0, i).reduce((acc, q) => acc + q.width, 0)]),
       ),
     }
-  }, [visibleColumns, pins, selectable, hasActions, resolvedActionsWidth])
+  }, [visibleColumns, pins, columnWidths, selectable, hasActions, resolvedActionsWidth])
+
+  const effectivePin = (column: DataTableColumn<T>) => {
+    const override = pins[column.id]
+    return override === 'none' ? undefined : (override ?? column.pin)
+  }
+
+  const reorderColumn = (sourceId: string, targetId: string, afterTarget: boolean) => {
+    if (sourceId === targetId) return
+    const source = columns.find((column) => column.id === sourceId)
+    const target = columns.find((column) => column.id === targetId)
+    if (!source || !target || source.reorderable === false) return
+
+    setColumnOrder((current) => {
+      const knownIds = new Set(columns.map((column) => column.id))
+      const complete = [
+        ...current.filter((id) => knownIds.has(id)),
+        ...columns.map((column) => column.id).filter((id) => !current.includes(id)),
+      ]
+      const withoutSource = complete.filter((id) => id !== sourceId)
+      const targetIndex = withoutSource.indexOf(targetId)
+      withoutSource.splice(targetIndex + (afterTarget ? 1 : 0), 0, sourceId)
+      return withoutSource
+    })
+
+    setPins((current) => ({
+      ...current,
+      [sourceId]: effectivePin(target) ?? 'none',
+    }))
+  }
+
+  const moveColumn = (id: string, direction: -1 | 1) => {
+    const visibleOrder = layout.placed.map((placed) => placed.column.id)
+    const index = visibleOrder.indexOf(id)
+    const targetId = visibleOrder[index + direction]
+    if (targetId) reorderColumn(id, targetId, direction === 1)
+  }
+
+  const startColumnDrag = (event: DragEvent<HTMLButtonElement>, id: string) => {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', id)
+    draggedColumnRef.current = id
+    setDraggedColumn(id)
+    setDragTarget(null)
+  }
+
+  const dragOverColumn = (event: DragEvent<HTMLTableCellElement>, id: string) => {
+    const sourceId = draggedColumnRef.current
+    if (!sourceId || sourceId === id) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    setDragTarget(id)
+  }
+
+  const dropColumn = (event: DragEvent<HTMLTableCellElement>, targetId: string) => {
+    event.preventDefault()
+    const sourceId = draggedColumnRef.current ?? event.dataTransfer.getData('text/plain')
+    if (sourceId && sourceId !== targetId) {
+      const bounds = event.currentTarget.getBoundingClientRect()
+      reorderColumn(sourceId, targetId, event.clientX >= bounds.left + bounds.width / 2)
+    }
+    draggedColumnRef.current = null
+    setDraggedColumn(null)
+    setDragTarget(null)
+  }
+
+  const resizeColumnBy = (column: DataTableColumn<T>, direction: -1 | 1) => {
+    setColumnWidths((current) => ({
+      ...current,
+      [column.id]: clampColumnWidth(
+        column,
+        (current[column.id] ?? column.width ?? DEFAULT_COLUMN_WIDTH) + direction * 16,
+      ),
+    }))
+  }
+
+  const startColumnResize = (event: ReactPointerEvent<HTMLButtonElement>, column: DataTableColumn<T>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    const startX = event.clientX
+    const startWidth = columnWidths[column.id] ?? column.width ?? DEFAULT_COLUMN_WIDTH
+    const previousCursor = document.body.style.cursor
+    const previousUserSelect = document.body.style.userSelect
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+
+    const resize = (pointerEvent: PointerEvent) => {
+      const width = clampColumnWidth(column, startWidth + pointerEvent.clientX - startX)
+      setColumnWidths((current) => (current[column.id] === width ? current : { ...current, [column.id]: width }))
+    }
+    const finish = () => {
+      document.body.style.cursor = previousCursor
+      document.body.style.userSelect = previousUserSelect
+      window.removeEventListener('pointermove', resize)
+      window.removeEventListener('pointerup', finish)
+      window.removeEventListener('pointercancel', finish)
+    }
+
+    window.addEventListener('pointermove', resize)
+    window.addEventListener('pointerup', finish)
+    window.addEventListener('pointercancel', finish)
+  }
 
   /* ------------------------------ scrolling ------------------------------- */
 
@@ -633,17 +837,19 @@ export function DataTable<T>(props: DataTableProps<T>) {
             )}
             {columnsMenu && (
               <ColumnsMenu
-                columns={columns.map((c) => ({
-                  id: c.id,
-                  header: c.header,
-                  visible: !hidden[c.id],
-                  hideable: c.hideable !== false && (hidden[c.id] || hideableCount > 1),
+                columns={orderedColumns.map((column) => ({
+                  id: column.id,
+                  header: column.header,
+                  visible: !hidden[column.id],
+                  hideable: column.hideable !== false && (hidden[column.id] || hideableCount > 1),
                 }))}
                 labels={labels}
                 onToggle={(id, visible) => setHidden((prev) => ({ ...prev, [id]: !visible }))}
                 onReset={() => {
-                  setHidden(Object.fromEntries(columns.filter((c) => c.defaultHidden).map((c) => [c.id, true])))
+                  setHidden(defaultHidden)
                   setPins({})
+                  setColumnOrder(columns.map((column) => column.id))
+                  setColumnWidths({})
                 }}
               />
             )}
@@ -706,10 +912,11 @@ export function DataTable<T>(props: DataTableProps<T>) {
                   </th>
                 )}
 
-                {layout.placed.map((placed) => {
+                {layout.placed.map((placed, index) => {
                   const { column } = placed
                   const sort = sortOf(column.id)
                   const sortable = column.sortable !== false
+                  const reorderable = columnReordering && column.reorderable !== false
                   return (
                     <HeaderCell
                       key={column.id}
@@ -721,6 +928,12 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       sortable={sortable}
                       filterable={column.filterable !== false}
                       pinnable={columnPinning}
+                      resizable={columnResizing && column.resizable !== false}
+                      reorderable={reorderable}
+                      dragging={draggedColumn === column.id}
+                      dragTarget={dragTarget === column.id}
+                      canMoveLeft={reorderable && index > 0}
+                      canMoveRight={reorderable && index < layout.placed.length - 1}
                       sortDirection={sort?.direction ?? false}
                       sortIndex={sort && query.sort.length > 1 ? query.sort.indexOf(sort) + 1 : undefined}
                       filter={query.filters.find((f) => f.id === column.id)}
@@ -729,6 +942,17 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       onToggleSort={(additive) => toggleSort(column.id, additive)}
                       onFilter={(filter) => setColumnFilter(column.id, filter)}
                       onPin={(pin) => setPins((prev) => ({ ...prev, [column.id]: pin ?? 'none' }))}
+                      onMove={(direction) => moveColumn(column.id, direction)}
+                      onDragStart={(event) => startColumnDrag(event, column.id)}
+                      onDragOver={(event) => dragOverColumn(event, column.id)}
+                      onDrop={(event) => dropColumn(event, column.id)}
+                      onDragEnd={() => {
+                        draggedColumnRef.current = null
+                        setDraggedColumn(null)
+                        setDragTarget(null)
+                      }}
+                      onResizeStart={(event) => startColumnResize(event, column)}
+                      onResizeBy={(direction) => resizeColumnBy(column, direction)}
                       onHide={
                         column.hideable !== false && hideableCount > 1
                           ? () => setHidden((prev) => ({ ...prev, [column.id]: true }))

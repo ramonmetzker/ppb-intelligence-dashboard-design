@@ -82,6 +82,12 @@ export interface DataTableColumn<T> extends ColumnSchema<T> {
   pin?: 'left' | 'right'
   /** Width in px. Required to be a number so sticky offsets can be computed. Defaults to 160. */
   width?: number
+  /** Bounds applied when the user resizes the column. Defaults to 80 and 640. */
+  minWidth?: number
+  maxWidth?: number
+  /** Opt out of user resizing or reordering for this column. */
+  resizable?: boolean
+  reorderable?: boolean
   /** Lets the column absorb leftover horizontal space. Only one unpinned column should grow. */
   grow?: boolean
   align?: 'left' | 'right' | 'center'

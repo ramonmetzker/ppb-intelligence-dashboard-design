@@ -205,6 +205,7 @@ export function SopDemandView({ initialMode = 'client' }: { initialMode?: Mode }
 
         <DataTable<SopDemand>
           caption="SOP demand lines"
+          persistenceKey="sop-demand"
           columns={COLUMNS}
           data={isClient ? rows : (remote?.rows ?? [])}
           totalRows={remote?.total}

@@ -2,10 +2,15 @@
 
 import type { ReactNode } from 'react'
 import { DataTableLocaleProvider } from '@/components/data-table/locale'
+import { DataTablePersistenceProvider } from '@/components/data-table/persistence'
 import { usePreferences } from '@/components/shell/preferences-provider'
 
-/** Every DataTable in the app follows the language chosen in the user preferences. */
+/** Every DataTable follows the current user's language and persistence scope. */
 export function AppDataTableLocale({ children }: { children: ReactNode }) {
-  const { language } = usePreferences()
-  return <DataTableLocaleProvider locale={language}>{children}</DataTableLocaleProvider>
+  const { language, user } = usePreferences()
+  return (
+    <DataTablePersistenceProvider userId={user.knoxId}>
+      <DataTableLocaleProvider locale={language}>{children}</DataTableLocaleProvider>
+    </DataTablePersistenceProvider>
+  )
 }

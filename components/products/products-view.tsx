@@ -117,6 +117,7 @@ export function ProductsView() {
       <DataTable<Product>
         key={gbm}
         caption={`${gbm} products`}
+        persistenceKey={`products.${gbm}`}
         columns={COLUMNS}
         data={rows}
         getRowId={(row) => row.id}
