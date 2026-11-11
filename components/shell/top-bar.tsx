@@ -14,7 +14,12 @@ import { cn } from '@/lib/utils'
 
 export function TopBar() {
   const [centerOpen, setCenterOpen] = useState(false)
-  const gbmOnly = usePathname().startsWith('/products')
+  const pathname = usePathname()
+  const isOverview = pathname === '/'
+  const isProducts = pathname.startsWith('/products')
+  const isRpaMonitor = pathname.startsWith('/rpa-monitor')
+  const showProductSelector = !isProducts && !isRpaMonitor
+  const hasContextSelectors = isOverview || isProducts || showProductSelector
   const { unreadCount, syncing, syncLabel } = useNotifications()
   const { collapsed, toggleSidebar } = useShell()
   const { t } = usePreferences()
@@ -74,18 +79,22 @@ export function TopBar() {
           </p>
         </div>
 
-        <div className="scroll-dark flex min-w-0 items-center justify-end gap-4 overflow-x-auto">
-          {gbmOnly ? (
-            <GbmSelector />
-          ) : (
-            <>
-              <div className="w-48 shrink-0">
-                <SidebarPlanSwitcher topbar />
-              </div>
-              <ProductContextSelector />
-            </>
-          )}
-        </div>
+        {hasContextSelectors && (
+          <div className="scroll-dark flex min-w-0 items-center justify-end gap-4 overflow-x-auto">
+            {isProducts ? (
+              <GbmSelector />
+            ) : (
+              <>
+                {isOverview && (
+                  <div className="w-48 shrink-0">
+                    <SidebarPlanSwitcher topbar />
+                  </div>
+                )}
+                {showProductSelector && <ProductContextSelector />}
+              </>
+            )}
+          </div>
+        )}
       </header>
 
       <NotificationCenter open={centerOpen} onOpenChange={setCenterOpen} />
