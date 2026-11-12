@@ -31,6 +31,7 @@ type Props<T> = {
   column: DataTableColumn<T>
   style: CSSProperties
   pinned: boolean
+  highlighted: boolean
   edge?: 'left' | 'right'
   rowSpan?: number
   groupStart?: boolean
@@ -72,6 +73,7 @@ export function HeaderCell<T>({
   column,
   style,
   pinned,
+  highlighted,
   edge,
   rowSpan,
   groupStart,
@@ -135,6 +137,7 @@ export function HeaderCell<T>({
         bordered && 'border-r border-border',
         dragTarget && 'ring-2 ring-inset ring-brand',
         dragging && 'opacity-60',
+        highlighted && 'data-table-column-highlight',
         column.headerClassName,
       )}
     >

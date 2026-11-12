@@ -656,7 +656,9 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   const scrollerRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [scrollState, setScrollState] = useState({ left: false, right: false, viewport: 0 })
+  const [highlightedColumnId, setHighlightedColumnId] = useState<string | null>(null)
 
   const measure = useCallback(() => {
     const el = scrollerRef.current
@@ -679,6 +681,12 @@ export function DataTable<T>(props: DataTableProps<T>) {
     return () => observer.disconnect()
   }, [measure])
 
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
+    }
+  }, [])
+
   const scrollBehavior = (): ScrollBehavior =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
 
@@ -697,6 +705,15 @@ export function DataTable<T>(props: DataTableProps<T>) {
       const el = scrollerRef.current
       const offset = layout.middleOffsets.get(id)
       if (!el || offset === undefined) return
+
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current)
+      setHighlightedColumnId(null)
+      const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 280
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightedColumnId(id)
+        highlightTimeoutRef.current = setTimeout(() => setHighlightedColumnId(null), 1600)
+      }, delay)
+
       el.scrollTo({ left: offset, behavior: scrollBehavior() })
     },
     [layout.middleOffsets],
@@ -928,6 +945,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
         column={{ ...column, pin: placed.pin }}
         style={style}
         pinned={Boolean(placed.pin)}
+        highlighted={highlightedColumnId === column.id}
         edge={placed.edge}
         rowSpan={rowSpan}
         groupStart={groupStart}
@@ -1368,6 +1386,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                             placed.pin ? pinnedCell : undefined,
                             rowSpan > 1 && !placed.pin && '!bg-transparent',
                             mergedCellHovered && '!bg-muted',
+                            highlightedColumnId === column.id && 'data-table-column-highlight',
                             align === 'right' && 'tnum text-right',
                             align === 'center' && 'text-center',
                             column.className,
