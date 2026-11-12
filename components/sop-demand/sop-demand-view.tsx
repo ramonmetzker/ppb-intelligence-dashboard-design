@@ -273,8 +273,9 @@ export function SopDemandView({ initialMode = 'client' }: { initialMode?: Mode }
 
         <DataTable<SopDemand>
           caption="SOP demand lines"
-          persistenceKey="sop-demand"
-          exporter={exportOptions}
+  persistenceKey="sop-demand"
+  bordered
+  exporter={exportOptions}
           columns={COLUMNS}
           mergeEqualRows={['family', 'product']}
           data={isClient ? rows : (remote?.rows ?? [])}
