@@ -35,6 +35,7 @@ type Props<T> = {
   rowSpan?: number
   groupStart?: boolean
   groupEnd?: boolean
+  bordered?: boolean
   stickyHeader: boolean
   sortable: boolean
   filterable: boolean
@@ -75,6 +76,7 @@ export function HeaderCell<T>({
   rowSpan,
   groupStart,
   groupEnd,
+  bordered,
   stickyHeader,
   sortable,
   filterable,
@@ -130,6 +132,7 @@ export function HeaderCell<T>({
         pinned ? 'z-30' : 'z-20',
         groupStart && 'border-l border-border',
         groupEnd && 'border-r border-border',
+        bordered && 'border-r border-border',
         dragTarget && 'ring-2 ring-inset ring-brand',
         dragging && 'opacity-60',
         column.headerClassName,

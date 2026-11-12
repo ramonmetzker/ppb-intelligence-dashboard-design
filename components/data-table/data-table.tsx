@@ -148,6 +148,8 @@ export interface DataTableProps<T> {
   columnPinning?: boolean
   columnResizing?: boolean
   columnReordering?: boolean
+  /** Adds vertical borders between every table column. */
+  bordered?: boolean
   /** Merge adjacent equal values with native rowSpan. Pass column ids to limit the feature. */
   mergeEqualRows?: boolean | readonly string[]
   /** Enabled by default. Pass options for a custom file name or server-side all-rows loader. */
@@ -208,6 +210,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
     columnPinning = true,
     columnResizing = true,
     columnReordering = true,
+    bordered = false,
     mergeEqualRows = false,
     exporter = true,
     persistenceKey,
@@ -867,6 +870,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
         rowSpan={rowSpan}
         groupStart={groupStart}
         groupEnd={groupEnd}
+        bordered={bordered}
         stickyHeader={stickyHeader || Boolean(placed.pin)}
         sortable={sortable}
         filterable={column.filterable !== false}
@@ -993,6 +997,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   const cellBase = cn(
     'dt-cell overflow-hidden border-b border-border bg-card px-3 text-ellipsis whitespace-nowrap',
+    bordered && 'border-r border-border',
     'group-hover/row:bg-muted group-data-[selected=true]/row:bg-brand-soft',
   )
   const pinnedCell =
@@ -1114,7 +1119,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     rowSpan={hasVisibleColumnGroups ? 2 : undefined}
                     data-edge={layout.leftEdgeOnSelect ? 'left' : undefined}
                     style={{ position: 'sticky', left: 0 }}
-                    className={cn('dt-cell z-30 h-10 border-b border-border bg-muted px-3', stickyHeader && 'top-0')}
+                    className={cn('dt-cell z-30 h-10 border-b border-border bg-muted px-3', bordered && 'border-r border-border', stickyHeader && 'top-0')}
                   >
                     <Checkbox
                       aria-label={labels.selectAllRows}
@@ -1163,7 +1168,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     rowSpan={hasVisibleColumnGroups ? 2 : undefined}
                     data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
                     style={{ position: 'sticky', right: 0, top: stickyHeader ? 0 : undefined }}
-                    className="dt-cell z-40 h-10 border-b border-border bg-muted"
+                    className={cn('dt-cell z-40 h-10 border-b border-border bg-muted', bordered && 'border-l border-border')}
                   >
                     <span className="sr-only">{labels.rowActions}</span>
                   </th>
@@ -1305,7 +1310,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       <td
                         data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
                         style={{ position: 'sticky', right: 0 }}
-                        className={cn(cellBase, rowHeight, pinnedCell, 'z-30 px-2')}
+                        className={cn(cellBase, rowHeight, pinnedCell, bordered && 'border-l border-border', 'z-30 px-2')}
                       >
                         {renderRowActions(row)}
                       </td>
