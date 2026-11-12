@@ -51,6 +51,32 @@ export const PPB_NCM_MAPPING_SEED: readonly PpbNcmMapping[] = [
   { id: 'p81m-housing', plant: 'P81M', ncm: '39269090', suframa: '1303', itemId: 'housing', lastUpdated: '2026-11-05' },
 ]
 
+export type PpbScoreType = 'Points' | 'Quota %'
+
+export type PpbScore = {
+  id: string
+  itemId: string
+  score: number
+  type: PpbScoreType
+  sedaUsage: YesNo
+  autoCount: YesNo
+  validFrom: string
+  validTo: string
+}
+
+export const PPB_SCORE_SEED: readonly PpbScore[] = [
+  { id: 'display-module-2026', itemId: 'display-module', score: 30, type: 'Points', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'main-board-2026', itemId: 'main-board', score: 25, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'battery-pack-2026', itemId: 'battery-pack', score: 20, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'camera-module-2026', itemId: 'camera-module', score: 100, type: 'Quota %', sedaUsage: 'N', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'housing-2026', itemId: 'housing', score: 15, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'flex-cable-2026', itemId: 'flex-cable', score: 5, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'speaker-module-2026', itemId: 'speaker-module', score: 100, type: 'Quota %', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'charger-adapter-2026', itemId: 'charger-adapter', score: 100, type: 'Quota %', sedaUsage: 'N', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'antenna-set-2026', itemId: 'antenna-set', score: 8, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'connector-set-2026', itemId: 'connector-set', score: 7, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+]
+
 export const PPB_ITEM_SCHEMA: ColumnSchema<PpbItem>[] = [
   { id: 'itemName', header: 'Item Name', kind: 'text' },
   { id: 'itemSlug', header: 'Item Slug', kind: 'text' },
