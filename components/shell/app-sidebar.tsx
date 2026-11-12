@@ -40,8 +40,6 @@ const GROUPS: {
     items: [
       { label: 'simulation', href: '/simulation', icon: GitBranch },
       { label: 'materials', href: '/materials', icon: Tag },
-      { label: 'sopDemand', href: '/sop-demand', icon: Table },
-      { label: 'salesDemand', href: '/sales-demand', icon: Table },
     ],
   },
   {
@@ -50,7 +48,12 @@ const GROUPS: {
   },
   {
     label: 'rawData',
-    items: [{ label: 'products', href: '/products', icon: Database }],
+    items: [
+      { label: 'ppbItems', href: '/raw-data/ppb-items', icon: Cube },
+      { label: 'products', href: '/products', icon: Database },
+      { label: 'sopDemand', href: '/raw-data/sop-demand', icon: Table },
+      { label: 'salesDemand', href: '/raw-data/sales-demand', icon: Table },
+    ],
   },
 ]
 

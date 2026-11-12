@@ -1,8 +1,5 @@
-import type { Metadata } from 'next'
-import { SalesDemandView } from '@/components/sales-demand/sales-demand-view'
-
-export const metadata: Metadata = { title: 'Sales Demand | PPB' }
+import { redirect } from 'next/navigation'
 
 export default function SalesDemandPage() {
-  return <SalesDemandView />
+  redirect('/raw-data/sales-demand')
 }

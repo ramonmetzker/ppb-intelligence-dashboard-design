@@ -14,6 +14,7 @@ const en = {
     overview: 'Overview',
     production: 'Production',
     items: 'PPB items',
+    ppbItems: 'PPB Items',
     simulation: 'Simulation',
     materials: 'Material prices',
     rpaMonitor: 'RPA Monitor',
@@ -127,6 +128,7 @@ const ptBR: Dictionary = {
     overview: 'Visão geral',
     production: 'Produção',
     items: 'Itens PPB',
+    ppbItems: 'PPB Items',
     simulation: 'Simulação',
     materials: 'Preços de materiais',
     rpaMonitor: 'Monitor de RPAs',
@@ -231,7 +233,7 @@ const ptBR: Dictionary = {
 const ko: Dictionary = {
   nav: {
     primary: '주 메뉴',
-    pages: '페이지',
+    pages: '���이지',
     appSubtitle: '기본 생산 공정',
     analyze: '분석',
     plan: '시뮬레이션',
@@ -240,6 +242,7 @@ const ko: Dictionary = {
     overview: '개요',
     production: '생산',
     items: 'PPB 품목',
+    ppbItems: 'PPB Items',
     simulation: '시뮬레이션',
     materials: '자재 가격',
     rpaMonitor: 'RPA 모니터',

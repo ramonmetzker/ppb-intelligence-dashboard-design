@@ -18,8 +18,6 @@ export function TopBar() {
   const isOverview = pathname === '/'
   const isProducts = pathname.startsWith('/products')
   const isRpaMonitor = pathname.startsWith('/rpa-monitor')
-  const isSopDemand = pathname.startsWith('/sop-demand')
-  const isSalesDemand = pathname.startsWith('/sales-demand')
   const showProductSelector = !isProducts && !isRpaMonitor
   const hasContextSelectors = isOverview || isProducts || showProductSelector
   const { unreadCount, syncing, syncLabel } = useNotifications()
@@ -92,9 +90,7 @@ export function TopBar() {
                     <SidebarPlanSwitcher topbar />
                   </div>
                 )}
-                {showProductSelector && (
-                  <ProductContextSelector showYear={!isSopDemand} defaultYear={isSalesDemand ? '2027' : '2026'} />
-                )}
+                {showProductSelector && <ProductContextSelector showYear={false} />}
               </>
             )}
           </div>

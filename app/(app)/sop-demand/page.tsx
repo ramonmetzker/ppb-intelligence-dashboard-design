@@ -1,8 +1,5 @@
-import type { Metadata } from 'next'
-import { SopDemandView } from '@/components/sop-demand/sop-demand-view'
-
-export const metadata: Metadata = { title: 'SOP Demand | PPB' }
+import { redirect } from 'next/navigation'
 
 export default function SopDemandPage() {
-  return <SopDemandView />
+  redirect('/raw-data/sop-demand')
 }
