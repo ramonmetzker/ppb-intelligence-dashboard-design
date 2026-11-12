@@ -1159,13 +1159,13 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
                 {hasActions && (
                   <th
-                    scope={hasVisibleColumnGroups ? undefined : 'col'}
-                    aria-hidden={hasVisibleColumnGroups || undefined}
+                    scope="col"
+                    rowSpan={hasVisibleColumnGroups ? 2 : undefined}
                     data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
                     style={{ position: 'sticky', right: 0, top: stickyHeader ? 0 : undefined }}
                     className="dt-cell z-40 h-10 border-b border-border bg-muted"
                   >
-                    {!hasVisibleColumnGroups && <span className="sr-only">{labels.rowActions}</span>}
+                    <span className="sr-only">{labels.rowActions}</span>
                   </th>
                 )}
               </tr>
@@ -1184,16 +1184,6 @@ export function DataTable<T>(props: DataTableProps<T>) {
                           ),
                         )
                       : [],
-                  )}
-                  {hasActions && (
-                    <th
-                      scope="col"
-                      data-edge={layout.rightEdgeOnActions ? 'right' : undefined}
-                      style={{ position: 'sticky', right: 0, top: stickyHeader ? 40 : undefined }}
-                      className="dt-cell z-40 h-10 border-b border-border bg-muted"
-                    >
-                      <span className="sr-only">{labels.rowActions}</span>
-                    </th>
                   )}
                 </tr>
               )}

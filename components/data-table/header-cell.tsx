@@ -65,7 +65,7 @@ type Props<T> = {
 }
 
 const iconButton =
-  'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 outline-none transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover/th:text-muted-foreground data-[popup-open]:bg-background data-[popup-open]:text-foreground'
+  'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-muted-foreground/60 outline-none transition-colors hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring group-hover:text-muted-foreground data-[popup-open]:bg-background data-[popup-open]:text-foreground'
 
 export function HeaderCell<T>({
   column,
@@ -125,7 +125,7 @@ export function HeaderCell<T>({
       onDragOver={onDragOver}
       onDrop={onDrop}
       className={cn(
-        'dt-cell group/th h-10 border-b border-border bg-muted px-1.5 text-left text-xs font-medium text-muted-foreground',
+        'dt-cell group h-10 border-b border-border bg-muted px-1.5 text-left text-xs font-medium text-muted-foreground',
         stickyHeader ? 'sticky top-0' : 'relative',
         pinned ? 'z-30' : 'z-20',
         groupStart && 'border-l border-border',
@@ -188,7 +188,11 @@ export function HeaderCell<T>({
           {filterable && (
             <Popover open={filterOpen} onOpenChange={setFilterOpen}>
               <PopoverTrigger
-                className={cn(iconButton, filter && 'bg-brand-soft text-brand-deep opacity-100 hover:bg-brand-soft')}
+                className={cn(
+                  iconButton,
+                  'dt-header-filter transition-opacity',
+                  filter && 'bg-brand-soft text-brand-deep hover:bg-brand-soft',
+                )}
                 aria-label={filter ? `${labels.filterColumn(column.header)}. ${labels.filterActive}` : labels.filterColumn(column.header)}
               >
                 <ListFilter aria-hidden="true" className="size-3.5" />
@@ -295,7 +299,7 @@ export function HeaderCell<T>({
           }}
           className="absolute top-0 right-0 z-40 flex h-full w-2 cursor-col-resize touch-none items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <span aria-hidden="true" className="h-5 w-px bg-border transition-colors group-hover/th:bg-brand" />
+          <span aria-hidden="true" className="h-5 w-px bg-border transition-colors group-hover:bg-brand" />
         </button>
       )}
     </th>

@@ -550,6 +550,15 @@ input[type='range'].lever:focus-visible {
 }
 
 /* Data table: edge dividers and scroll shadows for pinned columns. */
+.dt-header-filter {
+  opacity: 0;
+}
+.dt-cell:hover .dt-header-filter,
+.dt-cell:focus-within .dt-header-filter,
+.dt-header-filter[data-popup-open] {
+  opacity: 1;
+}
+
 .dt-cell[data-edge='left'] {
   border-right: 1px solid var(--border);
 }
