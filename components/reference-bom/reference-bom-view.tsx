@@ -1,16 +1,16 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight, GitBranch, Link2 } from 'lucide-react'
+import { Link2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/data-table/data-table'
 import type { BulkAction, DataTableColumn, RowAction, SelectionContext } from '@/lib/data-table/types'
 import { PageHeader } from '@/components/app/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
-import { REFERENCE_BOM_ROWS, type BomCoverage, type ReferenceBomRow } from '@/lib/reference-bom-data'
+import { REFERENCE_BOM_ROWS, SALES_ASSIGNMENT_ROWS, type BomCoverage, type ReferenceBomRow } from '@/lib/reference-bom-data'
 import { ReferenceBomAssignmentDialog } from './reference-bom-assignment-dialog'
+import { SalesAssignmentsTable } from './sales-assignments-table'
 
 const COVERAGE_STYLES: Record<BomCoverage, string> = {
   Reference: 'border-brand/25 bg-brand-soft text-brand-deep',
@@ -98,7 +98,7 @@ export function ReferenceBomView() {
           </TabsTrigger>
           <TabsTrigger value="sales" className="!h-9 flex-none gap-2 px-3">
             Sales Assignments
-            <Badge variant="outline" className="h-5 px-1.5 text-[10px]">Next</Badge>
+            <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{SALES_ASSIGNMENT_ROWS.length}</Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -122,17 +122,7 @@ export function ReferenceBomView() {
         </TabsContent>
 
         <TabsContent value="sales">
-          <div className="flex min-h-80 flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
-            <span className="mb-4 flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-              <GitBranch className="size-5" aria-hidden="true" />
-            </span>
-            <h2 className="text-sm font-semibold">Sales assignments are next</h2>
-            <p className="mt-1 max-w-md text-xs leading-5 text-muted-foreground">The Sales Demand assignment flow will use the same BOM coverage patterns once the SOP workflow is defined.</p>
-            <Button type="button" variant="outline" size="sm" className="mt-5" onClick={() => setActiveTab('sop')}>
-              Back to SOP Assignments
-              <ArrowRight data-icon="inline-end" aria-hidden="true" />
-            </Button>
-          </div>
+          <SalesAssignmentsTable />
         </TabsContent>
       </Tabs>
 

@@ -15,7 +15,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { MoreHorizontal, SearchX, Inbox } from 'lucide-react'
+import { ChevronRight, MoreHorizontal, SearchX, Inbox } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -133,6 +133,10 @@ export interface DataTableProps<T> {
 
   rowActions?: readonly RowAction<T>[] | ((row: T) => readonly RowAction<T>[])
   actionsWidth?: number
+  /** Returns nested rows rendered beneath the parent when the parent is expanded. */
+  getRowChildren?: (row: T) => readonly T[]
+  /** Expand every parent row with children on first render. */
+  defaultExpanded?: boolean
   onRowClick?: (row: T) => void
   getRowClassName?: (row: T) => string | undefined
 
@@ -172,6 +176,7 @@ export interface DataTableProps<T> {
 
 type Placed<T> = { column: DataTableColumn<T>; width: number; pin?: 'left' | 'right'; offset?: number; edge?: 'left' | 'right'; grow?: boolean }
 type HeaderSegment<T> = { group?: DataTableColumnGroup<T>; columns: Placed<T>[] }
+type DisplayRow<T> = { row: T; depth: number }
 
 const ROW_HEIGHT: Record<Density, string> = {
   compact: 'h-8',
@@ -199,6 +204,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
     bulkActions = [],
     rowActions,
     actionsWidth,
+    getRowChildren,
+    defaultExpanded = false,
     onRowClick,
     getRowClassName,
     toolbarStart,
@@ -270,6 +277,35 @@ export function DataTable<T>(props: DataTableProps<T>) {
     ? { page: result.page, pageCount: pagination ? clampPage(result.page, total, pageSize).pageCount : 1 }
     : clampPage(query.page, total, pageSize)
 
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(() => {
+    if (!defaultExpanded || !getRowChildren) return new Set()
+    return new Set(rows.filter((row) => getRowChildren(row).length > 0).map(getRowId))
+  })
+
+  const displayRows = useMemo<DisplayRow<T>[]>(() => {
+    if (!getRowChildren) return rows.map((row) => ({ row, depth: 0 }))
+
+    const next: DisplayRow<T>[] = []
+    const visit = (row: T, depth: number) => {
+      next.push({ row, depth })
+      if (!expandedRows.has(getRowId(row))) return
+      for (const child of getRowChildren(row)) visit(child, depth + 1)
+    }
+    rows.forEach((row) => visit(row, 0))
+    return next
+  }, [expandedRows, getRowChildren, getRowId, rows])
+
+  const toggleExpanded = (row: T) => {
+    if (!getRowChildren?.(row).length) return
+    const id = getRowId(row)
+    setExpandedRows((current) => {
+      const next = new Set(current)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
   const updateQuery = (patch: Partial<DataTableQuery>, reason: QueryChangeReason) => {
     const next: DataTableQuery = { ...query, ...patch, page: reason === 'page' ? (patch.page ?? query.page) : 1 }
     if (controlledQuery === undefined) setInternalQuery(next)
@@ -316,7 +352,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   )
 
   const rowSpans = useMemo(() => {
-    if (!mergeEqualRows || rows.length < 2) return null
+    if (!mergeEqualRows || getRowChildren || rows.length < 2) return null
     const requested = Array.isArray(mergeEqualRows) ? new Set(mergeEqualRows) : null
     const mergeColumns = visibleColumns.filter(
       (column) => column.mergeRows !== false && (!requested || requested.has(column.id)),
@@ -340,7 +376,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
       spans.set(column.id, columnSpans)
     }
     return spans
-  }, [mergeEqualRows, rows, visibleColumns])
+  }, [getRowChildren, mergeEqualRows, rows, visibleColumns])
 
   useEffect(() => {
     if (!storageKey) {
@@ -1007,6 +1043,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   const totalColumns = layout.placed.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)
   const showSkeleton = loading && rows.length === 0
   const showEmpty = !loading && rows.length === 0
+  const treeColumnId = layout.placed.find((placed) => !placed.pin)?.column.id ?? layout.placed[0]?.column.id
   const colSpanStyle: CSSProperties = { width: scrollState.viewport || undefined }
 
   return (
@@ -1244,12 +1281,14 @@ export function DataTable<T>(props: DataTableProps<T>) {
                 </tr>
               )}
 
-              {rows.map((row, rowIndex) => {
+              {displayRows.map(({ row, depth }, rowIndex) => {
                 const id = getRowId(row)
                 const isSelected = live.has(id)
+                const hasChildren = getRowChildren ? getRowChildren(row).length > 0 : false
                 return (
                   <tr
                     key={id}
+                    data-depth={depth}
                     data-selected={isSelected}
                     tabIndex={onRowClick ? 0 : undefined}
                     onClick={onRowClick ? (event) => onRowPointer(event, row) : undefined}
@@ -1259,6 +1298,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     className={cn(
                       'group/row bg-card outline-none hover:bg-muted data-[selected=true]:bg-brand-soft focus-visible:[&>td]:bg-muted',
                       onRowClick && 'cursor-pointer',
+                      depth > 0 && 'bg-muted/15',
                       getRowClassName?.(row),
                     )}
                   >
@@ -1308,7 +1348,30 @@ export function DataTable<T>(props: DataTableProps<T>) {
                             column.className,
                           )}
                         >
-                          <div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+                          <div
+                            className={cn(
+                              'min-w-0 overflow-hidden text-ellipsis whitespace-nowrap',
+                              column.id === treeColumnId && 'flex items-center gap-1.5',
+                            )}
+                            style={column.id === treeColumnId && depth > 0 ? { paddingLeft: `${depth * 1.25}rem` } : undefined}
+                          >
+                            {column.id === treeColumnId && hasChildren ? (
+                              <button
+                                type="button"
+                                aria-label={expandedRows.has(id) ? 'Collapse row' : 'Expand row'}
+                                aria-expanded={expandedRows.has(id)}
+                                title={expandedRows.has(id) ? 'Collapse row' : 'Expand row'}
+                                className="flex size-5 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  toggleExpanded(row)
+                                }}
+                              >
+                                <ChevronRight className={cn('size-3.5 transition-transform', expandedRows.has(id) && 'rotate-90')} aria-hidden="true" />
+                              </button>
+                            ) : column.id === treeColumnId && depth > 0 ? (
+                              <span className="size-5 shrink-0" aria-hidden="true" />
+                            ) : null}
                             {renderCellContent(row, rowIndex, column)}
                           </div>
                         </td>

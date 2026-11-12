@@ -52,3 +52,42 @@ export const PPB_BOM_ITEMS: PpbBomItem[] = [
   { id: 'pba-assy', name: 'PBA Assy', description: 'Main board assembly', localDefault: 100 },
   { id: 'rfid', name: 'RFID', description: 'RFID module', localDefault: 0 },
 ]
+
+export type SalesAssignmentRow = {
+  id: string
+  originalModel: string
+  newModel: string
+  referenceBom: string
+  division: number
+  totalVolume: number
+  children?: SalesAssignmentRow[]
+}
+
+export const SALES_ASSIGNMENT_ROWS: SalesAssignmentRow[] = [
+  {
+    id: 'sales-sm-097',
+    originalModel: 'SM-097',
+    newModel: '2 submodels',
+    referenceBom: 'Assign per child',
+    division: 100,
+    totalVolume: 2400,
+    children: [
+      { id: 'sales-sm-097-128', originalModel: 'SM-097', newModel: 'SM-097 128GB', referenceBom: 'BOM-ZB-420-R1', division: 60, totalVolume: 1440 },
+      { id: 'sales-sm-097-256', originalModel: 'SM-097', newModel: 'SM-097 256GB', referenceBom: 'BOM-NX-200-R2', division: 40, totalVolume: 960 },
+    ],
+  },
+  {
+    id: 'sales-sm-144',
+    originalModel: 'SM-144',
+    newModel: '3 submodels',
+    referenceBom: 'Assign per child',
+    division: 100,
+    totalVolume: 1280,
+    children: [
+      { id: 'sales-sm-144-base', originalModel: 'SM-144', newModel: 'SM-144 Base', referenceBom: 'BOM-GT-500-R4', division: 50, totalVolume: 640 },
+      { id: 'sales-sm-144-pro', originalModel: 'SM-144', newModel: 'SM-144 Pro', referenceBom: 'BOM-ZB-420-R1', division: 30, totalVolume: 384 },
+      { id: 'sales-sm-144-ultra', originalModel: 'SM-144', newModel: 'SM-144 Ultra', referenceBom: 'Fake BOM', division: 20, totalVolume: 256 },
+    ],
+  },
+  { id: 'sales-sm-221', originalModel: 'SM-221', newModel: 'SM-221', referenceBom: 'Unassigned', division: 100, totalVolume: 760 },
+]
