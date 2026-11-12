@@ -16,7 +16,6 @@ import { PPB_ITEM_SEED, type PpbItem } from '@/lib/ppb-items/data'
 import { UI_PARAMETER_YEARS, itemNameForUiParameter, type UiParameter, type UiParameterYear } from '@/lib/ui-parameters/data'
 import { useUiParameters } from './ui-parameters-provider'
 import { UiParameterFormDialog } from './ui-parameter-form-dialog'
-import { dataTableControlClass } from '@/components/data-table/toolbar-controls'
 
 function YesNoBadge({ value }: { value: 'Y' | 'N' }) {
   const enabled = value === 'Y'
@@ -59,17 +58,17 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
   const canGoNext = yearIndex >= 0 && yearIndex < yearOptions.length - 1
 
   return (
-    <div className={`${dataTableControlClass} gap-0 overflow-hidden px-0`} aria-label="Year filter">
+    <div className="flex h-9 shrink-0 items-stretch overflow-hidden rounded-lg border border-input bg-card" aria-label="Year filter">
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="size-7 shrink-0 rounded-md"
+        className="h-full w-9 rounded-none"
         disabled={!canGoPrevious}
         aria-label="Previous year"
         onClick={() => canGoPrevious && onChange(String(yearOptions[yearIndex - 1]) as UiParameterYear)}
       >
-        <ChevronLeft aria-hidden="true" className="size-4" />
+        <ChevronLeft aria-hidden="true" />
       </Button>
       <input
         type="number"
@@ -89,12 +88,12 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
         type="button"
         variant="ghost"
         size="icon"
-        className="size-7 shrink-0 rounded-md"
+        className="h-full w-9 rounded-none"
         disabled={!canGoNext}
         aria-label="Next year"
         onClick={() => canGoNext && onChange(String(yearOptions[yearIndex + 1]) as UiParameterYear)}
       >
-        <ChevronRight aria-hidden="true" className="size-4" />
+        <ChevronRight aria-hidden="true" />
       </Button>
     </div>
   )
