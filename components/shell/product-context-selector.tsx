@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ProductIcon } from '@/components/products/product-icon'
@@ -29,13 +29,23 @@ import { GBMS, type Gbm, type Product } from '@/lib/products/data'
 type Context = { product: string; year: string }
 type Draft = Context & { gbm: Gbm }
 
-const YEARS = ['2026', '2025'] as const
+const YEARS = ['2027', '2026', '2025'] as const
 
-export function ProductContextSelector({ showYear = true }: { showYear?: boolean }) {
+type ProductContextSelectorProps = {
+  showYear?: boolean
+  defaultYear?: string
+}
+
+export function ProductContextSelector({ showYear = true, defaultYear = '2026' }: ProductContextSelectorProps) {
   const { products } = useProducts()
   const [open, setOpen] = useState(false)
-  const [applied, setApplied] = useState<Context>({ product: 'mobile', year: '2026' })
+  const [applied, setApplied] = useState<Context>({ product: 'mobile', year: defaultYear })
   const [draft, setDraft] = useState<Draft>({ ...applied, gbm: 'MX' })
+
+  useEffect(() => {
+    setApplied((current) => (current.year === defaultYear ? current : { ...current, year: defaultYear }))
+    setDraft((current) => ({ ...current, year: defaultYear }))
+  }, [defaultYear])
 
   const byGbm = useMemo(
     () =>

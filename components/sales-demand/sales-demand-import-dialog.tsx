@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { UploadSimple } from '@phosphor-icons/react'
+import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,18 +19,21 @@ import { SALES_MONTHS, type SalesDemand, type SalesMonthId } from '@/lib/sales-d
 const MODEL_PATTERN = /^[A-Z]{2}-[A-Z]\d{3}$/
 const EXPECTED_HEADERS = ['Model', ...SALES_MONTHS.map((month) => month.label), 'Total']
 const number = new Intl.NumberFormat('en-US')
+const steps = ['Paste data', 'Review', 'Confirm'] as const
 
-const SAMPLE_TSV = [
-  EXPECTED_HEADERS.join('\t'),
-  ['SM-S098', '120', '180', '240', '300', '360', '420', '480', '540', '600', '660', '720', '780', '5400'].join('\t'),
-  ['SM-A017', '-', '90', '140', '210', '-', '-', '-', '-', '-', '-', '-', '-', '440'].join('\t'),
-].join('\n')
+type Step = 1 | 2 | 3
 
 type ParseResult = {
   rows: SalesDemand[]
   errors: string[]
   hasInput: boolean
 }
+
+const SAMPLE_TSV = [
+  EXPECTED_HEADERS.join('\t'),
+  ['SM-S098', '120', '180', '240', '300', '360', '420', '480', '540', '600', '660', '720', '780', '5400'].join('\t'),
+  ['SM-A017', '-', '90', '140', '210', '-', '-', '-', '-', '-', '-', '-', '-', '440'].join('\t'),
+].join('\n')
 
 function parseSalesDemand(input: string): ParseResult {
   const lines = input.split(/\r?\n/).map((line) => line.trimEnd()).filter((line) => line.trim())
@@ -95,18 +99,75 @@ function parseSalesDemand(input: string): ParseResult {
   return { rows, errors, hasInput: true }
 }
 
+function StepIndicator({ currentStep }: { currentStep: Step }) {
+  return (
+    <ol className="grid grid-cols-3 gap-2" aria-label="Sales demand import steps">
+      {steps.map((label, index) => {
+        const step = (index + 1) as Step
+        const active = step === currentStep
+        const complete = step < currentStep
+        return (
+          <li
+            key={label}
+            aria-current={active ? 'step' : undefined}
+            className={cn(
+              'flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium',
+              active && 'border-brand/40 bg-brand/10 text-foreground',
+              complete && 'border-success/30 bg-success/5 text-foreground',
+              !active && !complete && 'border-border text-muted-foreground',
+            )}
+          >
+            <span
+              className={cn(
+                'flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold',
+                active && 'bg-brand text-primary-foreground',
+                complete && 'bg-success text-primary-foreground',
+                !active && !complete && 'bg-muted text-muted-foreground',
+              )}
+            >
+              {step}
+            </span>
+            <span className="truncate">{label}</span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+function ValidationMessage({ result }: { result: ParseResult }) {
+  if (!result.hasInput) return null
+
+  if (result.errors.length === 0) {
+    return (
+      <div className="flex items-center gap-2" aria-live="polite">
+        <Badge variant="secondary">{result.rows.length} valid rows</Badge>
+        <span className="text-xs text-muted-foreground">Ready to review</span>
+      </div>
+    )
+  }
+
+  return (
+    <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+      <p className="font-medium">Fix the validation issues before continuing.</p>
+      <ul className="mt-1 flex flex-col gap-1">
+        {result.errors.slice(0, 5).map((error, index) => <li key={`${index}-${error}`}>{error}</li>)}
+      </ul>
+      {result.errors.length > 5 && <p className="mt-1">Showing the first 5 errors.</p>}
+    </div>
+  )
+}
+
 function PreviewTable({ rows }: { rows: SalesDemand[] }) {
   return (
-    <div className="max-h-64 overflow-auto rounded-lg border border-border">
+    <div className="max-h-72 overflow-auto rounded-lg border border-border">
       <table className="w-full min-w-[1200px] border-collapse text-left text-xs">
         <caption className="sr-only">Preview of pasted 2027 monthly sales demand</caption>
         <thead className="sticky top-0 bg-muted text-muted-foreground">
           <tr>
             <th className="px-3 py-2 font-medium">Model</th>
             {SALES_MONTHS.map((month) => (
-              <th key={month.id} className="px-3 py-2 text-right font-medium">
-                {month.label}
-              </th>
+              <th key={month.id} className="px-3 py-2 text-right font-medium">{month.label}</th>
             ))}
             <th className="px-3 py-2 text-right font-medium">Total</th>
           </tr>
@@ -132,17 +193,21 @@ function PreviewTable({ rows }: { rows: SalesDemand[] }) {
 
 export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDemand[]) => void }) {
   const [open, setOpen] = useState(false)
+  const [step, setStep] = useState<Step>(1)
   const [input, setInput] = useState('')
   const result = useMemo(() => parseSalesDemand(input), [input])
-  const canImport = result.rows.length > 0 && result.errors.length === 0
+  const canContinue = result.rows.length > 0 && result.errors.length === 0
 
   const handleOpenChange = (nextOpen: boolean) => {
-    if (nextOpen) setInput('')
+    if (nextOpen) {
+      setStep(1)
+      setInput('')
+    }
     setOpen(nextOpen)
   }
 
   const importRows = () => {
-    if (!canImport) return
+    if (!canContinue) return
     onImport(result.rows)
     setOpen(false)
   }
@@ -153,60 +218,90 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
         <UploadSimple data-icon="inline-start" />
         Import sales demand
       </Button>
-      <DialogContent className="max-w-4xl gap-5">
-        <DialogHeader>
-          <DialogTitle>Import sales demand</DialogTitle>
-          <DialogDescription>
-            Paste the tab-separated 2027 sales provision copied from Excel. Use one model per line and a dash for months without volume.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-3">
-            <label htmlFor="sales-demand-tsv" className="text-sm font-medium text-foreground">
-              Excel content
-            </label>
-            <Button variant="ghost" size="sm" onClick={() => setInput(SAMPLE_TSV)}>
-              Use sample
-            </Button>
-          </div>
-          <Textarea
-            id="sales-demand-tsv"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder={SAMPLE_TSV}
-            className="min-h-40 resize-y font-mono text-xs leading-5"
-            aria-describedby="sales-demand-tsv-help"
-          />
-          <p id="sales-demand-tsv-help" className="text-xs text-muted-foreground">
-            Expected columns: Model, Jan 2027 through Dec 2027, and Total. Monthly values must be non-negative numbers or -.
-          </p>
-        </div>
-
-        {result.hasInput && (
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-2" aria-live="polite">
-              <Badge variant={result.errors.length === 0 ? 'secondary' : 'destructive'}>
-                {result.errors.length === 0 ? `${result.rows.length} valid rows` : `${result.errors.length} validation errors`}
-              </Badge>
-              {result.errors.length === 0 && <span className="text-xs text-muted-foreground">Ready to import</span>}
+      <DialogContent className="w-[calc(100%-2rem)] !max-w-[1100px] overflow-hidden p-0">
+        <div className="flex max-h-[calc(100vh-2rem)] flex-col">
+          <DialogHeader className="shrink-0 gap-4 border-b border-border px-6 pt-6 pb-5">
+            <div>
+              <DialogTitle>Import sales demand</DialogTitle>
+              <DialogDescription className="mt-1">
+                Import the 2027 monthly sales provision copied from Excel.
+              </DialogDescription>
             </div>
-            {result.errors.length > 0 && (
-              <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-                <ul className="flex flex-col gap-1">
-                  {result.errors.slice(0, 6).map((error) => <li key={error}>{error}</li>)}
-                </ul>
-                {result.errors.length > 6 && <p className="mt-1">Showing the first 6 errors.</p>}
-              </div>
-            )}
-            {result.rows.length > 0 && <PreviewTable rows={result.rows} />}
-          </div>
-        )}
+            <StepIndicator currentStep={step} />
+          </DialogHeader>
 
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={importRows} disabled={!canImport}>Import {canImport ? `${result.rows.length} rows` : 'sales demand'}</Button>
-        </DialogFooter>
+          <div className="min-h-0 overflow-y-auto px-6 py-5">
+            {step === 1 && (
+              <section className="flex flex-col gap-4" aria-labelledby="paste-sales-demand-title">
+                <div>
+                  <h2 id="paste-sales-demand-title" className="text-sm font-semibold text-foreground">Paste Excel data</h2>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Expected columns: Model, Jan 2027 through Dec 2027, and Total. Use a dash for months without volume.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <label htmlFor="sales-demand-tsv" className="text-sm font-medium text-foreground">Excel content</label>
+                    <Button variant="ghost" size="sm" onClick={() => setInput(SAMPLE_TSV)}>Use sample</Button>
+                  </div>
+                  <Textarea
+                    id="sales-demand-tsv"
+                    value={input}
+                    onChange={(event) => setInput(event.target.value)}
+                    placeholder={SAMPLE_TSV}
+                    wrap="off"
+                    className="min-h-56 resize-y overflow-x-auto whitespace-pre font-mono text-xs leading-5"
+                    aria-describedby="sales-demand-tsv-help"
+                  />
+                  <p id="sales-demand-tsv-help" className="text-xs text-muted-foreground">
+                    Paste tab-separated values directly from the spreadsheet. Headers are case-insensitive.
+                  </p>
+                </div>
+                <ValidationMessage result={result} />
+              </section>
+            )}
+
+            {step === 2 && (
+              <section className="flex flex-col gap-4" aria-labelledby="review-sales-demand-title">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 id="review-sales-demand-title" className="text-sm font-semibold text-foreground">Review imported data</h2>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">Confirm the monthly values before importing them into Sales Demand.</p>
+                  </div>
+                  <Badge variant="secondary">{result.rows.length} rows ready</Badge>
+                </div>
+                <PreviewTable rows={result.rows} />
+              </section>
+            )}
+
+            {step === 3 && (
+              <section className="flex flex-col gap-4" aria-labelledby="confirm-sales-demand-title">
+                <div>
+                  <h2 id="confirm-sales-demand-title" className="text-sm font-semibold text-foreground">Confirm import</h2>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">The validated rows will replace the current mocked Sales Demand data in this view.</p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/40 px-4 py-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">{result.rows.length} rows</Badge>
+                    <span className="text-sm text-foreground">ready to import for calendar year 2027</span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    Monthly totals have been recalculated from the pasted values and validated against the Total column.
+                  </p>
+                </div>
+              </section>
+            )}
+          </div>
+
+          <DialogFooter className="!mx-0 !mb-0 shrink-0 border-t border-border px-6 py-4">
+            <Button variant="ghost" onClick={() => (step === 1 ? setOpen(false) : setStep((step - 1) as Step))}>
+              {step === 1 ? 'Cancel' : 'Back'}
+            </Button>
+            {step === 1 && <Button onClick={() => setStep(2)} disabled={!canContinue}>Review data</Button>}
+            {step === 2 && <Button onClick={() => setStep(3)}>Continue</Button>}
+            {step === 3 && <Button onClick={importRows} disabled={!canContinue}>Import sales demand</Button>}
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )

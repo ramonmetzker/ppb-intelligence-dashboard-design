@@ -1,6 +1,7 @@
 'use client'
 
 import { DataTable } from '@/components/data-table/data-table'
+import { PageHeader } from '@/components/app/page-header'
 import type { DataTableColumnDefinition } from '@/lib/data-table/types'
 import { SOP_DEMAND_ROWS, SOP_SCHEMA, SOP_WEEKS, type SopDemand } from '@/lib/sop-demand/data'
 
@@ -47,12 +48,10 @@ const COLUMNS: DataTableColumnDefinition<SopDemand>[] = [
 export function SopDemandView() {
   return (
     <>
-      <div className="mb-4">
-        <h1 className="text-balance font-display text-2xl font-semibold tracking-tight text-foreground">SOP Demand</h1>
-        <p className="mt-1 max-w-3xl text-pretty text-sm leading-6 text-muted-foreground">
-          Weekly demand volume by model and plant from W45 2026 through W12 2027.
-        </p>
-      </div>
+      <PageHeader
+        title="SOP Demand"
+        description="Weekly demand volume by model and plant from W45 2026 through W12 2027."
+      />
 
       <DataTable<SopDemand>
         caption="SOP demand by model, plant, and week"
