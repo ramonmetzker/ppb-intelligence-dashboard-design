@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { PageHeader } from '@/components/app/page-header'
 import { StoryStatus } from '@/components/app/story-status'
 import { VolumePanel } from '@/components/app/volume-panel'
 import { TrajectoryPanel } from '@/components/app/trajectory-client'
@@ -10,6 +11,10 @@ export const metadata: Metadata = { title: 'Overview | PPB' }
 export default function OverviewPage() {
   return (
     <>
+      <PageHeader
+        title="Overview"
+        description="Current PPB score, forecast, and simulation status for the selected plan."
+      />
       <div className="flex flex-col gap-3">
         <StoryStatus />
         <Reveal>
