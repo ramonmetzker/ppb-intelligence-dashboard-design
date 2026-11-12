@@ -298,6 +298,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   const draggedColumnRef = useRef<string | null>(null)
   const [dragTarget, setDragTarget] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null)
 
   const orderedColumns = useMemo(() => {
     const byId = new Map(columns.map((column) => [column.id, column]))
@@ -1253,6 +1254,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     tabIndex={onRowClick ? 0 : undefined}
                     onClick={onRowClick ? (event) => onRowPointer(event, row) : undefined}
                     onKeyDown={onRowClick ? (event) => onRowKey(event, row) : undefined}
+                    onPointerEnter={rowSpans ? () => setHoveredRowIndex(rowIndex) : undefined}
+                    onPointerLeave={rowSpans ? () => setHoveredRowIndex(null) : undefined}
                     className={cn(
                       'group/row bg-card outline-none hover:bg-muted data-[selected=true]:bg-brand-soft focus-visible:[&>td]:bg-muted',
                       onRowClick && 'cursor-pointer',
@@ -1281,6 +1284,11 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       const { column } = placed
                       const rowSpan = rowSpans?.get(column.id)?.[rowIndex] ?? 1
                       if (rowSpan === 0) return null
+                      const mergedCellHovered =
+                        rowSpan > 1 &&
+                        hoveredRowIndex !== null &&
+                        hoveredRowIndex >= rowIndex &&
+                        hoveredRowIndex < rowIndex + rowSpan
                       const align = column.align ?? (column.kind === 'number' ? 'right' : 'left')
                       return (
                         <td
@@ -1293,7 +1301,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
                             cellBase,
                             rowHeight,
                             placed.pin ? pinnedCell : undefined,
-                            rowSpan > 1 && !placed.pin && '!bg-transparent group-hover/row:!bg-transparent',
+                            rowSpan > 1 && !placed.pin && '!bg-transparent',
+                            mergedCellHovered && '!bg-muted',
                             align === 'right' && 'tnum text-right',
                             align === 'center' && 'text-center',
                             column.className,
