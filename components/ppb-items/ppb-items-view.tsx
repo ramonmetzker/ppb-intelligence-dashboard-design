@@ -13,7 +13,7 @@ import {
   type DataTableQuery,
   type RowAction,
 } from '@/lib/data-table/types'
-import { PPB_CATEGORIES, PPB_ITEM_SCHEMA, PPB_ITEM_SEED, type PpbItem } from '@/lib/ppb-items/data'
+import { PPB_ITEM_SCHEMA, PPB_ITEM_SEED, PPB_NCM_MAPPING_SEED, type PpbItem, type PpbNcmMapping } from '@/lib/ppb-items/data'
 import { PpbItemFormDialog, type PpbItemFormValues } from './ppb-item-form-dialog'
 
 const schemaById = new Map(PPB_ITEM_SCHEMA.map((schema) => [schema.id, schema]))
@@ -47,49 +47,62 @@ const COLUMNS: DataTableColumn<PpbItem>[] = [
   },
 ]
 
-const RELATED_COLUMNS: DataTableColumn<RelatedMasterRecord>[] = [
-  { id: 'name', header: 'Name', kind: 'text', width: 220, pin: 'left', grow: true },
-  { id: 'description', header: 'Description', kind: 'text', width: 360 },
-  { id: 'linkedItems', header: 'Linked Items', kind: 'number', width: 140, align: 'right' },
-  { id: 'status', header: 'Status', kind: 'text', width: 130, cell: ({ row }) => <Badge variant="secondary">{row.status}</Badge> },
-]
+function createMappingColumns(items: readonly PpbItem[]): DataTableColumn<PpbNcmMapping>[] {
+  const itemNames = new Map(items.map((item) => [item.id, item.itemName]))
 
-type RelatedMasterRecord = {
-  id: string
-  name: string
-  description: string
-  linkedItems: number
-  status: 'Active' | 'Draft'
-}
-
-const RELATED_DATA: Record<'categories' | 'mappings' | 'attributes', RelatedMasterRecord[]> = {
-  categories: PPB_CATEGORIES.map((name, index) => ({
-    id: name,
-    name,
-    description: index === 0 ? 'Items sourced from approved local suppliers.' : index === 1 ? 'Items produced within the manufacturing network.' : 'Items outside the localization scope.',
-    linkedItems: [4, 3, 2][index],
-    status: 'Active',
-  })),
-  mappings: [
-    { id: 'local-source', name: 'Local source mapping', description: 'Links PPB items to local purchasing references.', linkedItems: 6, status: 'Active' },
-    { id: 'production-route', name: 'Production route mapping', description: 'Links PPB items to in-house production routes.', linkedItems: 3, status: 'Active' },
-    { id: 'exception-map', name: 'Localization exception map', description: 'Items excluded from the localization mapping flow.', linkedItems: 2, status: 'Draft' },
-  ],
-  attributes: [
-    { id: 'category', name: 'Category', description: 'Classification used by localization and sourcing workflows.', linkedItems: 10, status: 'Active' },
-    { id: 'mapping', name: 'Mapping', description: 'Controls whether an item participates in mapping workflows.', linkedItems: 10, status: 'Active' },
-    { id: 'active', name: 'Active', description: 'Controls whether an item is available for planning flows.', linkedItems: 10, status: 'Active' },
-  ],
+  return [
+    {
+      id: 'plant',
+      header: 'Plant',
+      kind: 'text',
+      width: 150,
+      cell: ({ row }) => <Badge variant="outline">{row.plant}</Badge>,
+    },
+    {
+      id: 'ncm',
+      header: 'NCM',
+      kind: 'text',
+      width: 180,
+      cell: ({ row }) => <span className="font-mono text-xs tracking-wide">{row.ncm}</span>,
+    },
+    {
+      id: 'suframa',
+      header: 'Suframa (Destaque)',
+      kind: 'text',
+      width: 230,
+      cell: ({ row }) => <span className="font-mono text-xs tracking-wide">{row.suframa}</span>,
+    },
+    {
+      id: 'item',
+      header: 'Item',
+      kind: 'text',
+      width: 260,
+      grow: true,
+      accessor: (row) => itemNames.get(row.itemId) ?? row.itemId,
+      searchText: (row) => itemNames.get(row.itemId) ?? row.itemId,
+      cell: ({ row }) => <span>{itemNames.get(row.itemId) ?? row.itemId}</span>,
+    },
+    {
+      id: 'lastUpdated',
+      header: 'Last Updated',
+      kind: 'date',
+      width: 180,
+      cell: ({ row }) => <span className="tabular-nums">{row.lastUpdated}</span>,
+    },
+  ]
 }
 
 const DEFAULT_QUERY: DataTableQuery = { ...DEFAULT_DATA_TABLE_QUERY, sort: [{ id: 'itemName', direction: 'asc' }] }
+const DEFAULT_MAPPING_QUERY: DataTableQuery = { ...DEFAULT_DATA_TABLE_QUERY, sort: [{ id: 'plant', direction: 'asc' }] }
 
 export function PpbItemsView() {
   const [items, setItems] = useState<readonly PpbItem[]>(PPB_ITEM_SEED)
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_QUERY)
+  const [mappingQuery, setMappingQuery] = useState<DataTableQuery>(DEFAULT_MAPPING_QUERY)
   const [activeTab, setActiveTab] = useState('items')
   const [editing, setEditing] = useState<PpbItem | null>(null)
   const [formOpen, setFormOpen] = useState(false)
+  const mappingColumns = useMemo(() => createMappingColumns(items), [items])
 
   const openCreate = () => {
     setEditing(null)
@@ -113,8 +126,6 @@ export function PpbItemsView() {
     { id: 'edit', label: 'Edit', icon: <Pencil aria-hidden="true" />, inline: true, onSelect: openEdit },
   ]
 
-  const tabCounts = useMemo(() => ({ items: items.length, categories: RELATED_DATA.categories.length, mappings: RELATED_DATA.mappings.length, attributes: RELATED_DATA.attributes.length }), [items.length])
-
   return (
     <>
       <PageHeader
@@ -131,10 +142,8 @@ export function PpbItemsView() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
         <TabsList variant="line" className="w-full justify-start gap-2 rounded-none border-b border-border p-0">
-          <TabsTrigger value="items" className="flex-none gap-2 px-3 pb-2">Items <Badge variant="secondary">{tabCounts.items}</Badge></TabsTrigger>
-          <TabsTrigger value="categories" className="flex-none gap-2 px-3 pb-2">Categories <Badge variant="outline">{tabCounts.categories}</Badge></TabsTrigger>
-          <TabsTrigger value="mappings" className="flex-none gap-2 px-3 pb-2">Mappings <Badge variant="outline">{tabCounts.mappings}</Badge></TabsTrigger>
-          <TabsTrigger value="attributes" className="flex-none gap-2 px-3 pb-2">Attributes <Badge variant="outline">{tabCounts.attributes}</Badge></TabsTrigger>
+          <TabsTrigger value="items" className="flex-none gap-2 px-3 pb-2">Items <Badge variant="secondary">{items.length}</Badge></TabsTrigger>
+          <TabsTrigger value="mapping-ncm" className="flex-none px-3 pb-2">Mapping (NCM)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items">
@@ -154,20 +163,20 @@ export function PpbItemsView() {
           />
         </TabsContent>
 
-        {(['categories', 'mappings', 'attributes'] as const).map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <DataTable<RelatedMasterRecord>
-              caption={`${tab} connected to PPB Items`}
-              persistenceKey={`ppb-items.${tab}`}
-              columns={RELATED_COLUMNS}
-              data={RELATED_DATA[tab]}
-              getRowId={(row) => row.id}
-              columnPinning={false}
-              densityControl={false}
-              pagination={false}
-            />
-          </TabsContent>
-        ))}
+        <TabsContent value="mapping-ncm">
+          <DataTable<PpbNcmMapping>
+            caption="PPB Items Mapping (NCM)"
+            persistenceKey="ppb-items.mapping-ncm"
+            columns={mappingColumns}
+            data={PPB_NCM_MAPPING_SEED}
+            getRowId={(row) => row.id}
+            query={mappingQuery}
+            onQueryChange={setMappingQuery}
+            columnPinning={false}
+            densityControl={false}
+            pagination={false}
+          />
+        </TabsContent>
       </Tabs>
 
       <PpbItemFormDialog open={formOpen} onOpenChange={setFormOpen} item={editing} items={items} onSubmit={submit} />
