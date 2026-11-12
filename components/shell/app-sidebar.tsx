@@ -41,10 +41,6 @@ const GROUPS: {
     items: [{ label: 'simulation', href: '/simulation', icon: GitBranch }],
   },
   {
-    label: 'monitor',
-    items: [{ label: 'rpaMonitor', href: '/rpa-monitor', icon: Robot }],
-  },
-  {
     label: 'rawData',
     items: [
       { label: 'materials', href: '/raw-data/material-prices', icon: Tag },
@@ -54,6 +50,10 @@ const GROUPS: {
       { label: 'salesDemand', href: '/raw-data/sales-demand', icon: Table },
       { label: 'uiParameters', href: '/raw-data/ui-parameters', icon: SlidersHorizontal },
     ],
+  },
+  {
+    label: 'automations',
+    items: [{ label: 'rpaMonitor', href: '/rpa-monitor', icon: Robot }],
   },
 ]
 
