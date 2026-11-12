@@ -86,7 +86,7 @@ export function TopBar() {
             ) : (
               <>
                 {isOverview && (
-                  <div className="w-48 shrink-0">
+                  <div className="w-64 shrink-0 sm:w-72 lg:w-80">
                     <SidebarPlanSwitcher topbar />
                   </div>
                 )}

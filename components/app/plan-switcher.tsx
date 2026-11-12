@@ -209,8 +209,8 @@ export function SidebarPlanSwitcher({
         title={compact ? `Active simulation: ${planName}` : undefined}
         className={cn(
           'group relative w-full overflow-hidden rounded-md text-left transition-colors focus-visible:outline-2 focus-visible:outline-ring',
-          topbar
-            ? 'flex h-9 items-center gap-2 bg-transparent px-1 hover:text-white'
+            topbar
+              ? 'flex h-10 items-center gap-2.5 rounded-md border border-sidebar-border/70 bg-sidebar-accent/30 px-2.5 hover:border-sidebar-border hover:bg-sidebar-accent hover:text-white'
             : compact
               ? 'flex h-11 items-center justify-center border border-sidebar-border bg-ink-raised px-1 hover:border-brand/60'
               : 'border border-sidebar-border bg-ink-raised px-2.5 py-2 hover:border-brand/60',
@@ -227,16 +227,16 @@ export function SidebarPlanSwitcher({
         )}
         {topbar ? (
           <>
-            <span className="text-[10px] font-semibold tracking-[0.12em] text-sidebar-foreground/75 uppercase">
+            <span className="shrink-0 text-[10px] font-semibold tracking-[0.12em] text-sidebar-foreground/75 uppercase">
               Simulation
             </span>
-            <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-white">
+            <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-white">
               {planName}
             </span>
             <CountUp
               value={sim.yearEnd}
               duration={800}
-              className="num text-[12px] font-semibold text-white"
+              className="num min-w-10 text-right text-[12px] font-semibold text-white"
             />
             <CaretUpDown size={12} className="shrink-0 text-sidebar-foreground/45" aria-hidden="true" />
           </>
