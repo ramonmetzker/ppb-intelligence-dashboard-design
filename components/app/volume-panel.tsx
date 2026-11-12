@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { ChevronRight } from 'lucide-react'
 import {
   Bar,
   CartesianGrid,
@@ -20,6 +21,7 @@ import {
   fmt,
   fmtPercent,
   fmtVolume,
+  type ItemDef,
   type SeriesRow,
   type VolumeMode,
 } from '@/lib/ppb-model'
@@ -27,6 +29,10 @@ import { CountUp } from '@/components/app/count-up'
 import { Panel } from '@/components/app/panel'
 import { usePlan } from '@/components/app/plan-provider'
 import { Segmented } from '@/components/app/segmented'
+import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
+import { additionalParameters, isItemDisplayed } from '@/lib/ui-parameters/behavior'
+import { itemNameForUiParameter } from '@/lib/ui-parameters/data'
+import type { UiParameter } from '@/lib/ui-parameters/data'
 import { cn } from '@/lib/utils'
 
 const INK = 'var(--ink)'
@@ -45,9 +51,12 @@ const MODE_OPTIONS = [
 
 export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'full' }) {
   const { plan, planName } = usePlan()
+  const { parameters } = useUiParameters()
   const [mode, setMode] = useState<VolumeMode>('monthly')
   const [lineMetric, setLineMetric] = useState<LineMetric>('share')
   const [matrixMetric, setMatrixMetric] = useState<MatrixMetric>('sharePoints')
+  const visibleItems = useMemo(() => ITEMS.filter((item) => isItemDisplayed(item.name, parameters)), [parameters])
+  const extraItems = useMemo(() => additionalParameters(parameters), [parameters])
 
   const series = useMemo(() => buildSeries(plan, mode), [plan, mode])
   const base = baselineSeries(mode)
@@ -64,12 +73,12 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
           baseShare: i >= LAST_ACTUAL ? base[i].total.share : undefined,
           basePoints: i >= LAST_ACTUAL ? base[i].total.points : undefined,
         }
-        ITEMS.forEach((item) => {
+        visibleItems.forEach((item) => {
           entry[`vol_${item.key}`] = row.cells[item.key].volume
         })
         return entry
       }),
-    [series, base],
+    [series, base, visibleItems],
   )
 
   const rightDomain = useMemo<[number, number]>(() => {
@@ -100,7 +109,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 pt-3">
         <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-muted-foreground">
-          {ITEMS.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.key} className="flex items-center gap-1.5">
               <span
                 aria-hidden="true"
@@ -181,10 +190,10 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               tick={{ fill: AXIS, fontSize: 11, fontFamily: 'var(--font-space-grotesk)' }}
             />
             <Tooltip
-              content={<VolumeTooltip rows={series} baseRows={base} mode={mode} />}
+              content={<VolumeTooltip rows={series} baseRows={base} mode={mode} items={visibleItems} />}
               cursor={{ fill: 'color-mix(in srgb, var(--brand) 5%, transparent)' }}
             />
-            {ITEMS.map((item) => (
+            {visibleItems.map((item) => (
               <Bar
                 key={item.key}
                 yAxisId="left"
@@ -244,11 +253,11 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
 
         {layout === 'full' ? (
           <div className="flex flex-col gap-4 pb-3">
-            <Matrix series={series} base={base} metric="sharePoints" />
-            <Matrix series={series} base={base} metric="volume" />
+            <Matrix series={series} base={base} metric="sharePoints" items={visibleItems} extraItems={extraItems} />
+            <Matrix series={series} base={base} metric="volume" items={visibleItems} extraItems={extraItems} />
           </div>
         ) : (
-          <Matrix series={series} base={base} metric={matrixMetric} />
+          <Matrix series={series} base={base} metric={matrixMetric} items={visibleItems} extraItems={extraItems} />
         )}
       </div>
     </Panel>
@@ -264,11 +273,16 @@ function Matrix({
   series,
   base,
   metric,
+  items,
+  extraItems,
 }: {
   series: SeriesRow[]
   base: SeriesRow[]
   metric: MatrixMetric
+  items: readonly ItemDef[]
+  extraItems: readonly UiParameter[]
 }) {
+  const [expanded, setExpanded] = useState(false)
   const isShare = metric === 'sharePoints'
   const openStart = (i: number) => i === LAST_ACTUAL + 1
 
@@ -309,7 +323,7 @@ function Matrix({
           </tr>
         </thead>
         <tbody>
-          {ITEMS.map((item, rowIndex) => (
+          {items.map((item, rowIndex) => (
             <tr key={item.key} className="border-b border-border/70">
               <th scope="row" className="px-4 py-1.5 text-left font-medium">
                 <span className="flex items-center gap-2">
@@ -362,6 +376,48 @@ function Matrix({
               })}
             </tr>
           ))}
+          {extraItems.length > 0 && (
+            <>
+              <tr className="border-b border-border/70">
+                <th scope="row" colSpan={series.length + 1} className="px-4 py-1.5 text-left">
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    onClick={() => setExpanded((current) => !current)}
+                    className="group flex w-full items-center gap-2 text-left text-[12px] font-semibold focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground transition-colors group-hover:border-brand/50 group-hover:text-brand">
+                      <ChevronRight
+                        aria-hidden="true"
+                        className={cn('size-3.5 transition-transform duration-200', expanded && 'rotate-90')}
+                      />
+                    </span>
+                    <span>Additional Items</span>
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
+                      {extraItems.length}
+                    </span>
+                  </button>
+                </th>
+              </tr>
+              {expanded && extraItems.map((parameter, index) => (
+                <tr
+                  key={parameter.id}
+                  className="additional-item-row border-b border-border/70"
+                  style={{ animationDelay: `${index * 45}ms` }}
+                >
+                  <th scope="row" className="px-4 py-1.5 pl-11 text-left text-[11.5px] font-normal text-muted-foreground">
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-muted-foreground/45" />
+                      {itemNameForUiParameter(parameter.itemId)}
+                    </span>
+                  </th>
+                  {series.map((row) => (
+                    <td key={row.month} className="px-2 py-1.5 text-right text-muted-foreground/70">—</td>
+                  ))}
+                </tr>
+              ))}
+            </>
+          )}
         </tbody>
         <tfoot>
           <tr className="border-t-2 border-foreground/80 bg-secondary/50">
@@ -434,9 +490,10 @@ type TipProps = {
   rows: SeriesRow[]
   baseRows: SeriesRow[]
   mode: VolumeMode
+  items: readonly ItemDef[]
 }
 
-function VolumeTooltip({ active, label, rows, baseRows, mode }: TipProps) {
+function VolumeTooltip({ active, label, rows, baseRows, mode, items }: TipProps) {
   if (!active || !label) return null
   const row = rows.find((r) => r.month === label)
   if (!row) return null
@@ -449,7 +506,7 @@ function VolumeTooltip({ active, label, rows, baseRows, mode }: TipProps) {
         {label} <span className="font-normal text-muted-foreground">{mode}</span>
       </p>
       <ul className="flex flex-col gap-1">
-        {ITEMS.map((item) => (
+        {items.map((item) => (
           <li key={item.key} className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-2 text-muted-foreground">
               <span

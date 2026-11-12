@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -11,6 +12,8 @@ import {
 } from 'recharts'
 import { ITEMS, fmt, fmtPercent, fmtSigned, itemShareTrend } from '@/lib/ppb-model'
 import { usePlan } from '@/components/app/plan-provider'
+import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
+import { isItemDisplayed } from '@/lib/ui-parameters/behavior'
 import { cn } from '@/lib/utils'
 
 const INK = 'var(--ink)'
@@ -21,6 +24,8 @@ const AXIS = 'var(--muted-foreground)'
 
 export function ItemTrends() {
   const { plan, sim } = usePlan()
+  const { parameters } = useUiParameters()
+  const visibleItems = useMemo(() => ITEMS.filter((item) => isItemDisplayed(item.name, parameters)), [parameters])
 
   return (
     <section aria-label="Local share trend by item">
@@ -35,7 +40,7 @@ export function ItemTrends() {
         </div>
       </div>
       <ul className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
-        {ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const row = sim.items.find((r) => r.key === item.key)!
           const data = itemShareTrend(plan, item.key)
           return (

@@ -10,6 +10,7 @@ import {
   GitBranch,
   Robot,
   SquaresFour,
+  SlidersHorizontal,
   Table,
   Tag,
 } from '@phosphor-icons/react'
@@ -53,6 +54,7 @@ const GROUPS: {
       { label: 'products', href: '/products', icon: Database },
       { label: 'sopDemand', href: '/raw-data/sop-demand', icon: Table },
       { label: 'salesDemand', href: '/raw-data/sales-demand', icon: Table },
+      { label: 'uiParameters', href: '/raw-data/ui-parameters', icon: SlidersHorizontal },
     ],
   },
 ]

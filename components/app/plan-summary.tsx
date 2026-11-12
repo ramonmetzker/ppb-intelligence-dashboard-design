@@ -1,16 +1,25 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Sparkle } from '@phosphor-icons/react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { ITEMS, BASE_PLAN, fmtSigned } from '@/lib/ppb-model'
 import { CountUp } from '@/components/app/count-up'
 import { Panel } from '@/components/app/panel'
 import { InlinePlanSwitcher } from '@/components/app/plan-switcher'
 import { usePlan } from '@/components/app/plan-provider'
+import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
+import { additionalParameters, isItemDisplayed } from '@/lib/ui-parameters/behavior'
+import { itemNameForUiParameter } from '@/lib/ui-parameters/data'
 import { cn } from '@/lib/utils'
 
 export function PlanSummary() {
   const { plan, sim } = usePlan()
+  const { parameters } = useUiParameters()
+  const [expanded, setExpanded] = useState(false)
+  const visibleItems = useMemo(() => ITEMS.filter((item) => isItemDisplayed(item.name, parameters)), [parameters])
+  const extraItems = useMemo(() => additionalParameters(parameters), [parameters])
 
   return (
     <Panel
@@ -35,7 +44,7 @@ export function PlanSummary() {
         <span className="text-right">Points</span>
       </div>
       <ul className="flex flex-col border-t border-border">
-        {ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const row = sim.items.find((r) => r.key === item.key)!
           return (
             <li
@@ -88,6 +97,34 @@ export function PlanSummary() {
             </li>
           )
         })}
+        {extraItems.length > 0 && (
+          <>
+            <li className="border-b border-border/70 bg-secondary/30 px-4 py-2">
+              <button
+                type="button"
+                aria-expanded={expanded}
+                onClick={() => setExpanded((current) => !current)}
+                className="grid w-full grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 text-left text-[12.5px] font-semibold focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                <span className="flex items-center gap-2">
+                  {expanded ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
+                  Additional Items
+                </span>
+                <span />
+                <span />
+                <span className="num text-right text-muted-foreground">{extraItems.length}</span>
+              </button>
+            </li>
+            {expanded && extraItems.map((parameter) => (
+              <li key={parameter.id} className="grid grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 border-b border-border/70 bg-secondary/10 px-4 py-2 text-[12px] text-muted-foreground">
+                <span className="truncate pl-6">{itemNameForUiParameter(parameter.itemId)}</span>
+                <span className="num text-right">—</span>
+                <span className="num text-right">—</span>
+                <span className="num text-right">—</span>
+              </li>
+            ))}
+          </>
+        )}
       </ul>
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-border px-4 py-2.5">
         <p className="text-[11.5px] text-muted-foreground">

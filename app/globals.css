@@ -402,6 +402,20 @@ input[type='range'].lever:focus-visible {
   opacity: 0;
 }
 
+@keyframes additional-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.additional-item-row {
+  animation: additional-row-in 0.36s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
 @keyframes sheen {
   from {
     transform: translateX(-120%);
