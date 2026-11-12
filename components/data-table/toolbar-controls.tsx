@@ -17,7 +17,7 @@ import {
 import type { Density } from '@/lib/data-table/types'
 import type { DataTableLabels } from './filter-utils'
 
-const triggerClass =
+export const dataTableControlClass =
   'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-input bg-card px-2.5 text-[13px] font-medium outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 data-[popup-open]:bg-muted'
 
 export type ColumnToggle = { id: string; header: string; visible: boolean; hideable: boolean }
@@ -36,7 +36,7 @@ export function ColumnsMenu({
   const hiddenCount = columns.filter((c) => !c.visible).length
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={triggerClass} aria-label={labels.columns}>
+      <DropdownMenuTrigger className={dataTableControlClass} aria-label={labels.columns}>
         <Columns3 aria-hidden="true" className="size-4" />
         <span className="hidden lg:inline">{labels.columns}</span>
         {hiddenCount > 0 && (
@@ -76,7 +76,7 @@ export function DensityMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={triggerClass} aria-label={labels.density}>
+      <DropdownMenuTrigger className={dataTableControlClass} aria-label={labels.density}>
         <Rows3 aria-hidden="true" className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-40">
@@ -171,7 +171,7 @@ export function ExportMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={triggerClass} aria-label={labels.export} disabled={busy}>
+      <DropdownMenuTrigger className={dataTableControlClass} aria-label={labels.export} disabled={busy}>
         {busy ? (
           <Loader2 aria-hidden="true" className="size-4 animate-spin" />
         ) : (

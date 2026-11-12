@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleX, Pencil, Plus } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, CircleX, Pencil, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
 import { Badge } from '@/components/ui/badge'
@@ -13,9 +13,10 @@ import {
   type RowAction,
 } from '@/lib/data-table/types'
 import { PPB_ITEM_SEED, type PpbItem } from '@/lib/ppb-items/data'
-import { itemNameForUiParameter, type UiParameter } from '@/lib/ui-parameters/data'
+import { UI_PARAMETER_YEARS, itemNameForUiParameter, type UiParameter, type UiParameterYear } from '@/lib/ui-parameters/data'
 import { useUiParameters } from './ui-parameters-provider'
 import { UiParameterFormDialog } from './ui-parameter-form-dialog'
+import { dataTableControlClass } from '@/components/data-table/toolbar-controls'
 
 function YesNoBadge({ value }: { value: 'Y' | 'N' }) {
   const enabled = value === 'Y'
@@ -44,18 +45,69 @@ function createColumns(items: readonly PpbItem[]): DataTableColumn<UiParameter>[
     },
     { id: 'display', header: 'Display', kind: 'boolean', width: 150, align: 'center', accessor: (row) => row.display === 'Y', searchText: (row) => row.display, cell: ({ row }) => <YesNoBadge value={row.display} /> },
     { id: 'collapse', header: 'Collapse', kind: 'boolean', width: 160, align: 'center', accessor: (row) => row.collapse === 'Y', searchText: (row) => row.collapse, cell: ({ row }) => <YesNoBadge value={row.collapse} /> },
-    { id: 'year', header: 'Year', kind: 'number', width: 140, cell: ({ row }) => <span className="tabular-nums">{row.year}</span> },
+    { id: 'year', header: 'Year', kind: 'number', filterable: false, width: 140, cell: ({ row }) => <span className="tabular-nums">{row.year}</span> },
   ]
 }
 
 const DEFAULT_QUERY: DataTableQuery = { ...DEFAULT_DATA_TABLE_QUERY, sort: [{ id: 'order', direction: 'asc' }] }
 
+function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (year: UiParameterYear) => void }) {
+  const yearOptions = [...UI_PARAMETER_YEARS].map(Number).sort((a, b) => a - b)
+  const numericYear = Number(year)
+  const yearIndex = yearOptions.indexOf(numericYear)
+  const canGoPrevious = yearIndex > 0
+  const canGoNext = yearIndex >= 0 && yearIndex < yearOptions.length - 1
+
+  return (
+    <div className={`${dataTableControlClass} gap-0 overflow-hidden px-0`} aria-label="Year filter">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-full w-9 rounded-none"
+        disabled={!canGoPrevious}
+        aria-label="Previous year"
+        onClick={() => canGoPrevious && onChange(String(yearOptions[yearIndex - 1]) as UiParameterYear)}
+      >
+        <ChevronLeft aria-hidden="true" />
+      </Button>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={yearOptions[0]}
+        max={yearOptions[yearOptions.length - 1]}
+        step="1"
+        value={year}
+        aria-label="Year filter"
+        onChange={(event) => {
+          const next = event.target.value
+          if (UI_PARAMETER_YEARS.includes(next as UiParameterYear)) onChange(next as UiParameterYear)
+        }}
+        className="tnum h-full w-16 border-x border-input bg-transparent px-1 text-center text-[13px] font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      />
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-full w-9 rounded-none"
+        disabled={!canGoNext}
+        aria-label="Next year"
+        onClick={() => canGoNext && onChange(String(yearOptions[yearIndex + 1]) as UiParameterYear)}
+      >
+        <ChevronRight aria-hidden="true" />
+      </Button>
+    </div>
+  )
+}
+
 export function UiParametersView() {
   const { parameters, addParameter, updateParameter } = useUiParameters()
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_QUERY)
+  const [year, setYear] = useState<UiParameterYear>(UI_PARAMETER_YEARS[1])
   const [editing, setEditing] = useState<UiParameter | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const columns = useMemo(() => createColumns(PPB_ITEM_SEED), [])
+  const visibleParameters = useMemo(() => parameters.filter((parameter) => parameter.year === year), [parameters, year])
 
   const openCreate = () => {
     setEditing(null)
@@ -87,10 +139,11 @@ export function UiParametersView() {
         caption="UI Parameters master data"
         persistenceKey="ui-parameters"
         columns={columns}
-        data={parameters}
+        data={visibleParameters}
         getRowId={(row) => row.id}
         query={query}
         onQueryChange={setQuery}
+        toolbarStart={<YearSelector year={year} onChange={setYear} />}
         rowActions={rowActions}
         onRowClick={openEdit}
         columnPinning={false}
