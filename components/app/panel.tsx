@@ -24,7 +24,7 @@ export function Panel({
       aria-labelledby={headingId}
       className={cn('flex min-w-0 flex-col rounded-lg border border-border bg-card', className)}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-border px-4 py-3">
+      <header className="flex flex-col items-start gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
           <h2
             id={headingId}
