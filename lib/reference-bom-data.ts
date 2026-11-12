@@ -26,14 +26,14 @@ export type PpbBomItem = {
 }
 
 export const REFERENCE_BOM_ROWS: ReferenceBomRow[] = [
-  { id: 'sop-001', plant: 'Manaus', model: 'ZB-420', month: 'Nov 2026', volume: 1840, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
-  { id: 'sop-002', plant: 'Manaus', model: 'ZB-430', month: 'Nov 2026', volume: 1260, coverage: 'Previous', source: 'BOM-ZB-410-R3', previousBom: 'BOM-ZB-410-R3' },
-  { id: 'sop-003', plant: 'Jundiaí', model: 'NX-200', month: 'Dec 2026', volume: 980, coverage: 'Fake', source: 'Fake BOM' },
-  { id: 'sop-004', plant: 'Manaus', model: 'NX-210', month: 'Dec 2026', volume: 740, coverage: 'Reference', source: 'BOM-NX-200-R2' },
-  { id: 'sop-005', plant: 'Jundiaí', model: 'GT-510', month: 'Jan 2027', volume: 520, coverage: 'Previous', source: 'BOM-GT-500-R4', previousBom: 'BOM-GT-500-R4' },
-  { id: 'sop-006', plant: 'Manaus', model: 'GT-520', month: 'Jan 2027', volume: 410, coverage: 'Fake', source: 'Fake BOM' },
-  { id: 'sop-007', plant: 'Jundiaí', model: 'ZB-450', month: 'Feb 2027', volume: 680, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
-  { id: 'sop-008', plant: 'Manaus', model: 'NX-220', month: 'Feb 2027', volume: 320, coverage: 'Fake', source: 'Fake BOM' },
+  { id: 'sop-001', plant: 'P81M', model: 'ZB-420', month: 'Nov 2026', volume: 1840, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
+  { id: 'sop-002', plant: 'P81M', model: 'ZB-430', month: 'Nov 2026', volume: 1260, coverage: 'Previous', source: 'BOM-ZB-410-R3', previousBom: 'BOM-ZB-410-R3' },
+  { id: 'sop-003', plant: 'P81J', model: 'NX-200', month: 'Dec 2026', volume: 980, coverage: 'Fake', source: 'Fake BOM' },
+  { id: 'sop-004', plant: 'P81M', model: 'NX-210', month: 'Dec 2026', volume: 740, coverage: 'Reference', source: 'BOM-NX-200-R2' },
+  { id: 'sop-005', plant: 'P81J', model: 'GT-510', month: 'Jan 2027', volume: 520, coverage: 'Previous', source: 'BOM-GT-500-R4', previousBom: 'BOM-GT-500-R4' },
+  { id: 'sop-006', plant: 'P81M', model: 'GT-520', month: 'Jan 2027', volume: 410, coverage: 'Fake', source: 'Fake BOM' },
+  { id: 'sop-007', plant: 'P81J', model: 'ZB-450', month: 'Feb 2027', volume: 680, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
+  { id: 'sop-008', plant: 'P81M', model: 'NX-220', month: 'Feb 2027', volume: 320, coverage: 'Fake', source: 'Fake BOM' },
 ]
 
 export const REFERENCE_BOM_OPTIONS: ReferenceBomOption[] = [

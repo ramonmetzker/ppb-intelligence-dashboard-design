@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight, GitBranch, Link2, PackageCheck } from 'lucide-react'
+import { ArrowRight, GitBranch, Link2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/data-table/data-table'
@@ -19,7 +19,13 @@ const COVERAGE_STYLES: Record<BomCoverage, string> = {
 }
 
 const COLUMNS: readonly DataTableColumn<ReferenceBomRow>[] = [
-  { id: 'plant', header: 'Plant', accessor: 'plant', width: 130 },
+  {
+    id: 'plant',
+    header: 'Plant',
+    accessor: 'plant',
+    width: 130,
+    cell: ({ row }) => <Badge variant="outline" className="h-5 border-border px-1.5 font-mono text-[10px] font-semibold tracking-wide">{row.plant}</Badge>,
+  },
   { id: 'model', header: 'Model', accessor: 'model', width: 150, grow: true },
   { id: 'month', header: 'Month', accessor: 'month', width: 120 },
   { id: 'volume', header: 'Volume', accessor: 'volume', kind: 'number', width: 115, align: 'right' },
@@ -77,32 +83,12 @@ export function ReferenceBomView() {
     [],
   )
 
-  const referenceCount = REFERENCE_BOM_ROWS.filter((row) => row.coverage === 'Reference').length
-  const fakeCount = REFERENCE_BOM_ROWS.filter((row) => row.coverage === 'Fake').length
-  const totalVolume = REFERENCE_BOM_ROWS.reduce((sum, row) => sum + row.volume, 0)
-
   return (
     <>
       <PageHeader
         title="Reference BOM"
         description="Assign BOM coverage to future models found in demand that do not have an ingested BOM yet."
       />
-
-      <div className="mb-5 flex flex-col gap-3 rounded-xl border border-border bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand-deep">
-            <PackageCheck className="size-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold">Coverage queue ready for review</p>
-            <p className="truncate text-xs text-muted-foreground">{REFERENCE_BOM_ROWS.length} models · {totalVolume.toLocaleString('en-US')} planned units · mock data</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 pl-12 text-xs sm:pl-0">
-          <span className="flex items-center gap-1.5 text-muted-foreground"><span className="size-1.5 rounded-full bg-brand" aria-hidden="true" />{referenceCount} reference</span>
-          <span className="flex items-center gap-1.5 text-muted-foreground"><span className="size-1.5 rounded-full bg-warning" aria-hidden="true" />{fakeCount} fake</span>
-        </div>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
         <TabsList variant="line" className="h-10 min-h-10 w-full justify-start gap-2 rounded-none border-b border-border p-0">
@@ -128,9 +114,9 @@ export function ReferenceBomView() {
             rowActions={rowActions}
             onRowClick={(row) => openAssignment([row])}
             columnPinning={false}
-            densityControl={false}
+            densityControl
             pagination={false}
-            exporter={false}
+            exporter
             labels={{ searchPlaceholder: 'Search models, plants, or sources...' }}
           />
         </TabsContent>

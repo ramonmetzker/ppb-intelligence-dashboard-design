@@ -77,7 +77,7 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0">
+      <DialogContent className="gap-0 overflow-hidden p-0 sm:!max-w-4xl">
         <DialogHeader className="border-b border-border bg-muted/25 px-6 py-5 pr-14">
           <div className="flex items-start justify-between gap-4">
             <div>
