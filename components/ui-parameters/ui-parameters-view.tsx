@@ -69,7 +69,7 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
         aria-label="Previous year"
         onClick={() => canGoPrevious && onChange(String(yearOptions[yearIndex - 1]) as UiParameterYear)}
       >
-        <ChevronLeft aria-hidden="true" />
+        <ChevronLeft aria-hidden="true" className="size-4" />
       </Button>
       <input
         type="number"
@@ -83,7 +83,7 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
           const next = event.target.value
           if (UI_PARAMETER_YEARS.includes(next as UiParameterYear)) onChange(next as UiParameterYear)
         }}
-        className="tnum h-full w-16 border-x border-input bg-transparent px-1 text-center text-[13px] font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="tnum h-full w-16 appearance-none border-x border-input bg-transparent px-1 text-center text-[13px] font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />
       <Button
         type="button"
@@ -94,7 +94,7 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
         aria-label="Next year"
         onClick={() => canGoNext && onChange(String(yearOptions[yearIndex + 1]) as UiParameterYear)}
       >
-        <ChevronRight aria-hidden="true" />
+        <ChevronRight aria-hidden="true" className="size-4" />
       </Button>
     </div>
   )
