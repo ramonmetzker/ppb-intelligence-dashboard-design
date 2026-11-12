@@ -98,7 +98,7 @@ export function MaterialPricesView() {
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-0">
       <PageHeader
         title="Material Prices"
         description="Current and historical raw material prices by Part Number, with imported cost build-up, local price, validity, and cost per point."
@@ -107,7 +107,7 @@ export function MaterialPricesView() {
       </PageHeader>
 
       {lastPriceImport && (
-        <div role="status" className="flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-[12.5px] text-success">
+        <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-[12.5px] text-success">
           <p>
             <span className="font-medium">Prices imported.</span>{' '}
             {lastPriceImport.added} new, {lastPriceImport.replaced} previous version{lastPriceImport.replaced === 1 ? '' : 's'} closed, and {lastPriceImport.unchanged} unchanged.

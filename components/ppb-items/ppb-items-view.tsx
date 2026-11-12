@@ -273,10 +273,10 @@ export function PpbItemsView() {
       </PageHeader>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
-        <TabsList variant="line" className="w-full justify-start gap-2 rounded-none border-b border-border p-0">
-          <TabsTrigger value="items" className="flex-none gap-2 px-3 pb-2">Items <Badge variant="secondary">{items.length}</Badge></TabsTrigger>
-          <TabsTrigger value="mapping-ncm" className="flex-none px-3 pb-2">Mapping (NCM)</TabsTrigger>
-          <TabsTrigger value="scoring" className="flex-none px-3 pb-2">Score</TabsTrigger>
+        <TabsList variant="line" className="h-10 min-h-10 w-full justify-start gap-2 rounded-none border-b border-border p-0">
+          <TabsTrigger value="items" className="!h-9 flex-none gap-2 px-3">Items <Badge variant="secondary">{items.length}</Badge></TabsTrigger>
+          <TabsTrigger value="mapping-ncm" className="!h-9 flex-none px-3">Mapping (NCM)</TabsTrigger>
+          <TabsTrigger value="scoring" className="!h-9 flex-none px-3">Score</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items">
