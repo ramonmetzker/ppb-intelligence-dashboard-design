@@ -38,10 +38,7 @@ const GROUPS: {
   },
   {
     label: 'plan',
-    items: [
-      { label: 'simulation', href: '/simulation', icon: GitBranch },
-      { label: 'materials', href: '/materials', icon: Tag },
-    ],
+    items: [{ label: 'simulation', href: '/simulation', icon: GitBranch }],
   },
   {
     label: 'monitor',
@@ -50,6 +47,7 @@ const GROUPS: {
   {
     label: 'rawData',
     items: [
+      { label: 'materials', href: '/raw-data/material-prices', icon: Tag },
       { label: 'ppbItems', href: '/raw-data/ppb-items', icon: Cube },
       { label: 'products', href: '/products', icon: Database },
       { label: 'sopDemand', href: '/raw-data/sop-demand', icon: Table },

@@ -12,8 +12,15 @@ import {
   type PriceBook,
   type UploadPreview,
 } from '@/lib/material-store'
+import {
+  applyMaterialPriceImport,
+  MATERIAL_PRICE_ROWS,
+  type MaterialPrice,
+  type PriceImportPreview,
+} from '@/lib/material-price-data'
 
 export type ImportSummary = { added: number; updated: number; fileName: string }
+export type PriceImportSummary = { added: number; replaced: number; unchanged: number; fileName: string }
 
 type MaterialsContext = {
   book: PriceBook
@@ -22,6 +29,10 @@ type MaterialsContext = {
   applyUpload: (preview: UploadPreview) => ImportSummary
   editEntry: (id: string, price: number, origin: Origin) => void
   classify: (code: string, item: ItemKey | null) => void
+  priceRows: readonly MaterialPrice[]
+  lastPriceImport: PriceImportSummary | null
+  dismissPriceImport: () => void
+  applyPriceImport: (preview: PriceImportPreview) => PriceImportSummary
 }
 
 const Context = createContext<MaterialsContext | null>(null)
@@ -30,6 +41,8 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
   const { push } = useNotifications()
   const [book, setBook] = useState<PriceBook>(seedBook)
   const [lastImport, setLastImport] = useState<ImportSummary | null>(null)
+  const [priceRows, setPriceRows] = useState<readonly MaterialPrice[]>(MATERIAL_PRICE_ROWS)
+  const [lastPriceImport, setLastPriceImport] = useState<PriceImportSummary | null>(null)
 
   const applyUpload = useCallback((preview: UploadPreview) => {
     const summary: ImportSummary = {
@@ -44,6 +57,25 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
   title: 'Price list imported',
       body: `${summary.fileName}: ${summary.added} new and ${summary.updated} updated prices.`,
       href: '/materials',
+      hrefLabel: 'View material prices',
+    })
+    return summary
+  }, [push])
+
+  const applyPriceImport = useCallback((preview: PriceImportPreview) => {
+    const summary: PriceImportSummary = {
+      added: preview.rows.filter((row) => row.status === 'new').length,
+      replaced: preview.rows.filter((row) => row.status === 'replace').length,
+      unchanged: preview.rows.filter((row) => row.status === 'same').length,
+      fileName: 'Pasted prices',
+    }
+    setPriceRows((current) => applyMaterialPriceImport(current, preview.rows))
+    setLastPriceImport(summary)
+    push({
+      type: 'pricing',
+      title: 'Material prices imported',
+      body: `${summary.added} new and ${summary.replaced} previous versions closed.`,
+      href: '/raw-data/material-prices',
       hrefLabel: 'View material prices',
     })
     return summary
@@ -68,8 +100,12 @@ export function MaterialProvider({ children }: { children: React.ReactNode }) {
       applyUpload,
       editEntry,
       classify,
+      priceRows,
+      lastPriceImport,
+      dismissPriceImport: () => setLastPriceImport(null),
+      applyPriceImport,
     }),
-    [book, lastImport, applyUpload, editEntry, classify],
+    [book, lastImport, applyUpload, editEntry, classify, priceRows, lastPriceImport, applyPriceImport],
   )
 
   return <Context.Provider value={value}>{children}</Context.Provider>
