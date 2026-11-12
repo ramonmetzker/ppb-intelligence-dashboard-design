@@ -31,39 +31,56 @@ export type SopDemand = {
   id: string
   model: string
   plant: (typeof SOP_PLANTS)[number]
-  weeks: Record<SopWeekId, number>
+  weeks: Record<SopWeekId, number | null>
 }
 
-const MODELS = [
-  'TV Core 2027',
-  'Monitor Core 2027',
-  'Wearables Core 2026',
-  'Indoor Unit Max 2027',
-  'Mobile Ultra 2027',
-  'Tablet Pro 2026',
-] as const
+const SKU_WINDOWS = [
+  ['SM-A015BRKZO', 'P81J', 0, 7],
+  ['SM-A025BRKZO', 'P81M', 1, 11],
+  ['SM-A035BRKZO', 'P81N', 4, 14],
+  ['SM-A045BRKZO', 'P81L', 7, 19],
+  ['SM-A055BRKZO', 'P81P', 9, 13],
+  ['SM-A065BRKZO', 'P81J', 2, 5],
+  ['SM-A075BRKZO', 'P81M', 5, 17],
+  ['SM-A085BRKZO', 'P81N', 0, 3],
+  ['SM-A095BRKZO', 'P81L', 8, 12],
+  ['SM-A105BRKZO', 'P81P', 3, 18],
+  ['SM-B110BRKZO', 'P81J', 6, 10],
+  ['SM-B120BRKZO', 'P81M', 10, 19],
+  ['SM-B130BRKZO', 'P81N', 0, 15],
+  ['SM-B140BRKZO', 'P81L', 4, 8],
+  ['SM-B150BRKZO', 'P81P', 11, 16],
+  ['SM-B160BRKZO', 'P81J', 1, 4],
+  ['SM-C210BRKZO', 'P81M', 2, 9],
+  ['SM-C220BRKZO', 'P81N', 12, 19],
+  ['SM-C230BRKZO', 'P81L', 5, 7],
+  ['SM-C240BRKZO', 'P81P', 0, 19],
+  ['SM-C250BRKZO', 'P81J', 14, 17],
+  ['SM-C260BRKZO', 'P81M', 3, 6],
+  ['SM-C270BRKZO', 'P81N', 8, 16],
+  ['SM-C280BRKZO', 'P81L', 10, 19],
+] as const satisfies readonly [string, (typeof SOP_PLANTS)[number], number, number][]
 
 export const PLANT_OPTIONS: readonly SelectOption[] = SOP_PLANTS.map((plant) => ({ value: plant, label: plant }))
 
 function buildRows(): SopDemand[] {
-  return MODELS.flatMap((model, modelIndex) =>
-    SOP_PLANTS.map((plant, plantIndex) => {
-      const baseVolume = 280 + modelIndex * 145 + plantIndex * 80
-      const weeks = Object.fromEntries(
-        SOP_WEEKS.map((week, weekIndex) => [
-          week.id,
-          Math.round((baseVolume + weekIndex * 34 + ((modelIndex + plantIndex + weekIndex) % 4) * 42) / 10) * 10,
-        ]),
-      ) as Record<SopWeekId, number>
+  return SKU_WINDOWS.map(([model, plant, startWeek, endWeek], skuIndex) => {
+    const weeks = Object.fromEntries(
+      SOP_WEEKS.map((week, weekIndex) => {
+        const active = weekIndex >= startWeek && weekIndex <= endWeek
+        const hasVolume = active && (weekIndex + skuIndex) % 7 !== 0
+        const volume = 240 + skuIndex * 38 + weekIndex * 24 + ((skuIndex + weekIndex) % 4) * 30
+        return [week.id, hasVolume ? Math.round(volume / 10) * 10 : null]
+      }),
+    ) as Record<SopWeekId, number | null>
 
-      return {
-        id: `sop-${modelIndex + 1}-${plant}`,
-        model,
-        plant,
-        weeks,
-      }
-    }),
-  )
+    return {
+      id: `sop-${model}`,
+      model,
+      plant,
+      weeks,
+    }
+  })
 }
 
 export const SOP_DEMAND_ROWS: readonly SopDemand[] = buildRows()

@@ -19,7 +19,7 @@ const weekColumn = (week: (typeof SOP_WEEKS)[number]) => ({
   width: 112,
   minWidth: 104,
   align: 'right' as const,
-  cell: ({ value }: { value: unknown }) => number.format(Number(value)),
+  cell: ({ value }: { value: unknown }) => (value == null || value === 0 ? '-' : number.format(Number(value))),
 })
 
 const COLUMNS: DataTableColumnDefinition<SopDemand>[] = [
@@ -34,8 +34,8 @@ const COLUMNS: DataTableColumnDefinition<SopDemand>[] = [
   {
     ...base('plant'),
     header: 'Plant',
-    width: 110,
-    minWidth: 96,
+    width: 126,
+    minWidth: 112,
   },
   ...monthGroups.map((month) => ({
     id: month.id,
@@ -59,7 +59,6 @@ export function SopDemandView() {
         persistenceKey="sop-demand"
         bordered
         columns={COLUMNS}
-        mergeEqualRows={['model']}
         data={SOP_DEMAND_ROWS}
         getRowId={(row) => row.id}
       />
