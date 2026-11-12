@@ -13,16 +13,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { SALES_PLANTS, SALES_WEEKS, type SalesDemand, type SalesWeekId } from '@/lib/sales-demand/data'
+import { SALES_MONTHS, type SalesDemand, type SalesMonthId } from '@/lib/sales-demand/data'
 
 const MODEL_PATTERN = /^[A-Z]{2}-[A-Z]\d{3}$/
-const EXPECTED_HEADERS = ['Model', 'Plant', ...SALES_WEEKS.map((week) => week.label)]
+const EXPECTED_HEADERS = ['Model', ...SALES_MONTHS.map((month) => month.label), 'Total']
 const number = new Intl.NumberFormat('en-US')
 
 const SAMPLE_TSV = [
   EXPECTED_HEADERS.join('\t'),
-  ['SM-S098', 'P81J', '120', '140', '-', '180', ...Array(16).fill('-')].join('\t'),
-  ['SM-A017', 'P81M', '-', '-', '90', '110', '130', ...Array(15).fill('-')].join('\t'),
+  ['SM-S098', '120', '180', '240', '300', '360', '420', '480', '540', '600', '660', '720', '780', '5400'].join('\t'),
+  ['SM-A017', '-', '90', '140', '210', '-', '-', '-', '-', '-', '-', '-', '-', '440'].join('\t'),
 ].join('\n')
 
 type ParseResult = {
@@ -49,26 +49,34 @@ function parseSalesDemand(input: string): ParseResult {
     const lineNumber = lineIndex + 2
     const cells = line.split('\t').map((value) => value.trim())
     const model = cells[0] ?? ''
-    const plant = cells[1] ?? ''
     const rowErrors: string[] = []
 
     if (cells.length !== EXPECTED_HEADERS.length) rowErrors.push('wrong number of columns')
     if (!MODEL_PATTERN.test(model)) rowErrors.push('model must look like SM-A017')
     if (seenModels.has(model)) rowErrors.push('model is duplicated')
-    if (!SALES_PLANTS.includes(plant as (typeof SALES_PLANTS)[number])) rowErrors.push(`unknown plant ${plant || '(empty)'}`)
 
-    const weeks = Object.fromEntries(
-      SALES_WEEKS.map((week, weekIndex) => {
-        const rawValue = cells[weekIndex + 2] ?? ''
-        if (rawValue === '' || rawValue === '-') return [week.id, null]
+    const months = Object.fromEntries(
+      SALES_MONTHS.map((month, monthIndex) => {
+        const rawValue = cells[monthIndex + 1] ?? ''
+        if (rawValue === '' || rawValue === '-') return [month.id, null]
         const value = Number(rawValue.replaceAll(',', ''))
         if (!Number.isFinite(value) || value < 0) {
-          rowErrors.push(`${week.label} must be a non-negative number or -`)
-          return [week.id, null]
+          rowErrors.push(`${month.label} must be a non-negative number or -`)
+          return [month.id, null]
         }
-        return [week.id, value]
+        return [month.id, value]
       }),
-    ) as Record<SalesWeekId, number | null>
+    ) as Record<SalesMonthId, number | null>
+
+    const calculatedTotal = Object.values(months).reduce<number>((sum, value) => sum + (value ?? 0), 0)
+    const rawTotal = cells[SALES_MONTHS.length + 1] ?? ''
+    const providedTotal = Number(rawTotal.replaceAll(',', ''))
+
+    if (!Number.isFinite(providedTotal) || providedTotal < 0) {
+      rowErrors.push('Total must be a non-negative number')
+    } else if (providedTotal !== calculatedTotal) {
+      rowErrors.push(`Total must equal ${number.format(calculatedTotal)}`)
+    }
 
     if (rowErrors.length > 0) {
       errors.push(`Line ${lineNumber}: ${rowErrors.join(', ')}`)
@@ -79,8 +87,8 @@ function parseSalesDemand(input: string): ParseResult {
     rows.push({
       id: `imported-${model}`,
       model,
-      plant: plant as SalesDemand['plant'],
-      weeks,
+      months,
+      total: calculatedTotal,
     })
   })
 
@@ -90,29 +98,29 @@ function parseSalesDemand(input: string): ParseResult {
 function PreviewTable({ rows }: { rows: SalesDemand[] }) {
   return (
     <div className="max-h-64 overflow-auto rounded-lg border border-border">
-      <table className="w-full min-w-[760px] border-collapse text-left text-xs">
-        <caption className="sr-only">Preview of pasted sales demand</caption>
+      <table className="w-full min-w-[1200px] border-collapse text-left text-xs">
+        <caption className="sr-only">Preview of pasted 2027 monthly sales demand</caption>
         <thead className="sticky top-0 bg-muted text-muted-foreground">
           <tr>
             <th className="px-3 py-2 font-medium">Model</th>
-            <th className="px-3 py-2 font-medium">Plant</th>
-            {SALES_WEEKS.slice(0, 6).map((week) => (
-              <th key={week.id} className="px-3 py-2 text-right font-medium">
-                {week.label}
+            {SALES_MONTHS.map((month) => (
+              <th key={month.id} className="px-3 py-2 text-right font-medium">
+                {month.label}
               </th>
             ))}
+            <th className="px-3 py-2 text-right font-medium">Total</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
           {rows.slice(0, 6).map((row) => (
             <tr key={row.id}>
               <td className="px-3 py-2 font-medium text-foreground">{row.model}</td>
-              <td className="px-3 py-2 text-muted-foreground">{row.plant}</td>
-              {SALES_WEEKS.slice(0, 6).map((week) => (
-                <td key={week.id} className="px-3 py-2 text-right text-muted-foreground">
-                  {row.weeks[week.id] == null ? '-' : number.format(row.weeks[week.id] ?? 0)}
+              {SALES_MONTHS.map((month) => (
+                <td key={month.id} className="px-3 py-2 text-right text-muted-foreground">
+                  {row.months[month.id] == null ? '-' : number.format(row.months[month.id] ?? 0)}
                 </td>
               ))}
+              <td className="px-3 py-2 text-right font-medium text-foreground">{number.format(row.total)}</td>
             </tr>
           ))}
         </tbody>
@@ -149,7 +157,7 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
         <DialogHeader>
           <DialogTitle>Import sales demand</DialogTitle>
           <DialogDescription>
-            Paste the tab-separated content copied from Excel. Use one SKU per line and a dash for weeks without volume.
+            Paste the tab-separated 2027 sales provision copied from Excel. Use one model per line and a dash for months without volume.
           </DialogDescription>
         </DialogHeader>
 
@@ -171,7 +179,7 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
             aria-describedby="sales-demand-tsv-help"
           />
           <p id="sales-demand-tsv-help" className="text-xs text-muted-foreground">
-            Expected columns: Model, Plant, W45 through W12. Values must be non-negative numbers or -.
+            Expected columns: Model, Jan 2027 through Dec 2027, and Total. Monthly values must be non-negative numbers or -.
           </p>
         </div>
 
