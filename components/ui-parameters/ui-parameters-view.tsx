@@ -64,7 +64,7 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
         type="button"
         variant="ghost"
         size="icon"
-        className="h-full w-9 rounded-none"
+        className="size-7 shrink-0 rounded-md"
         disabled={!canGoPrevious}
         aria-label="Previous year"
         onClick={() => canGoPrevious && onChange(String(yearOptions[yearIndex - 1]) as UiParameterYear)}
@@ -89,7 +89,7 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
         type="button"
         variant="ghost"
         size="icon"
-        className="h-full w-9 rounded-none"
+        className="size-7 shrink-0 rounded-md"
         disabled={!canGoNext}
         aria-label="Next year"
         onClick={() => canGoNext && onChange(String(yearOptions[yearIndex + 1]) as UiParameterYear)}
