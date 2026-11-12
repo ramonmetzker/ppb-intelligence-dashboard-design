@@ -41,6 +41,7 @@ const GROUPS: {
       { label: 'simulation', href: '/simulation', icon: GitBranch },
       { label: 'materials', href: '/materials', icon: Tag },
       { label: 'sopDemand', href: '/sop-demand', icon: Table },
+      { label: 'salesDemand', href: '/sales-demand', icon: Table },
     ],
   },
   {

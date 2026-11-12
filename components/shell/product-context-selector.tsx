@@ -31,7 +31,7 @@ type Draft = Context & { gbm: Gbm }
 
 const YEARS = ['2026', '2025'] as const
 
-export function ProductContextSelector() {
+export function ProductContextSelector({ showYear = true }: { showYear?: boolean }) {
   const { products } = useProducts()
   const [open, setOpen] = useState(false)
   const [applied, setApplied] = useState<Context>({ product: 'mobile', year: '2026' })
@@ -47,7 +47,7 @@ export function ProductContextSelector() {
 
   const appliedProduct = products.find((item) => item.id === applied.product) ?? byGbm.MX[0] ?? products[0]
   const draftProducts = byGbm[draft.gbm]
-  const hasChanges = draft.product !== applied.product || draft.year !== applied.year
+  const hasChanges = draft.product !== applied.product || (showYear && draft.year !== applied.year)
 
   const handleOpenChange = (next: boolean) => {
     if (next) setDraft({ ...applied, gbm: appliedProduct?.gbm ?? 'MX' })
@@ -70,7 +70,7 @@ export function ProductContextSelector() {
         render={
           <Button
             variant="outline"
-            aria-label={`Product context: ${appliedProduct?.name ?? 'None'}, ${appliedProduct?.gbm ?? ''}, ${applied.year}`}
+            aria-label={`Product context: ${appliedProduct?.name ?? 'None'}, ${appliedProduct?.gbm ?? ''}${showYear ? `, ${applied.year}` : ''}`}
             className="h-10 w-64 justify-between border-sidebar-border bg-sidebar-accent/55 px-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-foreground"
           />
         }
@@ -84,7 +84,7 @@ export function ProductContextSelector() {
               {appliedProduct?.name ?? 'No products'}
             </span>
             <span className="text-[10px] leading-none font-medium text-sidebar-foreground/55">
-              {appliedProduct?.gbm} · {applied.year}
+              {appliedProduct?.gbm}{showYear ? ` · ${applied.year}` : ''}
             </span>
           </span>
         </span>
@@ -159,32 +159,36 @@ export function ProductContextSelector() {
           })}
         </div>
 
-        <Separator />
+        {showYear && (
+          <>
+            <Separator />
 
-        <div className="flex items-center justify-between gap-3 p-3">
-          <span className="text-[10px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-            Year
-          </span>
-          <Select
-            value={draft.year}
-            onValueChange={(value) => setDraft((current) => ({ ...current, year: value ?? current.year }))}
-          >
-            <SelectTrigger aria-label="Year" className="w-28">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {YEARS.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+            <div className="flex items-center justify-between gap-3 p-3">
+              <span className="text-[10px] font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+                Year
+              </span>
+              <Select
+                value={draft.year}
+                onValueChange={(value) => setDraft((current) => ({ ...current, year: value ?? current.year }))}
+              >
+                <SelectTrigger aria-label="Year" className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {YEARS.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
 
-        <Separator />
+            <Separator />
+          </>
+        )}
 
         <div className="flex items-center justify-end gap-2 p-3">
           <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
