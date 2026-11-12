@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { Check, ChevronDown, Info, LockKeyhole, Search, Sparkles } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Check, ChevronDown, LockKeyhole, Search, Sparkles } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -36,10 +36,10 @@ type Props = {
   rows: ReferenceBomRow[]
 }
 
-const ASSIGNMENT_OPTIONS: { id: AssignmentType; label: string; description: string }[] = [
-  { id: 'previous', label: 'Previous BOM', description: 'Use the latest ingested BOM for this model.' },
-  { id: 'reference', label: 'Reference BOM', description: 'Reuse a BOM from another model.' },
-  { id: 'fake', label: 'Fake BOM', description: 'Create a temporary mix of imported and local items.' },
+const ASSIGNMENT_OPTIONS: { id: AssignmentType; label: string }[] = [
+  { id: 'previous', label: 'Previous BOM' },
+  { id: 'reference', label: 'Reference BOM' },
+  { id: 'fake', label: 'Fake BOM' },
 ]
 
 export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props) {
@@ -54,10 +54,6 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
   const selectedModelLabel = rows.length === 1 ? rows[0].model : `${rows.length} models`
   const selectedPreviousBom = rows.length === 1 ? rows[0].previousBom : undefined
   const totalVolume = rows.reduce((sum, row) => sum + row.volume, 0)
-  const localItemCount = useMemo(
-    () => Object.values(localPercentages).filter((percentage) => percentage > 0).length,
-    [localPercentages],
-  )
 
   useEffect(() => {
     if (!open) return
@@ -78,7 +74,7 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:!max-w-4xl">
-        <DialogHeader className="border-b border-border bg-muted/25 px-6 py-5 pr-14">
+        <DialogHeader className="border-b border-border bg-muted/25 px-6 py-4 pr-14">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="mb-2 flex items-center gap-2">
@@ -112,12 +108,12 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                   disabled={disabled}
                   onClick={() => chooseAssignment(option.id)}
                   className={cn(
-                    'group relative flex min-h-24 flex-col items-start rounded-xl border p-3 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                    'group relative flex min-h-16 flex-col items-start rounded-xl border p-2.5 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
                     active ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:bg-muted/40',
                     disabled && 'cursor-not-allowed opacity-50 hover:bg-card',
                   )}
                 >
-                  <span className="mb-2 flex w-full items-center justify-between">
+                  <span className="mb-1.5 flex w-full items-center justify-between">
                     <span className={cn('flex size-6 items-center justify-center rounded-md', active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground')}>
                       {option.id === 'previous' && <LockKeyhole className="size-3.5" aria-hidden="true" />}
                       {option.id === 'reference' && <Search className="size-3.5" aria-hidden="true" />}
@@ -126,8 +122,6 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                     {active && <Check className="size-4 text-primary" aria-hidden="true" />}
                   </span>
                   <span className="text-[13px] font-semibold">{option.label}</span>
-                  <span className="mt-1 text-[11px] leading-4 text-muted-foreground">{option.description}</span>
-                  {disabled && <span className="mt-auto pt-2 text-[10px] font-medium text-muted-foreground">No previous BOM for all selected models</span>}
                 </button>
               )
             })}
@@ -150,46 +144,37 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
             {assignmentType === 'reference' && (
               <div className="p-3">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[13px] font-medium">Select a reference model</p>
-                    <p className="mt-1 text-xs text-muted-foreground">The selected BOM will be copied as the coverage source.</p>
-                  </div>
+                  <p className="text-[13px] font-medium">Reference BOM</p>
                   <Badge variant="secondary">Reference</Badge>
                 </div>
                 <Popover open={referenceOpen} onOpenChange={setReferenceOpen}>
                   <PopoverTrigger
                     render={
-                      <Button variant="outline" className="h-10 w-full justify-between px-3 text-left font-normal" aria-label="Select reference BOM" />
+                      <Button variant="outline" className="h-9 w-full justify-between px-3 text-left font-normal" aria-label="Select reference model" />
                     }
                   >
-                    <span className="flex min-w-0 flex-col items-start gap-0.5">
-                      <span className="truncate text-[13px] font-medium">{referenceBom.sku}</span>
-                      <span className="truncate text-[11px] text-muted-foreground">{referenceBom.description}</span>
-                    </span>
-                    <ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <span className="truncate text-[13px] font-medium">{referenceBom.model}</span>
+                    <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   </PopoverTrigger>
-                  <PopoverContent align="start" className="w-[min(31rem,calc(100vw-3rem))] p-0">
+                  <PopoverContent align="start" className="w-(--anchor-width) min-w-0 max-w-[calc(100vw-3rem)] p-0">
                     <Command>
-                      <CommandInput placeholder="Search reference models..." />
+                      <CommandInput placeholder="Search models..." />
                       <CommandList>
                         <CommandEmpty>No reference BOMs found.</CommandEmpty>
                         {REFERENCE_BOM_OPTIONS.map((option) => (
                           <CommandItem
                             key={option.id}
-                            value={`${option.sku} ${option.model} ${option.description}`}
+                            value={option.model}
                             onSelect={() => {
                               setReferenceBom(option)
                               setReferenceOpen(false)
                             }}
-                            className="gap-2 px-3 py-2"
+                            className="gap-2 px-3 py-1.5"
                           >
-                            <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                            <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                               <Search className="size-3.5" aria-hidden="true" />
                             </span>
-                            <span className="flex min-w-0 flex-col">
-                              <span className="text-[13px] font-medium">{option.sku}</span>
-                              <span className="truncate text-[11px] text-muted-foreground">{option.description}</span>
-                            </span>
+                            <span className="truncate text-[13px] font-medium">{option.model}</span>
                             {referenceBom.id === option.id && <Check className="ml-auto size-4 text-primary" aria-hidden="true" />}
                           </CommandItem>
                         ))}
@@ -202,27 +187,17 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
 
             {assignmentType === 'fake' && (
               <div className="p-3">
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[13px] font-medium">Configure local content</p>
-                    <p className="mt-1 text-xs text-muted-foreground">Set the local share of each item. The remainder stays imported.</p>
-                  </div>
-                  <Badge variant="secondary">Fake BOM</Badge>
-                </div>
-                <div className="mb-3 flex items-center gap-2 rounded-lg border border-border bg-muted/25 px-2.5 py-1.5 text-[11px] leading-4 text-muted-foreground">
-                  <Info className="size-3.5 shrink-0" aria-hidden="true" />
-                  Default coverage imports every item except PBA Assy, which starts at 100% local.
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-[13px] font-medium">Fake BOM</p>
+                  <Badge variant="secondary">Fake</Badge>
                 </div>
                 <div className="divide-y divide-border rounded-lg border border-border">
                   {PPB_BOM_ITEMS.map((item) => {
                     const local = localPercentages[item.id] ?? item.localDefault
                     return (
-                      <div key={item.id} className="grid gap-1.5 px-3 py-2 sm:grid-cols-[8.5rem_1fr_4rem] sm:items-center sm:gap-3">
-                        <div className="min-w-0">
-                          <p className="text-[13px] font-medium">{item.name}</p>
-                          <p className="truncate text-[11px] text-muted-foreground">{item.description}</p>
-                        </div>
-                        <label className="flex min-w-0 items-center gap-3">
+                      <div key={item.id} className="grid grid-cols-[7.5rem_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2">
+                        <p className="truncate text-[13px] font-medium">{item.name}</p>
+                        <label className="flex min-w-0 items-center gap-2">
                           <span className="sr-only">{item.name} local percentage</span>
                           <input
                             type="range"
@@ -233,16 +208,12 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                             onChange={(event) => updateLocalPercentage(item.id, event.target.value)}
                             className="h-1.5 min-w-0 flex-1 cursor-pointer accent-primary"
                           />
-                          <span className="w-11 text-right text-[11px] text-muted-foreground">{100 - local}% imported</span>
+                          <span className="shrink-0 whitespace-nowrap text-right text-[11px] text-muted-foreground">{100 - local}% imported</span>
                         </label>
-                        <span className="tnum text-right text-[13px] font-semibold text-primary">{local}% local</span>
+                        <span className="tnum shrink-0 whitespace-nowrap text-right text-[13px] font-semibold text-primary">{local}% local</span>
                       </div>
                     )
                   })}
-                </div>
-                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="size-1.5 rounded-full bg-primary" aria-hidden="true" />
-                  {localItemCount} of {PPB_BOM_ITEMS.length} items include local content.
                 </div>
               </div>
             )}
