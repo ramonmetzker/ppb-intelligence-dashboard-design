@@ -159,7 +159,7 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                   <PopoverContent align="start" className="w-(--anchor-width) min-w-0 max-w-[calc(100vw-3rem)] p-0">
                     <Command>
                       <CommandInput placeholder="Search models..." />
-                      <CommandList>
+                      <CommandList className="mt-1 border-t border-border/60 pt-1">
                         <CommandEmpty>No reference BOMs found.</CommandEmpty>
                         {REFERENCE_BOM_OPTIONS.map((option) => (
                           <CommandItem
@@ -175,7 +175,7 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                               <Search className="size-3.5" aria-hidden="true" />
                             </span>
                             <span className="truncate text-[13px] font-medium">{option.model}</span>
-                            {referenceBom.id === option.id && <Check className="ml-auto size-4 text-primary" aria-hidden="true" />}
+                            {referenceBom.id === option.id && <Check className="ml-auto size-4 shrink-0 justify-self-end text-primary" aria-hidden="true" />}
                           </CommandItem>
                         ))}
                       </CommandList>
@@ -191,12 +191,18 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                   <p className="text-[13px] font-medium">Fake BOM</p>
                   <Badge variant="secondary">Fake</Badge>
                 </div>
+                <div className="grid grid-cols-[minmax(7rem,1fr)_4.5rem_9.5rem] items-center gap-2 px-3 pb-1.5 text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+                  <span>Item</span>
+                  <span className="text-right">Imported</span>
+                  <span className="text-right">Local</span>
+                </div>
                 <div className="divide-y divide-border rounded-lg border border-border">
                   {PPB_BOM_ITEMS.map((item) => {
                     const local = localPercentages[item.id] ?? item.localDefault
                     return (
-                      <div key={item.id} className="grid grid-cols-[7.5rem_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2">
+                      <div key={item.id} className="grid grid-cols-[minmax(7rem,1fr)_4.5rem_9.5rem] items-center gap-2 px-3 py-2">
                         <p className="truncate text-[13px] font-medium">{item.name}</p>
+                        <span className="tnum whitespace-nowrap text-right text-[11px] text-muted-foreground">{100 - local}%</span>
                         <label className="flex min-w-0 items-center gap-2">
                           <span className="sr-only">{item.name} local percentage</span>
                           <input
@@ -208,9 +214,8 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                             onChange={(event) => updateLocalPercentage(item.id, event.target.value)}
                             className="h-1.5 min-w-0 flex-1 cursor-pointer accent-primary"
                           />
-                          <span className="shrink-0 whitespace-nowrap text-right text-[11px] text-muted-foreground">{100 - local}% imported</span>
+                          <span className="tnum shrink-0 whitespace-nowrap text-right text-[11px] font-semibold text-primary">{local}%</span>
                         </label>
-                        <span className="tnum shrink-0 whitespace-nowrap text-right text-[13px] font-semibold text-primary">{local}% local</span>
                       </div>
                     )
                   })}
