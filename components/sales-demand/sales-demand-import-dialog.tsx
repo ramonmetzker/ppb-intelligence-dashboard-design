@@ -219,7 +219,7 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
         Import sales demand
       </Button>
       <DialogContent className="w-[calc(100%-2rem)] !max-w-[1100px] overflow-hidden p-0">
-        <div className="flex max-h-[calc(100vh-2rem)] flex-col">
+        <div className="flex min-w-0 max-h-[calc(100vh-2rem)] flex-col">
           <DialogHeader className="shrink-0 gap-4 border-b border-border px-6 pt-6 pb-5">
             <div>
               <DialogTitle>Import sales demand</DialogTitle>
@@ -230,7 +230,7 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
             <StepIndicator currentStep={step} />
           </DialogHeader>
 
-          <div className="min-h-0 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 min-w-0 overflow-x-hidden overflow-y-auto px-6 py-5">
             {step === 1 && (
               <section className="flex flex-col gap-4" aria-labelledby="paste-sales-demand-title">
                 <div>
