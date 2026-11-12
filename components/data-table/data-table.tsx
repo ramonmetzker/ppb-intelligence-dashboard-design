@@ -282,6 +282,17 @@ export function DataTable<T>(props: DataTableProps<T>) {
     return new Set(rows.filter((row) => getRowChildren(row).length > 0).map(getRowId))
   })
 
+  useEffect(() => {
+    if (!defaultExpanded || !getRowChildren) return
+    const parentIds = rows.filter((row) => getRowChildren(row).length > 0).map(getRowId)
+    if (parentIds.length === 0) return
+    setExpandedRows((current) => {
+      const next = new Set(current)
+      parentIds.forEach((id) => next.add(id))
+      return next.size === current.size ? current : next
+    })
+  }, [defaultExpanded, getRowChildren, getRowId, rows])
+
   const displayRows = useMemo<DisplayRow<T>[]>(() => {
     if (!getRowChildren) return rows.map((row) => ({ row, depth: 0 }))
 
@@ -305,6 +316,20 @@ export function DataTable<T>(props: DataTableProps<T>) {
       return next
     })
   }
+
+  const flattenRows = useCallback(
+    (source: readonly T[]) => {
+      if (!getRowChildren) return [...source]
+      const next: T[] = []
+      const visit = (row: T) => {
+        next.push(row)
+        getRowChildren(row).forEach(visit)
+      }
+      source.forEach(visit)
+      return next
+    },
+    [getRowChildren],
+  )
 
   const updateQuery = (patch: Partial<DataTableQuery>, reason: QueryChangeReason) => {
     const next: DataTableQuery = { ...query, ...patch, page: reason === 'page' ? (patch.page ?? query.page) : 1 }
@@ -683,22 +708,22 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   const live = useMemo(() => {
     if (mode !== 'client' || selected.size === 0) return selected
-    const present = new Set(data.map(getRowId))
+    const present = new Set(flattenRows(data).map(getRowId))
     const next = new Map<string, T>()
     selected.forEach((row, id) => present.has(id) && next.set(id, row))
     return next.size === selected.size ? selected : next
-  }, [mode, selected, data, getRowId])
+  }, [mode, selected, data, flattenRows, getRowId])
 
   const buildContext = useCallback(
     (map: Map<string, T>, all: boolean): SelectionContext<T> => {
       if (all && result) {
-        const everything = result.filtered.filter(isSelectable)
+        const everything = flattenRows(result.filtered).filter(isSelectable)
         return { ids: everything.map(getRowId), rows: everything, allMatching: true, count: everything.length, query }
       }
       const list = [...map.values()]
       return { ids: [...map.keys()], rows: list, allMatching: all, count: all ? total : map.size, query }
     },
-    [result, isSelectable, getRowId, query, total],
+    [result, flattenRows, isSelectable, getRowId, query, total],
   )
 
   function commitSelection(next: Map<string, T>, all: boolean) {
@@ -707,7 +732,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
     onSelectionChange?.(buildContext(next, all))
   }
 
-  const pageSelectable = useMemo(() => rows.filter(isSelectable), [rows, isSelectable])
+  const pageSelectable = useMemo(() => displayRows.map(({ row }) => row).filter(isSelectable), [displayRows, isSelectable])
   const selectedOnPage = pageSelectable.filter((row) => live.has(getRowId(row))).length
   const allPageSelected = pageSelectable.length > 0 && selectedOnPage === pageSelectable.length
   const somePageSelected = selectedOnPage > 0 && !allPageSelected
@@ -723,7 +748,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
     const apply = (target: T) => (checked ? next.set(getRowId(target), target) : next.delete(getRowId(target)))
     if (shiftHeld.current && lastClicked.current !== null) {
       const [from, to] = [lastClicked.current, index].sort((a, b) => a - b)
-      rows.slice(from, to + 1).filter(isSelectable).forEach(apply)
+      pageSelectable.slice(from, to + 1).filter(isSelectable).forEach(apply)
     } else {
       apply(row)
     }

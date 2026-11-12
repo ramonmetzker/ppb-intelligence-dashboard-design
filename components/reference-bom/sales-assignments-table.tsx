@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { GitBranch, Link2, PencilLine } from 'lucide-react'
+import { GitBranch, Link2, Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/data-table/data-table'
-import type { DataTableColumn, RowAction } from '@/lib/data-table/types'
+import type { BulkAction, DataTableColumn, RowAction, SelectionContext } from '@/lib/data-table/types'
 import {
   Dialog,
   DialogContent,
@@ -99,68 +99,108 @@ function toAssignmentRow(row: SalesAssignmentRow): ReferenceBomRow {
   }
 }
 
-function SalesSplitDialog({ row, open, onOpenChange }: { row: SalesAssignmentRow | null; open: boolean; onOpenChange: (open: boolean) => void }) {
-  const children = row?.children ?? []
-  const [divisions, setDivisions] = useState<Record<string, number>>({})
+type SplitDraft = {
+  id: string
+  newModel: string
+  division: number
+}
+
+function SalesSplitDialog({ row, open, onOpenChange, onSave }: { row: SalesAssignmentRow | null; open: boolean; onOpenChange: (open: boolean) => void; onSave: (parentId: string, drafts: SplitDraft[]) => void }) {
+  const [drafts, setDrafts] = useState<SplitDraft[]>([])
 
   useEffect(() => {
     if (!row || !open) return
-    setDivisions(Object.fromEntries(children.map((child) => [child.id, child.division])))
-  }, [children, open, row])
+    setDrafts(
+      row.children?.map((child) => ({ id: child.id, newModel: child.newModel, division: child.division })) ?? [
+        { id: `${row.id}-128`, newModel: `${row.originalModel} 128GB`, division: 50 },
+        { id: `${row.id}-256`, newModel: `${row.originalModel} 256GB`, division: 50 },
+      ],
+    )
+  }, [open, row])
 
-  const totalDivision = children.reduce((sum, child) => sum + (divisions[child.id] ?? child.division), 0)
+  const canSave = drafts.length >= 2 && drafts.every((draft) => draft.newModel.trim().length > 0)
+
+  const updateDraft = (id: string, patch: Partial<SplitDraft>) => {
+    setDrafts((current) => current.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)))
+  }
+
+  const updateDivision = (id: string, value: number) => {
+    setDrafts((current) => {
+      const others = current.filter((draft) => draft.id !== id)
+      if (others.length === 0) return current.map((draft) => (draft.id === id ? { ...draft, division: 100 } : draft))
+
+      const remainder = 100 - value
+      const base = Math.floor(remainder / (others.length * 5)) * 5
+      const extraUnits = (remainder - base * others.length) / 5
+      let otherIndex = 0
+
+      return current.map((draft) => {
+        if (draft.id === id) return { ...draft, division: value }
+        const division = base + (otherIndex++ < extraUnits ? 5 : 0)
+        return { ...draft, division }
+      })
+    })
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-0 overflow-hidden p-0 sm:!max-w-2xl">
         <DialogHeader className="border-b border-border bg-muted/25 px-6 py-4 pr-14">
-          <DialogTitle>Manage submodels</DialogTitle>
+          <DialogTitle>Split sales model</DialogTitle>
           <DialogDescription className="mt-1">
-            Divide the Sales Demand volume for {row?.originalModel ?? 'this model'} across its submodels.
+            Create submodels for {row?.originalModel ?? 'this model'} and divide its Sales Demand volume.
           </DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-4">
-          <div className="mb-2 grid grid-cols-[minmax(0,1fr)_7rem_7rem] items-center gap-3 px-3 text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+          <div className="mb-2 grid grid-cols-[minmax(0,1fr)_8.5rem_7rem_2rem] items-center gap-3 px-3 text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
             <span>New Model</span>
             <span className="text-right">Division</span>
             <span className="text-right">Volume</span>
+            <span />
           </div>
           <div className="divide-y divide-border rounded-xl border border-border">
-            {children.map((child) => {
-              const division = divisions[child.id] ?? child.division
-              return (
-                <div key={child.id} className="grid grid-cols-[minmax(0,1fr)_7rem_7rem] items-center gap-3 px-3 py-3">
-                  <span className="truncate text-[13px] font-medium">{child.newModel}</span>
-                  <label className="flex items-center justify-end gap-2">
-                    <span className="sr-only">{child.newModel} division percentage</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      step="5"
-                      value={division}
-                      onChange={(event) => setDivisions((current) => ({ ...current, [child.id]: Number(event.target.value) }))}
-                      className="h-1.5 w-16 shrink-0 cursor-pointer accent-primary"
-                    />
-                    <span className="tnum w-9 whitespace-nowrap text-right text-[12px] font-semibold">{division}%</span>
-                  </label>
-                  <span className="tnum whitespace-nowrap text-right text-[12px] text-muted-foreground">{Math.round(child.totalVolume * division / child.division).toLocaleString('en-US')}</span>
-                </div>
-              )
-            })}
+            {drafts.map((draft) => (
+              <div key={draft.id} className="grid grid-cols-[minmax(0,1fr)_8.5rem_7rem_2rem] items-center gap-3 px-3 py-2.5">
+                <label className="min-w-0">
+                  <span className="sr-only">Submodel name</span>
+                  <input
+                    value={draft.newModel}
+                    onChange={(event) => updateDraft(draft.id, { newModel: event.target.value })}
+                    className="h-8 w-full min-w-0 rounded-md border border-input bg-background px-2 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </label>
+                <label className="flex items-center justify-end gap-2">
+                  <span className="sr-only">{draft.newModel} division percentage</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={draft.division}
+                    onChange={(event) => updateDivision(draft.id, Number(event.target.value))}
+                    className="h-1.5 w-16 shrink-0 cursor-pointer accent-primary"
+                  />
+                  <span className="tnum w-9 whitespace-nowrap text-right text-[12px] font-semibold">{draft.division}%</span>
+                </label>
+                <span className="tnum whitespace-nowrap text-right text-[12px] text-muted-foreground">{Math.round((row?.totalVolume ?? 0) * draft.division / 100).toLocaleString('en-US')}</span>
+                <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${draft.newModel}`} className="size-8 text-muted-foreground hover:text-destructive" onClick={() => setDrafts((current) => current.filter((item) => item.id !== draft.id))}>
+                  <Trash2 className="size-3.5" aria-hidden="true" />
+                </Button>
+              </div>
+            ))}
           </div>
-          <div className="mt-3 flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-xs">
-            <span className="text-muted-foreground">Total division</span>
-            <span className={cn('tnum font-semibold', totalDivision === 100 ? 'text-brand-deep' : 'text-warning-foreground')}>{totalDivision}%</span>
-          </div>
+          <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => setDrafts((current) => [...current, { id: `${row?.id ?? 'submodel'}-${current.length + 1}`, newModel: `${row?.originalModel ?? 'Model'} ${current.length + 1}`, division: 0 }])}>
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            Add submodel
+          </Button>
         </div>
 
         <DialogFooter className="!mx-0 !mb-0 items-center rounded-none border-t border-border !px-6 !py-3 sm:!justify-between">
-          <p className="hidden text-xs text-muted-foreground sm:block">Mock split editor · no data will be changed</p>
+          <p className="hidden text-xs text-muted-foreground sm:block">Adjust one slider to rebalance the others automatically.</p>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="button" onClick={() => onOpenChange(false)}>Save split</Button>
+            <Button type="button" disabled={!canSave} onClick={() => row && onSave(row.id, drafts)}>Save split</Button>
           </div>
         </DialogFooter>
       </DialogContent>
@@ -169,7 +209,8 @@ function SalesSplitDialog({ row, open, onOpenChange }: { row: SalesAssignmentRow
 }
 
 export function SalesAssignmentsTable() {
-  const [assignmentRow, setAssignmentRow] = useState<ReferenceBomRow | null>(null)
+  const [salesRows, setSalesRows] = useState<SalesAssignmentRow[]>(() => SALES_ASSIGNMENT_ROWS.map((row) => ({ ...row })))
+  const [assignmentRows, setAssignmentRows] = useState<ReferenceBomRow[]>([])
   const [splitRow, setSplitRow] = useState<SalesAssignmentRow | null>(null)
 
   const rowActions = useMemo(
@@ -177,29 +218,64 @@ export function SalesAssignmentsTable() {
       if (row.children?.length) {
         return [{ id: 'split', label: 'Manage split', icon: <GitBranch aria-hidden="true" />, inline: true, onSelect: () => setSplitRow(row) }]
       }
-      return [{ id: 'assign', label: 'Assign BOM', icon: <Link2 aria-hidden="true" />, inline: true, onSelect: () => setAssignmentRow(toAssignmentRow(row)) }]
+      if (row.parentId) {
+        return [{ id: 'assign', label: 'Assign BOM', icon: <Link2 aria-hidden="true" />, inline: true, onSelect: () => setAssignmentRows([toAssignmentRow(row)]) }]
+      }
+      const actions: RowAction<SalesAssignmentRow>[] = [
+        { id: 'split', label: 'Split model', icon: <GitBranch aria-hidden="true" />, inline: true, onSelect: () => setSplitRow(row) },
+      ]
+      if (row.parentId || !row.children?.length) {
+        actions.push({ id: 'assign', label: 'Assign BOM', icon: <Link2 aria-hidden="true" />, inline: true, onSelect: () => setAssignmentRows([toAssignmentRow(row)]) })
+      }
+      return actions
     },
     [],
   )
 
+  const bulkActions = useMemo<readonly BulkAction<SalesAssignmentRow>[]>(
+    () => [
+      {
+        id: 'assign-selected',
+        label: 'Assign BOM',
+        icon: <Link2 aria-hidden="true" />,
+        disabled: (selection) => selection.rows.every((row) => Boolean(row.children?.length)),
+        onSelect: (selection: SelectionContext<SalesAssignmentRow>) => {
+          setAssignmentRows(selection.rows.filter((row) => !row.children?.length).map(toAssignmentRow))
+        },
+      },
+    ],
+    [],
+  )
+
+  const saveSplit = (parentId: string, drafts: SplitDraft[]) => {
+    setSalesRows((current) => current.map((row) => {
+      if (row.id !== parentId) return row
+      const children = drafts.map((draft) => ({
+        id: draft.id,
+        parentId: row.id,
+        originalModel: row.originalModel,
+        newModel: draft.newModel.trim(),
+        referenceBom: 'Unassigned',
+        division: draft.division,
+        totalVolume: Math.round(row.totalVolume * draft.division / 100),
+      }))
+      return { ...row, newModel: `${children.length} submodels`, referenceBom: 'Assign per child', division: 100, children }
+    }))
+    setSplitRow(null)
+  }
+
   return (
     <>
-      <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/25 px-3 py-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <GitBranch className="size-4 shrink-0 text-brand" aria-hidden="true" />
-          <p className="truncate text-xs text-muted-foreground">Expand a sales model to review and assign BOMs to its submodels.</p>
-        </div>
-        <Badge variant="secondary" className="shrink-0">{SALES_ASSIGNMENT_ROWS.length} models</Badge>
-      </div>
-
       <DataTable<SalesAssignmentRow>
         caption="Sales BOM assignments"
         persistenceKey="reference-bom.sales"
         columns={SALES_COLUMNS}
-        data={SALES_ASSIGNMENT_ROWS}
+        data={salesRows}
         getRowId={(row) => row.id}
         getRowChildren={getSalesChildren}
         defaultExpanded
+        selectable
+        bulkActions={bulkActions}
         rowActions={rowActions}
         columnPinning={false}
         densityControl
@@ -208,8 +284,8 @@ export function SalesAssignmentsTable() {
         labels={{ searchPlaceholder: 'Search sales models or BOMs...' }}
       />
 
-      <SalesSplitDialog row={splitRow} open={Boolean(splitRow)} onOpenChange={(open) => !open && setSplitRow(null)} />
-      <ReferenceBomAssignmentDialog open={Boolean(assignmentRow)} onOpenChange={(open) => !open && setAssignmentRow(null)} rows={assignmentRow ? [assignmentRow] : []} />
+      <SalesSplitDialog row={splitRow} open={Boolean(splitRow)} onOpenChange={(open) => !open && setSplitRow(null)} onSave={saveSplit} />
+      <ReferenceBomAssignmentDialog open={assignmentRows.length > 0} onOpenChange={(open) => !open && setAssignmentRows([])} rows={assignmentRows} />
     </>
   )
 }
