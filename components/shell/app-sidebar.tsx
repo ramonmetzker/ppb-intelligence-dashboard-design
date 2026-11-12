@@ -45,6 +45,7 @@ const GROUPS: {
     items: [
       { label: 'materials', href: '/raw-data/material-prices', icon: Tag },
       { label: 'ppbItems', href: '/raw-data/ppb-items', icon: Cube },
+      { label: 'referenceBom', href: '/raw-data/reference-bom', icon: Table },
       { label: 'products', href: '/products', icon: Database },
       { label: 'sopDemand', href: '/raw-data/sop-demand', icon: Table },
       { label: 'salesDemand', href: '/raw-data/sales-demand', icon: Table },
