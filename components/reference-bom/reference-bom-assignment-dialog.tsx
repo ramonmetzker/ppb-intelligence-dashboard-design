@@ -165,6 +165,7 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                           <CommandItem
                             key={option.id}
                             value={option.model}
+                            data-checked={referenceBom.id === option.id}
                             onSelect={() => {
                               setReferenceBom(option)
                               setReferenceOpen(false)
@@ -175,7 +176,6 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                               <Search className="size-3.5" aria-hidden="true" />
                             </span>
                             <span className="truncate text-[13px] font-medium">{option.model}</span>
-                            {referenceBom.id === option.id && <Check className="ml-auto size-4 shrink-0 justify-self-end text-primary" aria-hidden="true" />}
                           </CommandItem>
                         ))}
                       </CommandList>
@@ -212,7 +212,7 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                             step="5"
                             value={local}
                             onChange={(event) => updateLocalPercentage(item.id, event.target.value)}
-                            className="h-1.5 min-w-0 flex-1 cursor-pointer accent-primary"
+                            className="h-1.5 w-20 shrink-0 cursor-pointer accent-primary"
                           />
                           <span className="tnum shrink-0 whitespace-nowrap text-right text-[11px] font-semibold text-primary">{local}%</span>
                         </label>
