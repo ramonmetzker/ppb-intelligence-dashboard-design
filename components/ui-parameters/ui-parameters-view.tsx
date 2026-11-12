@@ -146,7 +146,7 @@ export function UiParametersView() {
         rowActions={rowActions}
         onRowClick={openEdit}
         columnPinning={false}
-        densityControl={false}
+        densityControl
         pagination={false}
       />
 

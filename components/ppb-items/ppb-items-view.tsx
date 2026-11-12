@@ -291,7 +291,7 @@ export function PpbItemsView() {
             rowActions={itemRowActions}
             onRowClick={openEdit}
             columnPinning={false}
-            densityControl={false}
+            densityControl
             pagination={false}
           />
         </TabsContent>
@@ -308,7 +308,7 @@ export function PpbItemsView() {
             rowActions={mappingRowActions}
             onRowClick={openEditMapping}
             columnPinning={false}
-            densityControl={false}
+            densityControl
             pagination={false}
           />
         </TabsContent>
@@ -325,7 +325,7 @@ export function PpbItemsView() {
             rowActions={scoreRowActions}
             onRowClick={openEditScore}
             columnPinning={false}
-            densityControl={false}
+            densityControl
             pagination={false}
           />
         </TabsContent>

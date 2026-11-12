@@ -128,7 +128,7 @@ export function ProductsView() {
         rowActions={rowActions}
         onRowClick={openEdit}
         columnPinning={false}
-        densityControl={false}
+        densityControl
         pagination={false}
       />
 
