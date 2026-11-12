@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Sparkle } from '@phosphor-icons/react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { ITEMS, BASE_PLAN, fmtSigned } from '@/lib/ppb-model'
 import { CountUp } from '@/components/app/count-up'
 import { Panel } from '@/components/app/panel'
@@ -11,7 +11,6 @@ import { InlinePlanSwitcher } from '@/components/app/plan-switcher'
 import { usePlan } from '@/components/app/plan-provider'
 import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
 import { additionalParameters, isItemDisplayed } from '@/lib/ui-parameters/behavior'
-import { itemNameForUiParameter } from '@/lib/ui-parameters/data'
 import { cn } from '@/lib/utils'
 
 export function PlanSummary() {
@@ -19,7 +18,11 @@ export function PlanSummary() {
   const { parameters } = useUiParameters()
   const [expanded, setExpanded] = useState(false)
   const visibleItems = useMemo(() => ITEMS.filter((item) => isItemDisplayed(item.name, parameters)), [parameters])
-  const extraItems = useMemo(() => additionalParameters(parameters), [parameters])
+  const extraItemIds = useMemo(() => new Set(additionalParameters(parameters).map((parameter) => parameter.itemId)), [parameters])
+  const extraItems = useMemo(
+    () => ITEMS.filter((item) => extraItemIds.has(item.masterItemId)),
+    [extraItemIds],
+  )
 
   return (
     <Panel
@@ -99,30 +102,62 @@ export function PlanSummary() {
         })}
         {extraItems.length > 0 && (
           <>
-            <li className="border-b border-border/70 bg-secondary/30 px-4 py-2">
+            <li className="border-b border-border/70 px-4 py-2">
               <button
                 type="button"
                 aria-expanded={expanded}
                 onClick={() => setExpanded((current) => !current)}
                 className="grid w-full grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 text-left text-[12.5px] font-semibold focus-visible:outline-2 focus-visible:outline-ring"
               >
-                <span className="flex items-center gap-2">
-                  {expanded ? <ChevronDown aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
-                  Additional Items
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground transition-colors hover:border-brand/50 hover:text-brand">
+                    <ChevronRight
+                      aria-hidden="true"
+                      className={cn('size-3.5 transition-transform duration-200', expanded && 'rotate-90')}
+                    />
+                  </span>
+                  <span>Additional Items</span>
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
+                    {extraItems.length}
+                  </span>
                 </span>
                 <span />
                 <span />
-                <span className="num text-right text-muted-foreground">{extraItems.length}</span>
+                <span />
               </button>
             </li>
-            {expanded && extraItems.map((parameter) => (
-              <li key={parameter.id} className="grid grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 border-b border-border/70 bg-secondary/10 px-4 py-2 text-[12px] text-muted-foreground">
-                <span className="truncate pl-6">{itemNameForUiParameter(parameter.itemId)}</span>
-                <span className="num text-right">—</span>
-                <span className="num text-right">—</span>
-                <span className="num text-right">—</span>
-              </li>
-            ))}
+            {expanded && extraItems.map((item, index) => {
+              const row = sim.items.find((candidate) => candidate.key === item.key)!
+              return (
+                <li
+                  key={item.key}
+                  className="additional-item-row grid grid-cols-[minmax(0,1fr)_88px_88px_64px] items-center gap-2 border-b border-border/70 px-4 py-2"
+                  style={{ animationDelay: `${index * 45}ms` }}
+                >
+                  <span className="flex min-w-0 items-center gap-2 text-[12.5px] font-medium">
+                    <span aria-hidden="true" className="size-2 shrink-0 rounded-[1px]" style={{ background: item.color }} />
+                    <span className="truncate">{item.name}</span>
+                  </span>
+                  {([0, 1] as const).map((open) => {
+                    const delta = plan[item.key][open] - BASE_PLAN[item.key][open]
+                    const changed = Math.abs(delta) >= 0.05
+                    return (
+                      <span key={open} className="num text-right text-[12.5px]">
+                        <span className={cn('font-medium transition-colors', changed && 'text-brand')}>
+                          <CountUp value={plan[item.key][open]} decimals={1} suffix="%" duration={800} />
+                        </span>
+                        <span className={cn('block text-[10.5px] leading-3 transition-colors', changed ? delta > 0 ? 'text-success' : 'text-critical' : 'text-muted-foreground/70')}>
+                          {changed ? `${fmtSigned(delta, 1)} pp` : 'forecast'}
+                        </span>
+                      </span>
+                    )
+                  })}
+                  <span className={cn('num text-right text-[12.5px] font-medium transition-colors', Math.abs(row.delta) < 0.005 ? 'text-muted-foreground' : row.delta > 0 ? 'text-success' : 'text-critical')}>
+                    <CountUp value={row.delta} signed duration={800} />
+                  </span>
+                </li>
+              )
+            })}
           </>
         )}
       </ul>

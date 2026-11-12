@@ -58,6 +58,22 @@ export const QUOTES: Record<ItemKey, ItemPrices> = {
     ],
     reference: 0.098,
   },
+  inspProcess: {
+    unit: 'process',
+    months: [
+      { local: 1.8, imported: 1.6 },
+      { local: 1.85, imported: 1.6 },
+    ],
+    reference: 0.125,
+  },
+  rfid: {
+    unit: 'tag',
+    months: [
+      { local: 0.42, imported: 0.38 },
+      { local: 0.43, imported: 0.38 },
+    ],
+    reference: 0.105,
+  },
 }
 
 /** How much more local costs than import, as a ratio. */

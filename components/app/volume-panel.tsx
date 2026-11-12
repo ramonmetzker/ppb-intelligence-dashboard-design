@@ -31,8 +31,6 @@ import { usePlan } from '@/components/app/plan-provider'
 import { Segmented } from '@/components/app/segmented'
 import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
 import { additionalParameters, isItemDisplayed } from '@/lib/ui-parameters/behavior'
-import { itemNameForUiParameter } from '@/lib/ui-parameters/data'
-import type { UiParameter } from '@/lib/ui-parameters/data'
 import { cn } from '@/lib/utils'
 
 const INK = 'var(--ink)'
@@ -56,7 +54,11 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
   const [lineMetric, setLineMetric] = useState<LineMetric>('share')
   const [matrixMetric, setMatrixMetric] = useState<MatrixMetric>('sharePoints')
   const visibleItems = useMemo(() => ITEMS.filter((item) => isItemDisplayed(item.name, parameters)), [parameters])
-  const extraItems = useMemo(() => additionalParameters(parameters), [parameters])
+  const extraItemIds = useMemo(() => new Set(additionalParameters(parameters).map((parameter) => parameter.itemId)), [parameters])
+  const extraItems = useMemo(
+    () => ITEMS.filter((item) => extraItemIds.has(item.masterItemId)),
+    [extraItemIds],
+  )
 
   const series = useMemo(() => buildSeries(plan, mode), [plan, mode])
   const base = baselineSeries(mode)
@@ -280,7 +282,7 @@ function Matrix({
   base: SeriesRow[]
   metric: MatrixMetric
   items: readonly ItemDef[]
-  extraItems: readonly UiParameter[]
+  extraItems: readonly ItemDef[]
 }) {
   const [expanded, setExpanded] = useState(false)
   const isShare = metric === 'sharePoints'
@@ -399,21 +401,52 @@ function Matrix({
                   </button>
                 </th>
               </tr>
-              {expanded && extraItems.map((parameter, index) => (
+              {expanded && extraItems.map((item, index) => (
                 <tr
-                  key={parameter.id}
+                  key={item.key}
                   className="additional-item-row border-b border-border/70"
                   style={{ animationDelay: `${index * 45}ms` }}
                 >
-                  <th scope="row" className="px-4 py-1.5 pl-11 text-left text-[11.5px] font-normal text-muted-foreground">
+                  <th scope="row" className="px-4 py-1.5 text-left font-medium">
                     <span className="flex items-center gap-2">
-                      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-muted-foreground/45" />
-                      {itemNameForUiParameter(parameter.itemId)}
+                      <span aria-hidden="true" className="size-2 shrink-0 rounded-[1px]" style={{ background: item.color }} />
+                      {item.name}
                     </span>
                   </th>
-                  {series.map((row) => (
-                    <td key={row.month} className="px-2 py-1.5 text-right text-muted-foreground/70">—</td>
-                  ))}
+                  {series.map((row) => {
+                    const cell = row.cells[item.key]
+                    const changed =
+                      row.projected &&
+                      Math.abs(cell.share - base[row.index].cells[item.key].share) > 0.0004
+                    return (
+                      <td
+                        key={row.month}
+                        className={cn(
+                          'cell-in px-2 py-1.5 text-right',
+                          openStart(row.index) && 'border-l border-dashed border-brand/60',
+                        )}
+                        style={
+                          {
+                            ...(isShare ? { background: heat(cell.share) } : {}),
+                            '--cell-delay': `${300 + row.index * 45 + (items.length + index) * 60}ms`,
+                          } as React.CSSProperties
+                        }
+                      >
+                        {isShare ? (
+                          <>
+                            <span className={cn('num block text-[12.5px] leading-4 font-medium', changed && 'text-brand-deep')}>
+                              {fmtPercent(cell.share)}
+                            </span>
+                            <span className="num block text-[10.5px] leading-4 text-muted-foreground">
+                              {fmt(cell.points, 1)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="num text-[12.5px]">{fmtVolume(cell.volume)}</span>
+                        )}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))}
             </>

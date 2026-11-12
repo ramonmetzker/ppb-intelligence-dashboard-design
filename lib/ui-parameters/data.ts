@@ -16,16 +16,13 @@ export type UiParameter = {
 export type UiParameterFormValues = Omit<UiParameter, 'id'>
 
 export const UI_PARAMETER_SEED: readonly UiParameter[] = [
-  { id: 'display-module-2026', order: 1, itemId: 'display-module', display: 'Y', collapse: 'N', year: '2026' },
-  { id: 'main-board-2026', order: 2, itemId: 'main-board', display: 'Y', collapse: 'N', year: '2026' },
-  { id: 'battery-pack-2026', order: 3, itemId: 'battery-pack', display: 'Y', collapse: 'N', year: '2026' },
-  { id: 'camera-module-2026', order: 4, itemId: 'camera-module', display: 'Y', collapse: 'Y', year: '2026' },
-  { id: 'housing-2026', order: 5, itemId: 'housing', display: 'Y', collapse: 'N', year: '2026' },
-  { id: 'flex-cable-2026', order: 6, itemId: 'flex-cable', display: 'Y', collapse: 'N', year: '2026' },
-  { id: 'speaker-module-2026', order: 7, itemId: 'speaker-module', display: 'N', collapse: 'N', year: '2026' },
-  { id: 'charger-adapter-2026', order: 8, itemId: 'charger-adapter', display: 'Y', collapse: 'Y', year: '2026' },
-  { id: 'antenna-set-2026', order: 9, itemId: 'antenna-set', display: 'Y', collapse: 'N', year: '2026' },
-  { id: 'connector-set-2026', order: 10, itemId: 'connector-set', display: 'Y', collapse: 'N', year: '2026' },
+  { id: 'memory-2026', order: 1, itemId: 'memory', display: 'Y', collapse: 'N', year: '2026' },
+  { id: 'battery-2026', order: 2, itemId: 'battery', display: 'Y', collapse: 'N', year: '2026' },
+  { id: 'adapter-2026', order: 3, itemId: 'adapter', display: 'Y', collapse: 'N', year: '2026' },
+  { id: 'pba-assy-2026', order: 4, itemId: 'pba-assy', display: 'Y', collapse: 'Y', year: '2026' },
+  { id: 'main-2026', order: 5, itemId: 'main', display: 'Y', collapse: 'Y', year: '2026' },
+  { id: 'insp-process-2026', order: 6, itemId: 'insp-process', display: 'Y', collapse: 'Y', year: '2026' },
+  { id: 'rfid-2026', order: 7, itemId: 'rfid', display: 'Y', collapse: 'N', year: '2026' },
 ]
 
 export const UI_PARAMETER_SCHEMA: ColumnSchema<UiParameter>[] = [

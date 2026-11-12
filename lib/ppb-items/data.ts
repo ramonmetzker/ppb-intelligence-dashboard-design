@@ -19,16 +19,13 @@ export type PpbItem = {
 }
 
 export const PPB_ITEM_SEED: readonly PpbItem[] = [
-  { id: 'display-module', itemName: 'Display Module', itemSlug: 'display-module', category: 'In-house Production', mapping: 'Y', active: 'Y' },
-  { id: 'main-board', itemName: 'Main Board', itemSlug: 'main-board', category: 'Local Purchasing', mapping: 'Y', active: 'Y' },
-  { id: 'battery-pack', itemName: 'Battery Pack', itemSlug: 'battery-pack', category: 'Local Purchasing', mapping: 'Y', active: 'Y' },
-  { id: 'camera-module', itemName: 'Camera Module', itemSlug: 'camera-module', category: 'Localization N/A', mapping: 'N', active: 'Y' },
-  { id: 'housing', itemName: 'Housing', itemSlug: 'housing', category: 'In-house Production', mapping: 'Y', active: 'Y' },
-  { id: 'flex-cable', itemName: 'Flex Cable', itemSlug: 'flex-cable', category: 'Local Purchasing', mapping: 'N', active: 'Y' },
-  { id: 'speaker-module', itemName: 'Speaker Module', itemSlug: 'speaker-module', category: 'Local Purchasing', mapping: 'Y', active: 'N' },
-  { id: 'charger-adapter', itemName: 'Charger Adapter', itemSlug: 'charger-adapter', category: 'Localization N/A', mapping: 'N', active: 'Y' },
-  { id: 'antenna-set', itemName: 'Antenna Set', itemSlug: 'antenna-set', category: 'In-house Production', mapping: 'Y', active: 'Y' },
-  { id: 'connector-set', itemName: 'Connector Set', itemSlug: 'connector-set', category: 'Local Purchasing', mapping: 'Y', active: 'Y' },
+  { id: 'memory', itemName: 'Memory', itemSlug: 'memory', category: 'Local Purchasing', mapping: 'Y', active: 'Y' },
+  { id: 'battery', itemName: 'Battery', itemSlug: 'battery', category: 'Local Purchasing', mapping: 'Y', active: 'Y' },
+  { id: 'adapter', itemName: 'Adapter', itemSlug: 'adapter', category: 'Local Purchasing', mapping: 'Y', active: 'Y' },
+  { id: 'pba-assy', itemName: 'PBA Assy', itemSlug: 'pba-assy', category: 'In-house Production', mapping: 'Y', active: 'Y' },
+  { id: 'main', itemName: 'Main', itemSlug: 'main', category: 'In-house Production', mapping: 'Y', active: 'Y' },
+  { id: 'insp-process', itemName: 'Insp. Process', itemSlug: 'insp-process', category: 'In-house Production', mapping: 'Y', active: 'Y' },
+  { id: 'rfid', itemName: 'RFID', itemSlug: 'rfid', category: 'Local Purchasing', mapping: 'Y', active: 'Y' },
 ]
 
 export type PpbPlant = 'P81J' | 'P81M'
@@ -43,12 +40,13 @@ export type PpbNcmMapping = {
 }
 
 export const PPB_NCM_MAPPING_SEED: readonly PpbNcmMapping[] = [
-  { id: 'p81j-display-module', plant: 'P81J', ncm: '85176259', suframa: '1201', itemId: 'display-module', lastUpdated: '2026-11-12' },
-  { id: 'p81j-main-board', plant: 'P81J', ncm: '85176239', suframa: '1202', itemId: 'main-board', lastUpdated: '2026-11-11' },
-  { id: 'p81j-battery-pack', plant: 'P81J', ncm: '85076000', suframa: '1203', itemId: 'battery-pack', lastUpdated: '2026-11-08' },
-  { id: 'p81m-display-module', plant: 'P81M', ncm: '85176259', suframa: '1301', itemId: 'display-module', lastUpdated: '2026-11-10' },
-  { id: 'p81m-camera-module', plant: 'P81M', ncm: '85258929', suframa: '1302', itemId: 'camera-module', lastUpdated: '2026-11-07' },
-  { id: 'p81m-housing', plant: 'P81M', ncm: '39269090', suframa: '1303', itemId: 'housing', lastUpdated: '2026-11-05' },
+  { id: 'p81j-memory', plant: 'P81J', ncm: '85176259', suframa: '1201', itemId: 'memory', lastUpdated: '2026-11-12' },
+  { id: 'p81j-battery', plant: 'P81J', ncm: '85076000', suframa: '1202', itemId: 'battery', lastUpdated: '2026-11-11' },
+  { id: 'p81j-pba-assy', plant: 'P81J', ncm: '85176239', suframa: '1203', itemId: 'pba-assy', lastUpdated: '2026-11-08' },
+  { id: 'p81j-main', plant: 'P81J', ncm: '85176239', suframa: '1204', itemId: 'main', lastUpdated: '2026-11-07' },
+  { id: 'p81m-adapter', plant: 'P81M', ncm: '85044090', suframa: '1301', itemId: 'adapter', lastUpdated: '2026-11-10' },
+  { id: 'p81m-insp-process', plant: 'P81M', ncm: '85176239', suframa: '1302', itemId: 'insp-process', lastUpdated: '2026-11-07' },
+  { id: 'p81m-rfid', plant: 'P81M', ncm: '85235910', suframa: '1303', itemId: 'rfid', lastUpdated: '2026-11-05' },
 ]
 
 export type PpbScoreType = 'Points' | 'Quota %'
@@ -65,16 +63,13 @@ export type PpbScore = {
 }
 
 export const PPB_SCORE_SEED: readonly PpbScore[] = [
-  { id: 'display-module-2026', itemId: 'display-module', score: 30, type: 'Points', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'main-board-2026', itemId: 'main-board', score: 25, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'battery-pack-2026', itemId: 'battery-pack', score: 20, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'camera-module-2026', itemId: 'camera-module', score: 100, type: 'Quota %', sedaUsage: 'N', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'housing-2026', itemId: 'housing', score: 15, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'flex-cable-2026', itemId: 'flex-cable', score: 5, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'speaker-module-2026', itemId: 'speaker-module', score: 100, type: 'Quota %', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'charger-adapter-2026', itemId: 'charger-adapter', score: 100, type: 'Quota %', sedaUsage: 'N', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'antenna-set-2026', itemId: 'antenna-set', score: 8, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
-  { id: 'connector-set-2026', itemId: 'connector-set', score: 7, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'memory-2026', itemId: 'memory', score: 30, type: 'Points', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'battery-2026', itemId: 'battery', score: 20, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'adapter-2026', itemId: 'adapter', score: 15, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'pba-assy-2026', itemId: 'pba-assy', score: 25, type: 'Points', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'main-2026', itemId: 'main', score: 25, type: 'Points', sedaUsage: 'Y', autoCount: 'N', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'insp-process-2026', itemId: 'insp-process', score: 10, type: 'Points', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
+  { id: 'rfid-2026', itemId: 'rfid', score: 5, type: 'Points', sedaUsage: 'Y', autoCount: 'Y', validFrom: '2026-01-01', validTo: '2026-12-31' },
 ]
 
 export const PPB_ITEM_SCHEMA: ColumnSchema<PpbItem>[] = [

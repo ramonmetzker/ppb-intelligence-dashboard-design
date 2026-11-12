@@ -5,8 +5,8 @@ import { priceIndex } from '@/lib/material-prices'
 /* -------------------------------------------------------------------------- */
 
 export const REQUIRED_SCORE = 662
-export const CURRENT_SCORE = 573.74
-export const BASE_FORECAST = 641.2
+export const CURRENT_SCORE = 582.24
+export const BASE_FORECAST = 654.2
 export const BASE_CONFIDENCE = 87
 
 export const MONTHS = [
@@ -33,10 +33,11 @@ export const OPEN_MONTHS = ['Nov', 'Dec'] as const
 /* PPB items                                                                   */
 /* -------------------------------------------------------------------------- */
 
-export type ItemKey = 'memory' | 'battery' | 'adapter' | 'pba' | 'mainBoard'
+export type ItemKey = 'memory' | 'battery' | 'adapter' | 'pba' | 'mainBoard' | 'inspProcess' | 'rfid'
 
 export type ItemDef = {
   key: ItemKey
+  masterItemId: string
   name: string
   detail: string
   color: string
@@ -56,6 +57,7 @@ export type ItemDef = {
 export const ITEMS: ItemDef[] = [
   {
     key: 'memory',
+    masterItemId: 'memory',
     name: 'Memory',
     detail: 'GH82 and GH96 modules',
     color: 'var(--chart-1)',
@@ -68,6 +70,7 @@ export const ITEMS: ItemDef[] = [
   },
   {
     key: 'battery',
+    masterItemId: 'battery',
     name: 'Battery',
     detail: 'EB-BS938 cells',
     color: 'var(--chart-2)',
@@ -80,6 +83,7 @@ export const ITEMS: ItemDef[] = [
   },
   {
     key: 'adapter',
+    masterItemId: 'adapter',
     name: 'Adapter',
     detail: 'Wall charger units',
     color: 'var(--chart-3)',
@@ -92,7 +96,8 @@ export const ITEMS: ItemDef[] = [
   },
   {
     key: 'pba',
-    name: 'PBA Assembly',
+    masterItemId: 'pba-assy',
+    name: 'PBA Assy',
     detail: 'Populated board assemblies',
     color: 'var(--chart-4)',
     current: 198.45,
@@ -104,7 +109,8 @@ export const ITEMS: ItemDef[] = [
   },
   {
     key: 'mainBoard',
-    name: 'Main Board',
+    masterItemId: 'main',
+    name: 'Main',
     detail: 'GH82-MB boards on local SMT',
     color: 'var(--chart-5)',
     current: 119.64,
@@ -113,6 +119,32 @@ export const ITEMS: ItemDef[] = [
     oct: 0.4,
     headroom: 14,
     costPerPp: 47.5,
+  },
+  {
+    key: 'inspProcess',
+    masterItemId: 'insp-process',
+    name: 'Insp. Process',
+    detail: 'Inspection and process compliance',
+    color: 'var(--chart-4)',
+    current: 5.25,
+    forecast: 8,
+    jan: 0.2,
+    oct: 0.32,
+    headroom: 8,
+    costPerPp: 22,
+  },
+  {
+    key: 'rfid',
+    masterItemId: 'rfid',
+    name: 'RFID',
+    detail: 'RFID traceability tags',
+    color: 'var(--chart-5)',
+    current: 3.25,
+    forecast: 5,
+    jan: 0.1,
+    oct: 0.24,
+    headroom: 12,
+    costPerPp: 18,
   },
 ]
 
@@ -133,6 +165,8 @@ const VOLUME_BASE: Record<ItemKey, number> = {
   adapter: 610,
   pba: 960,
   mainBoard: 925,
+  inspProcess: 520,
+  rfid: 380,
 }
 
 /** Share of the Oct-to-Dec move that has already landed by November. */
@@ -390,6 +424,8 @@ export const SUGGESTIONS: Suggestion[] = [
       adapter: [2, 3],
       pba: [5, 6],
       mainBoard: [5, 7],
+      inspProcess: [2, 3],
+      rfid: [1, 2],
     },
   ),
   suggestion(
@@ -436,6 +472,8 @@ export const SUGGESTIONS: Suggestion[] = [
       adapter: [10, 10],
       pba: [10, 10],
       mainBoard: [14, 14],
+      inspProcess: [8, 8],
+      rfid: [12, 12],
     },
   ),
   suggestion(

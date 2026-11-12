@@ -15,8 +15,10 @@ const ITEM_ALIASES: Record<ItemKey, RegExp> = {
   memory: /\bmemory\b|\bmemories\b|\bram\b/,
   battery: /\bbatter(?:y|ies)\b/,
   adapter: /\badapters?\b|\bchargers?\b/,
-  pba: /\bpba\b/,
-  mainBoard: /\bmain\s*boards?\b|\bmainboards?\b|\bmotherboards?\b/,
+  pba: /\bpba\b|\bpba\s*assy\b/,
+  mainBoard: /\bmain\s*boards?\b|\bmainboards?\b|\bmotherboards?\b|\bmain\b/,
+  inspProcess: /\binsp(?:ection)?\.?\s*process(?:es)?\b|\bprocess\s*inspection\b/,
+  rfid: /\brfid\b/,
 }
 
 const MONTH_ALIASES: Record<0 | 1, RegExp> = {

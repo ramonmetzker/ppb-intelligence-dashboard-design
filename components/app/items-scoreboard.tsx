@@ -2,12 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronRight } from 'lucide-react'
-import { fmt, fmtPercent, fmtSigned } from '@/lib/ppb-model'
+import { ITEM_BY_KEY, ITEMS, fmt, fmtPercent, fmtSigned } from '@/lib/ppb-model'
+import { PPB_SCORE_SEED } from '@/lib/ppb-items/data'
 import { Panel } from '@/components/app/panel'
 import { usePlan } from '@/components/app/plan-provider'
 import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
 import { additionalParameters, isItemDisplayed } from '@/lib/ui-parameters/behavior'
-import { itemNameForUiParameter } from '@/lib/ui-parameters/data'
 import { cn } from '@/lib/utils'
 
 export function ItemsScoreboard() {
@@ -15,7 +15,13 @@ export function ItemsScoreboard() {
   const { parameters } = useUiParameters()
   const [expanded, setExpanded] = useState(false)
   const visibleRows = useMemo(() => sim.items.filter((row) => isItemDisplayed(row.name, parameters)), [sim.items, parameters])
-  const extraItems = useMemo(() => additionalParameters(parameters), [parameters])
+  const extraItemIds = useMemo(() => new Set(additionalParameters(parameters).map((parameter) => parameter.itemId)), [parameters])
+  const extraRows = useMemo(
+    () => sim.items.filter((row) => extraItemIds.has(ITEM_BY_KEY[row.key].masterItemId)),
+    [sim.items, extraItemIds],
+  )
+  const scoreByItemId = useMemo(() => new Map(PPB_SCORE_SEED.map((score) => [score.itemId, score.score])), [])
+  const scoreFor = (key: (typeof ITEMS)[number]['key']) => scoreByItemId.get(ITEM_BY_KEY[key].masterItemId) ?? '—'
   const total = (pick: (r: (typeof sim.items)[number]) => number) =>
     visibleRows.reduce((sum, r) => sum + pick(r), 0)
 
@@ -32,6 +38,9 @@ export function ItemsScoreboard() {
           <tr className="border-b border-border bg-secondary/50 text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase">
             <th scope="col" className="px-4 py-2 text-left">
               Item
+            </th>
+            <th scope="col" className="px-3 py-2 text-right">
+              Score
             </th>
             <th scope="col" className="px-3 py-2 text-right">
               Weight
@@ -77,6 +86,7 @@ export function ItemsScoreboard() {
                   </span>
                 </span>
               </th>
+              <td className="num px-3 py-2 text-right font-medium">{scoreFor(r.key)}</td>
               <td className="num px-3 py-2 text-right text-muted-foreground">{r.weight.toFixed(0)}</td>
               <td className="num px-3 py-2 text-right">{fmtPercent(r.shareNow)}</td>
               <td className="num px-3 py-2 text-right text-muted-foreground">
@@ -100,10 +110,10 @@ export function ItemsScoreboard() {
               </td>
             </tr>
           ))}
-          {extraItems.length > 0 && (
+          {extraRows.length > 0 && (
             <>
               <tr className="border-b border-border/70">
-                <th scope="row" colSpan={9} className="px-4 py-2 text-left">
+                <th scope="row" colSpan={10} className="px-4 py-2 text-left">
                   <button
                     type="button"
                     aria-expanded={expanded}
@@ -118,24 +128,37 @@ export function ItemsScoreboard() {
                     </span>
                     <span>Additional Items</span>
                     <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium leading-none text-muted-foreground">
-                      {extraItems.length}
+                      {extraRows.length}
                     </span>
                   </button>
                 </th>
               </tr>
-              {expanded && extraItems.map((parameter, index) => (
+              {expanded && extraRows.map((r, index) => (
                 <tr
-                  key={parameter.id}
+                  key={r.key}
                   className="additional-item-row border-b border-border/70"
                   style={{ animationDelay: `${index * 55}ms` }}
                 >
-                  <th scope="row" className="px-4 py-2 pl-11 text-left font-normal text-muted-foreground">
+                  <th scope="row" className="px-4 py-2 text-left font-medium">
                     <span className="flex items-center gap-2">
-                      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-muted-foreground/45" />
-                      {itemNameForUiParameter(parameter.itemId)}
+                      <span aria-hidden="true" className="size-2 shrink-0 rounded-[1px]" style={{ background: r.color }} />
+                      <span>
+                        {r.name}
+                        <span className="block text-[11px] font-normal text-muted-foreground">{r.detail}</span>
+                      </span>
                     </span>
                   </th>
-                  <td colSpan={8} className="px-3 py-2 text-right text-muted-foreground/70">—</td>
+                  <td className="num px-3 py-2 text-right font-medium">{scoreFor(r.key)}</td>
+                  <td className="num px-3 py-2 text-right text-muted-foreground">{r.weight.toFixed(0)}</td>
+                  <td className="num px-3 py-2 text-right">{fmtPercent(r.shareNow)}</td>
+                  <td className="num px-3 py-2 text-right text-muted-foreground">{fmtPercent(r.shareForecast)}</td>
+                  <td className="num px-3 py-2 text-right font-medium">{fmtPercent(r.shareScenario)}</td>
+                  <td className="num border-l border-border px-3 py-2 text-right">{fmt(r.current)}</td>
+                  <td className="num px-3 py-2 text-right text-muted-foreground">{fmt(r.forecast)}</td>
+                  <td className="num px-3 py-2 text-right font-semibold">{fmt(r.scenario)}</td>
+                  <td className={cn('num px-4 py-2 text-right font-medium', r.delta > 0 ? 'text-success' : r.delta < 0 ? 'text-critical' : 'text-muted-foreground')}>
+                    {Math.abs(r.delta) < 0.005 ? '0.00' : fmtSigned(r.delta)}
+                  </td>
                 </tr>
               ))}
             </>
@@ -146,6 +169,7 @@ export function ItemsScoreboard() {
             <th scope="row" className="px-4 py-2 text-left">
               Total score
             </th>
+            <td />
             <td className="num px-3 py-2 text-right text-muted-foreground">
               {total((r) => r.weight).toFixed(0)}
             </td>
