@@ -14,10 +14,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { SALES_MONTHS, type SalesDemand, type SalesMonthId } from '@/lib/sales-demand/data'
+import { SALES_MONTHS, type SalesDemand, type SalesDemandYear, type SalesMonthId } from '@/lib/sales-demand/data'
 
 const MODEL_PATTERN = /^[A-Z]{2}-[A-Z]\d{3}$/
-const EXPECTED_HEADERS = ['Model', ...SALES_MONTHS.map((month) => month.label), 'Total']
 const number = new Intl.NumberFormat('en-US')
 const steps = ['Paste data', 'Review', 'Confirm'] as const
 
@@ -29,13 +28,17 @@ type ParseResult = {
   hasInput: boolean
 }
 
-const SAMPLE_TSV = [
-  EXPECTED_HEADERS.join('\t'),
-  ['SM-S098', '120', '180', '240', '300', '360', '420', '480', '540', '600', '660', '720', '780', '5400'].join('\t'),
-  ['SM-A017', '-', '90', '140', '210', '-', '-', '-', '-', '-', '-', '-', '-', '440'].join('\t'),
-].join('\n')
+function sampleTsv(year: SalesDemandYear) {
+  const expectedHeaders = ['Model', ...SALES_MONTHS.map((month) => `${month.label} ${year}`), 'Total']
+  return [
+    expectedHeaders.join('\t'),
+    ['SM-S098', '120', '180', '240', '300', '360', '420', '480', '540', '600', '660', '720', '780', '5400'].join('\t'),
+    ['SM-A017', '-', '90', '140', '210', '-', '-', '-', '-', '-', '-', '-', '-', '440'].join('\t'),
+  ].join('\n')
+}
 
-function parseSalesDemand(input: string): ParseResult {
+function parseSalesDemand(input: string, year: SalesDemandYear): ParseResult {
+  const expectedHeaders = ['Model', ...SALES_MONTHS.map((month) => `${month.label} ${year}`), 'Total']
   const lines = input.split(/\r?\n/).map((line) => line.trimEnd()).filter((line) => line.trim())
   if (lines.length === 0) return { rows: [], errors: [], hasInput: false }
 
@@ -44,8 +47,8 @@ function parseSalesDemand(input: string): ParseResult {
   const rows: SalesDemand[] = []
   const seenModels = new Set<string>()
 
-  if (headers.length !== EXPECTED_HEADERS.length || headers.some((header, index) => header.toLowerCase() !== EXPECTED_HEADERS[index].toLowerCase())) {
-    errors.push(`Header must be: ${EXPECTED_HEADERS.join(' | ')}`)
+  if (headers.length !== expectedHeaders.length || headers.some((header, index) => header.toLowerCase() !== expectedHeaders[index].toLowerCase())) {
+    errors.push(`Header must be: ${expectedHeaders.join(' | ')}`)
     return { rows, errors, hasInput: true }
   }
 
@@ -55,7 +58,7 @@ function parseSalesDemand(input: string): ParseResult {
     const model = cells[0] ?? ''
     const rowErrors: string[] = []
 
-    if (cells.length !== EXPECTED_HEADERS.length) rowErrors.push('wrong number of columns')
+    if (cells.length !== expectedHeaders.length) rowErrors.push('wrong number of columns')
     if (!MODEL_PATTERN.test(model)) rowErrors.push('model must look like SM-A017')
     if (seenModels.has(model)) rowErrors.push('model is duplicated')
 
@@ -89,8 +92,9 @@ function parseSalesDemand(input: string): ParseResult {
 
     seenModels.add(model)
     rows.push({
-      id: `imported-${model}`,
+      id: `imported-${year}-${model}`,
       model,
+      year,
       months,
       total: calculatedTotal,
     })
@@ -158,16 +162,16 @@ function ValidationMessage({ result }: { result: ParseResult }) {
   )
 }
 
-function PreviewTable({ rows }: { rows: SalesDemand[] }) {
+function PreviewTable({ rows, year }: { rows: SalesDemand[]; year: SalesDemandYear }) {
   return (
     <div className="max-h-72 overflow-auto rounded-lg border border-border">
       <table className="w-full min-w-[1200px] border-collapse text-left text-xs">
-        <caption className="sr-only">Preview of pasted 2027 monthly sales demand</caption>
+        <caption className="sr-only">Preview of pasted {year} monthly sales demand</caption>
         <thead className="sticky top-0 bg-muted text-muted-foreground">
           <tr>
             <th className="px-3 py-2 font-medium">Model</th>
             {SALES_MONTHS.map((month) => (
-              <th key={month.id} className="px-3 py-2 text-right font-medium">{month.label}</th>
+              <th key={month.id} className="px-3 py-2 text-right font-medium">{month.label} {year}</th>
             ))}
             <th className="px-3 py-2 text-right font-medium">Total</th>
           </tr>
@@ -191,11 +195,12 @@ function PreviewTable({ rows }: { rows: SalesDemand[] }) {
   )
 }
 
-export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDemand[]) => void }) {
+export function SalesDemandImportDialog({ year, onImport }: { year: SalesDemandYear; onImport: (rows: SalesDemand[]) => void }) {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<Step>(1)
   const [input, setInput] = useState('')
-  const result = useMemo(() => parseSalesDemand(input), [input])
+  const sample = sampleTsv(year)
+  const result = useMemo(() => parseSalesDemand(input, year), [input, year])
   const canContinue = result.rows.length > 0 && result.errors.length === 0
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -224,7 +229,7 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
             <div>
               <DialogTitle>Import sales demand</DialogTitle>
               <DialogDescription className="mt-1">
-                Import the 2027 monthly sales provision copied from Excel.
+                Import the {year} monthly sales provision copied from Excel.
               </DialogDescription>
             </div>
             <StepIndicator currentStep={step} />
@@ -236,19 +241,19 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
                 <div>
                   <h2 id="paste-sales-demand-title" className="text-sm font-semibold text-foreground">Paste Excel data</h2>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Expected columns: Model, Jan 2027 through Dec 2027, and Total. Use a dash for months without volume.
+                    Expected columns: Model, Jan {year} through Dec {year}, and Total. Use a dash for months without volume.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-3">
                     <label htmlFor="sales-demand-tsv" className="text-sm font-medium text-foreground">Excel content</label>
-                    <Button variant="ghost" size="sm" onClick={() => setInput(SAMPLE_TSV)}>Use sample</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setInput(sample)}>Use sample</Button>
                   </div>
                   <Textarea
                     id="sales-demand-tsv"
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
-                    placeholder={SAMPLE_TSV}
+                    placeholder={sample}
                     wrap="off"
                     className="min-h-56 resize-y overflow-x-auto whitespace-pre font-mono text-xs leading-5"
                     aria-describedby="sales-demand-tsv-help"
@@ -270,7 +275,7 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
                   </div>
                   <Badge variant="secondary">{result.rows.length} rows ready</Badge>
                 </div>
-                <PreviewTable rows={result.rows} />
+                <PreviewTable rows={result.rows} year={year} />
               </section>
             )}
 
@@ -278,12 +283,12 @@ export function SalesDemandImportDialog({ onImport }: { onImport: (rows: SalesDe
               <section className="flex flex-col gap-4" aria-labelledby="confirm-sales-demand-title">
                 <div>
                   <h2 id="confirm-sales-demand-title" className="text-sm font-semibold text-foreground">Confirm import</h2>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">The validated rows will replace the current mocked Sales Demand data in this view.</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">The validated rows will replace the current Sales Demand data for the selected year.</p>
                 </div>
                 <div className="rounded-lg border border-border bg-muted/40 px-4 py-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">{result.rows.length} rows</Badge>
-                    <span className="text-sm text-foreground">ready to import for calendar year 2027</span>
+                    <span className="text-sm text-foreground">ready to import for calendar year {year}</span>
                   </div>
                   <p className="mt-2 text-xs leading-5 text-muted-foreground">
                     Monthly totals have been recalculated from the pasted values and validated against the Total column.
