@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Pencil, Plus } from 'lucide-react'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/app/page-header'
 import { YesNoBadge } from '@/components/app/yes-no-badge'
 import { DataTable } from '@/components/data-table/data-table'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   DEFAULT_QUERY as DEFAULT_DATA_TABLE_QUERY,
+  type BulkAction,
   type DataTableColumn,
   type DataTableQuery,
   type RowAction,
@@ -228,14 +229,64 @@ export function PpbItemsView() {
     )
   }
 
+  const removeItems = (ids: string[]) => {
+    const removedIds = new Set(ids)
+    setItems((current) => current.filter((item) => !removedIds.has(item.id)))
+    setMappings((current) => current.filter((mapping) => !removedIds.has(mapping.itemId)))
+    setScores((current) => current.filter((score) => !removedIds.has(score.itemId)))
+  }
+
+  const removeMappings = (ids: string[]) => {
+    const removedIds = new Set(ids)
+    setMappings((current) => current.filter((mapping) => !removedIds.has(mapping.id)))
+  }
+
+  const removeScores = (ids: string[]) => {
+    const removedIds = new Set(ids)
+    setScores((current) => current.filter((score) => !removedIds.has(score.id)))
+  }
+
   const itemRowActions: RowAction<PpbItem>[] = [
     { id: 'edit', label: 'Edit', icon: <Pencil aria-hidden="true" />, inline: true, onSelect: openEdit },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      separatorBefore: true,
+      onSelect: (item) => removeItems([item.id]),
+    },
   ]
   const mappingRowActions: RowAction<PpbNcmMapping>[] = [
     { id: 'edit', label: 'Edit', icon: <Pencil aria-hidden="true" />, inline: true, onSelect: openEditMapping },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      separatorBefore: true,
+      onSelect: (mapping) => removeMappings([mapping.id]),
+    },
   ]
   const scoreRowActions: RowAction<PpbScore>[] = [
     { id: 'edit', label: 'Edit', icon: <Pencil aria-hidden="true" />, inline: true, onSelect: openEditScore },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      separatorBefore: true,
+      onSelect: (score) => removeScores([score.id]),
+    },
+  ]
+  const itemBulkActions: BulkAction<PpbItem>[] = [
+    { id: 'delete', label: 'Delete', icon: <Trash2 aria-hidden="true" />, tone: 'destructive', onSelect: ({ ids }) => removeItems(ids) },
+  ]
+  const mappingBulkActions: BulkAction<PpbNcmMapping>[] = [
+    { id: 'delete', label: 'Delete', icon: <Trash2 aria-hidden="true" />, tone: 'destructive', onSelect: ({ ids }) => removeMappings(ids) },
+  ]
+  const scoreBulkActions: BulkAction<PpbScore>[] = [
+    { id: 'delete', label: 'Delete', icon: <Trash2 aria-hidden="true" />, tone: 'destructive', onSelect: ({ ids }) => removeScores(ids) },
   ]
 
   return (
@@ -280,6 +331,8 @@ export function PpbItemsView() {
             getRowId={(row) => row.id}
             query={query}
             onQueryChange={setQuery}
+            selectable
+            bulkActions={itemBulkActions}
             rowActions={itemRowActions}
             onRowClick={openEdit}
             columnPinning={false}
@@ -297,6 +350,8 @@ export function PpbItemsView() {
             getRowId={(row) => row.id}
             query={mappingQuery}
             onQueryChange={setMappingQuery}
+            selectable
+            bulkActions={mappingBulkActions}
             rowActions={mappingRowActions}
             onRowClick={openEditMapping}
             columnPinning={false}
@@ -314,6 +369,8 @@ export function PpbItemsView() {
             getRowId={(row) => row.id}
             query={scoreQuery}
             onQueryChange={setScoreQuery}
+            selectable
+            bulkActions={scoreBulkActions}
             rowActions={scoreRowActions}
             onRowClick={openEditScore}
             columnPinning={false}
