@@ -58,7 +58,7 @@ export function IsoDatePickerInput({ id, value, onChange, placeholder = 'YYYY-MM
           onChange={(event) => onChange(formatDateInput(event.target.value))}
           className="font-mono"
         />
-        <InputGroupAddon align="inline-end">
+        <InputGroupAddon align="inline-end" className="p-0">
           <PopoverTrigger
             render={
               <InputGroupButton size="icon-sm" aria-label="Open date picker">
