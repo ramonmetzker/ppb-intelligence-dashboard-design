@@ -81,7 +81,9 @@ export function AppSidebar() {
           aria-label="PPB"
           className={cn('flex min-w-0 flex-1 items-center', collapsed ? 'justify-center' : 'gap-3')}
         >
-          <PpbMark size={30} className="shrink-0" />
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-md border border-brand/35 bg-card text-brand shadow-sm shadow-brand/10">
+            <PpbMark size={44} />
+          </span>
           {!collapsed && (
             <div className="min-w-0 leading-tight">
               <p className="font-display truncate text-[14px] font-semibold tracking-tight text-white">
