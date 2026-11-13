@@ -1162,8 +1162,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
       <ActiveFilters chips={chips} labels={labels} onClearAll={clearAllFilters} />
 
       <div className="relative overflow-hidden rounded-xl border border-border bg-card">
-        {loading && <div aria-hidden="true" className="absolute inset-x-0 top-0 z-40 h-0.5 animate-pulse bg-brand" />}
-
+      
         <div
           ref={scrollerRef}
           role="region"
