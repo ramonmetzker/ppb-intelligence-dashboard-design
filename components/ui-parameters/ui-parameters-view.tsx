@@ -31,21 +31,20 @@ function YesNoBadge({ value }: { value: 'Y' | 'N' }) {
 function createColumns(items: readonly PpbItem[]): DataTableColumn<UiParameter>[] {
   const itemNames = new Map(items.map((item) => [item.id, item.itemName]))
   return [
-    { id: 'order', header: 'Order', kind: 'number', width: 120, align: 'right', cell: ({ row }) => <span className="tabular-nums">{row.order}</span> },
+    { id: 'order', header: 'Order', kind: 'number', width: 136, align: 'right', cell: ({ row }) => <span className="tabular-nums">{row.order}</span> },
     {
       id: 'item',
       header: 'Item',
       kind: 'text',
-      width: 280,
+      width: 300,
       grow: true,
-      pin: 'left',
       accessor: (row) => itemNames.get(row.itemId) ?? row.itemId,
       searchText: (row) => itemNames.get(row.itemId) ?? row.itemId,
       cell: ({ row }) => <span>{itemNames.get(row.itemId) ?? row.itemId}</span>,
     },
-    { id: 'display', header: 'Display', kind: 'boolean', width: 150, align: 'center', accessor: (row) => row.display === 'Y', searchText: (row) => row.display, cell: ({ row }) => <YesNoBadge value={row.display} /> },
+    { id: 'display', header: 'Display', kind: 'boolean', width: 148, align: 'center', accessor: (row) => row.display === 'Y', searchText: (row) => row.display, cell: ({ row }) => <YesNoBadge value={row.display} /> },
     { id: 'collapse', header: 'Collapse', kind: 'boolean', width: 160, align: 'center', accessor: (row) => row.collapse === 'Y', searchText: (row) => row.collapse, cell: ({ row }) => <YesNoBadge value={row.collapse} /> },
-    { id: 'year', header: 'Year', kind: 'number', filterable: false, width: 140, cell: ({ row }) => <span className="tabular-nums">{row.year}</span> },
+    { id: 'year', header: 'Year', kind: 'number', filterable: false, width: 112, align: 'center', cell: ({ row }) => <span className="tabular-nums">{row.year}</span> },
   ]
 }
 
