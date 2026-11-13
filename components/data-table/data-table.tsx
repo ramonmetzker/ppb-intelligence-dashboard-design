@@ -15,7 +15,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { ChevronRight, MoreHorizontal, SearchX, Inbox } from 'lucide-react'
+import { ChevronRight, MoreHorizontal, SearchX } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -52,7 +52,7 @@ import {
   type SortDirection,
 } from '@/lib/data-table/types'
 import { cn } from '@/lib/utils'
-import { PpbLoadingMark } from '@/components/brand/ppb-mark'
+import { PpbLoadingMark, PpbMark } from '@/components/brand/ppb-mark'
 import { BulkBar } from './bulk-bar'
 import { downloadCsv, downloadJson, type ExportColumn } from './export-utils'
 import { describeFilter, type DataTableLabels } from './filter-utils'
@@ -1181,10 +1181,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
               aria-label={labels.loading}
               className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-card/40 backdrop-blur-[2px]"
             >
-              <div className="flex items-center justify-center rounded-full border border-border/70 bg-card/75 p-4 shadow-lg shadow-foreground/10">
-                <PpbLoadingMark size={42} className="text-brand" />
-                <span className="sr-only">{labels.loading}</span>
-              </div>
+              <PpbLoadingMark size={48} className="text-brand drop-shadow-lg" />
+              <span className="sr-only">{labels.loading}</span>
             </div>
           )}
           <table
@@ -1316,11 +1314,11 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     <div style={colSpanStyle} className="sticky left-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
                       {emptyState ?? (
                         <>
-                          {hasFilters ? (
-                            <SearchX aria-hidden="true" className="size-8 text-muted-foreground" />
-                          ) : (
-                            <Inbox aria-hidden="true" className="size-8 text-muted-foreground" />
-                          )}
+          {hasFilters ? (
+            <SearchX aria-hidden="true" className="size-8 text-muted-foreground" />
+          ) : (
+            <PpbMark size={48} className="text-brand/55" />
+          )}
                           <p className="text-sm font-medium">{hasFilters ? labels.noResults : labels.noData}</p>
                           {hasFilters && (
                             <>

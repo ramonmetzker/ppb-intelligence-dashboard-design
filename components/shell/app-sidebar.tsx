@@ -50,6 +50,7 @@ const GROUPS: {
       { label: 'sopDemand', href: '/raw-data/sop-demand', icon: Table },
       { label: 'salesDemand', href: '/raw-data/sales-demand', icon: Table },
       { label: 'uiParameters', href: '/raw-data/ui-parameters', icon: SlidersHorizontal },
+      { label: 'dataTableTest', href: '/raw-data/data-table-test', icon: Table },
     ],
   },
   {
