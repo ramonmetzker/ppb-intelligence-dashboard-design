@@ -72,7 +72,18 @@ export function countUnassignedSalesModels(rows: readonly SalesAssignmentRow[]):
 }
 
 export const SALES_ASSIGNMENT_ROWS: SalesAssignmentRow[] = [
-  { id: 'sales-sm-097', originalModel: 'SM-097', newModel: 'SM-097', referenceBom: 'Unassigned', division: 100, totalVolume: 2400 },
-  { id: 'sales-sm-144', originalModel: 'SM-144', newModel: 'SM-144', referenceBom: 'Unassigned', division: 100, totalVolume: 1280 },
-  { id: 'sales-sm-221', originalModel: 'SM-221', newModel: 'SM-221', referenceBom: 'Unassigned', division: 100, totalVolume: 760 },
+  {
+    id: 'sales-sm-s098',
+    originalModel: 'SM-S098',
+    newModel: '2 submodels',
+    referenceBom: 'Assign per child',
+    division: 100,
+    totalVolume: 1970,
+    children: [
+      { id: 'sales-sm-s098-128', parentId: 'sales-sm-s098', originalModel: 'SM-S098', newModel: 'SM-S098 128GB', referenceBom: 'Unassigned', division: 50, totalVolume: 985 },
+      { id: 'sales-sm-s098-256', parentId: 'sales-sm-s098', originalModel: 'SM-S098', newModel: 'SM-S098 256GB', referenceBom: 'Unassigned', division: 50, totalVolume: 985 },
+    ],
+  },
+  { id: 'sales-sm-s144', originalModel: 'SM-S144', newModel: 'SM-S144', referenceBom: 'Unassigned', division: 100, totalVolume: 3040 },
+  { id: 'sales-sm-a059', originalModel: 'SM-A059', newModel: 'SM-A059', referenceBom: 'Unassigned', division: 100, totalVolume: 7190 },
 ]

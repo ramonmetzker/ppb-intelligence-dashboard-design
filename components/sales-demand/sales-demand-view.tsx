@@ -1,10 +1,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CircleHelp } from 'lucide-react'
 import { DataTable } from '@/components/data-table/data-table'
 import { PageHeader } from '@/components/app/page-header'
 import { SalesDemandImportDialog } from '@/components/sales-demand/sales-demand-import-dialog'
+import { useSalesDemand } from '@/components/sales-demand/sales-demand-provider'
 import { Button } from '@/components/ui/button'
 import type { DataTableColumnDefinition } from '@/lib/data-table/types'
 import {
@@ -14,7 +15,9 @@ import {
   SALES_SCHEMA,
   type SalesDemand,
   type SalesDemandYear,
+  type SalesMonthId,
 } from '@/lib/sales-demand/data'
+import type { SalesAssignmentRow } from '@/lib/reference-bom-data'
 
 const number = new Intl.NumberFormat('en-US')
 const schemaById = new Map(SALES_SCHEMA.map((schema) => [schema.id, schema]))
@@ -37,6 +40,21 @@ function createColumns(year: SalesDemandYear): DataTableColumnDefinition<SalesDe
       minWidth: 160,
       pin: 'left',
       grow: true,
+      cell: ({ row }) => (
+        <div className="flex min-w-0 items-center gap-1.5">
+          <span className="truncate">{row.model}</span>
+          {row.previousModel && (
+            <span
+              role="img"
+              aria-label={`Original model: ${row.previousModel}`}
+              title={`Original model: ${row.previousModel}`}
+              className="inline-flex shrink-0 text-muted-foreground"
+            >
+              <CircleHelp className="size-3.5" aria-hidden="true" />
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       id: `year-${year}`,
@@ -53,6 +71,40 @@ function createColumns(year: SalesDemandYear): DataTableColumnDefinition<SalesDe
       cell: ({ value }: { value: unknown }) => number.format(Number(value)),
     },
   ]
+}
+
+function splitDemandRow(row: SalesDemand, children: readonly SalesAssignmentRow[]): SalesDemand[] {
+  const monthsByChild = children.map(() => ({}) as Record<SalesMonthId, number | null>)
+
+  SALES_MONTHS.forEach((month) => {
+    const sourceVolume = row.months[month.id]
+    if (sourceVolume == null) {
+      monthsByChild.forEach((months) => { months[month.id] = null })
+      return
+    }
+
+    let allocated = 0
+    children.forEach((child, childIndex) => {
+      const volume = childIndex === children.length - 1
+        ? sourceVolume - allocated
+        : Math.round(sourceVolume * child.division / 100)
+      monthsByChild[childIndex][month.id] = volume
+      allocated += volume
+    })
+  })
+
+  return children.map((child, childIndex) => {
+    const months = monthsByChild[childIndex]
+    const total = Object.values(months).reduce<number>((sum, value) => sum + (value ?? 0), 0)
+    return {
+      ...row,
+      id: `${row.id}-${child.id}`,
+      model: child.newModel,
+      previousModel: row.model,
+      months,
+      total,
+    }
+  })
 }
 
 function YearSelector({ year, onChange }: { year: SalesDemandYear; onChange: (year: SalesDemandYear) => void }) {
@@ -106,9 +158,22 @@ function YearSelector({ year, onChange }: { year: SalesDemandYear; onChange: (ye
 
 export function SalesDemandView() {
   const [year, setYear] = useState<SalesDemandYear>(SALES_DEMAND_YEARS[0])
-  const [rows, setRows] = useState<readonly SalesDemand[]>(SALES_DEMAND_ROWS)
+  const [demandRows, setDemandRows] = useState<readonly SalesDemand[]>(SALES_DEMAND_ROWS)
+  const { salesRows } = useSalesDemand()
   const columns = useMemo(() => createColumns(year), [year])
-  const visibleRows = useMemo(() => rows.filter((row) => row.year === year), [rows, year])
+  const assignmentsByModel = useMemo(
+    () => new Map(salesRows.map((assignment) => [assignment.originalModel, assignment])),
+    [salesRows],
+  )
+  const visibleRows = useMemo(
+    () => demandRows
+      .filter((row) => row.year === year)
+      .flatMap((row) => {
+        const children = assignmentsByModel.get(row.model)?.children
+        return children?.length ? splitDemandRow(row, children) : [row]
+      }),
+    [assignmentsByModel, demandRows, year],
+  )
 
   return (
     <>
@@ -118,7 +183,7 @@ export function SalesDemandView() {
       >
         <SalesDemandImportDialog
           year={year}
-          onImport={(importedRows) => setRows((current) => [...current.filter((row) => row.year !== year), ...importedRows])}
+          onImport={(importedRows) => setDemandRows((current) => [...current.filter((row) => row.year !== year), ...importedRows])}
         />
       </PageHeader>
 

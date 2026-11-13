@@ -14,6 +14,7 @@ import { AgentProvider } from '@/components/agent/agent-provider'
 import { AgentLauncher } from '@/components/agent/agent-launcher'
 import { AgentDialog } from '@/components/agent/agent-dialog'
 import { UiParametersProvider } from '@/components/ui-parameters/ui-parameters-provider'
+import { SalesDemandProvider } from '@/components/sales-demand/sales-demand-provider'
 import { readPreferences } from '@/lib/preferences'
 import { ACK_COOKIE, parseAcknowledgements } from '@/lib/notifications'
 
@@ -30,6 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <MaterialProvider>
             <ProductsProvider>
               <UiParametersProvider>
+              <SalesDemandProvider>
               <RpaProvider>
               <AgentProvider>
                 <ShellProvider>
@@ -48,6 +50,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 </ShellProvider>
               </AgentProvider>
               </RpaProvider>
+              </SalesDemandProvider>
               </UiParametersProvider>
             </ProductsProvider>
           </MaterialProvider>

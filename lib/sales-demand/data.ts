@@ -23,6 +23,7 @@ export type SalesMonthId = (typeof SALES_MONTHS)[number]['id']
 export type SalesDemand = {
   id: string
   model: string
+  previousModel?: string
   year: SalesDemandYear
   months: Record<SalesMonthId, number | null>
   total: number

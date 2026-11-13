@@ -16,10 +16,10 @@ import {
 } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import {
-  SALES_ASSIGNMENT_ROWS,
   type ReferenceBomRow,
   type SalesAssignmentRow,
 } from '@/lib/reference-bom-data'
+import { useSalesDemand, type SalesSplitDraft } from '@/components/sales-demand/sales-demand-provider'
 import { PopConfirm } from '@/components/pop-confirm'
 import { ReferenceBomAssignmentDialog } from './reference-bom-assignment-dialog'
 
@@ -100,14 +100,8 @@ function toAssignmentRow(row: SalesAssignmentRow): ReferenceBomRow {
   }
 }
 
-type SplitDraft = {
-  id: string
-  newModel: string
-  division: number
-}
-
-function SalesSplitDialog({ row, open, onOpenChange, onSave }: { row: SalesAssignmentRow | null; open: boolean; onOpenChange: (open: boolean) => void; onSave: (parentId: string, drafts: SplitDraft[]) => void }) {
-  const [drafts, setDrafts] = useState<SplitDraft[]>([])
+function SalesSplitDialog({ row, open, onOpenChange, onSave, onRemove }: { row: SalesAssignmentRow | null; open: boolean; onOpenChange: (open: boolean) => void; onSave: (parentId: string, drafts: SalesSplitDraft[]) => void; onRemove: (parentId: string) => void }) {
+  const [drafts, setDrafts] = useState<SalesSplitDraft[]>([])
 
   useEffect(() => {
     if (!row || !open) return
@@ -121,7 +115,7 @@ function SalesSplitDialog({ row, open, onOpenChange, onSave }: { row: SalesAssig
 
   const canSave = drafts.length >= 2 && drafts.every((draft) => draft.newModel.trim().length > 0)
 
-  const updateDraft = (id: string, patch: Partial<SplitDraft>) => {
+  const updateDraft = (id: string, patch: Partial<SalesSplitDraft>) => {
     setDrafts((current) => current.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)))
   }
 
@@ -206,7 +200,14 @@ function SalesSplitDialog({ row, open, onOpenChange, onSave }: { row: SalesAssig
         </div>
 
         <DialogFooter className="!mx-0 !mb-0 items-center rounded-none border-t border-border !px-6 !py-3 sm:!justify-between">
-          <p className="hidden text-xs text-muted-foreground sm:block">Adjust one slider to rebalance the others automatically.</p>
+          <div className="flex items-center gap-3">
+            <p className="hidden text-xs text-muted-foreground sm:block">Adjust one slider to rebalance the others automatically.</p>
+            {row?.children?.length ? (
+              <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => onRemove(row.id)}>
+                Remove split
+              </Button>
+            ) : null}
+          </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="button" disabled={!canSave} onClick={() => row && onSave(row.id, drafts)}>Save split</Button>
@@ -218,7 +219,7 @@ function SalesSplitDialog({ row, open, onOpenChange, onSave }: { row: SalesAssig
 }
 
 export function SalesAssignmentsTable() {
-  const [salesRows, setSalesRows] = useState<SalesAssignmentRow[]>(() => SALES_ASSIGNMENT_ROWS.map((row) => ({ ...row })))
+  const { salesRows, saveSplit, removeSplit } = useSalesDemand()
   const [assignmentRows, setAssignmentRows] = useState<ReferenceBomRow[]>([])
   const [splitRow, setSplitRow] = useState<SalesAssignmentRow | null>(null)
 
@@ -256,23 +257,6 @@ export function SalesAssignmentsTable() {
     [],
   )
 
-  const saveSplit = (parentId: string, drafts: SplitDraft[]) => {
-    setSalesRows((current) => current.map((row) => {
-      if (row.id !== parentId) return row
-      const children = drafts.map((draft) => ({
-        id: draft.id,
-        parentId: row.id,
-        originalModel: row.originalModel,
-        newModel: draft.newModel.trim(),
-        referenceBom: 'Unassigned',
-        division: draft.division,
-        totalVolume: Math.round(row.totalVolume * draft.division / 100),
-      }))
-      return { ...row, newModel: `${children.length} submodels`, referenceBom: 'Assign per child', division: 100, children }
-    }))
-    setSplitRow(null)
-  }
-
   return (
     <>
       <DataTable<SalesAssignmentRow>
@@ -293,7 +277,19 @@ export function SalesAssignmentsTable() {
         labels={{ searchPlaceholder: 'Search sales models or BOMs...' }}
       />
 
-      <SalesSplitDialog row={splitRow} open={Boolean(splitRow)} onOpenChange={(open) => !open && setSplitRow(null)} onSave={saveSplit} />
+      <SalesSplitDialog
+        row={splitRow}
+        open={Boolean(splitRow)}
+        onOpenChange={(open) => !open && setSplitRow(null)}
+        onSave={(parentId, drafts) => {
+          saveSplit(parentId, drafts)
+          setSplitRow(null)
+        }}
+        onRemove={(parentId) => {
+          removeSplit(parentId)
+          setSplitRow(null)
+        }}
+      />
       <ReferenceBomAssignmentDialog open={assignmentRows.length > 0} onOpenChange={(open) => !open && setAssignmentRows([])} rows={assignmentRows} />
     </>
   )
