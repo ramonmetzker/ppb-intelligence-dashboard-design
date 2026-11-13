@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -290,6 +291,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   } = props
 
   const labels = useDataTableLabels(locale, labelOverrides)
+  const dndContextId = useId()
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -1329,7 +1331,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
       <ActiveFilters chips={chips} labels={labels} onClearAll={clearAllFilters} />
 
       <div className="relative z-10 overflow-hidden rounded-xl border border-border bg-card">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleRowDragEnd}>
+        <DndContext id={dndContextId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleRowDragEnd}>
           <SortableContext items={displayRows.map(({ row }) => getRowId(row))} strategy={verticalListSortingStrategy}>
         <div
           ref={scrollerRef}
