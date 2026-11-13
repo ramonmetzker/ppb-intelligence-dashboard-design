@@ -15,10 +15,11 @@ import {
   Tag,
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
-import { PpbMark } from '@/components/brand/ppb-mark'
+import { PpbLoadingMark, PpbMark } from '@/components/brand/ppb-mark'
 import { useRpas } from '@/components/rpa/rpa-provider'
 import { useShell } from '@/components/shell/shell-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
+import { useNavigationTransition } from '@/components/app/route-progress'
 import type { Dictionary } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
@@ -62,6 +63,7 @@ const GROUPS: {
 export function AppSidebar() {
   const pathname = usePathname()
   const { collapsed } = useShell()
+  const isNavigating = useNavigationTransition()
   const { errorCount } = useRpas()
   const { t, user, setUserDialogOpen } = usePreferences()
   const isActive = (href: string) =>
@@ -83,7 +85,7 @@ export function AppSidebar() {
           className={cn('flex min-w-0 flex-1 items-center', collapsed ? 'justify-center' : 'gap-3')}
         >
           <span className="flex size-11 shrink-0 items-center justify-center text-sidebar-primary-foreground">
-            <PpbMark size={44} />
+            {isNavigating ? <PpbLoadingMark size={44} /> : <PpbMark size={44} />}
           </span>
           {!collapsed && (
             <div className="min-w-0 leading-tight">
