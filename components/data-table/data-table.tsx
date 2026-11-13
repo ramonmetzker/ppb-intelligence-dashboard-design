@@ -1097,15 +1097,27 @@ export function DataTable<T>(props: DataTableProps<T>) {
   const treeColumnId = layout.placed.find((placed) => !placed.pin)?.column.id ?? layout.placed[0]?.column.id
   const colSpanStyle: CSSProperties = { width: scrollState.viewport || undefined }
   const selectionBarActive = selectedCount > 0 && bulkActions.length > 0
+  const [selectionBarHasRun, setSelectionBarHasRun] = useState(false)
+  const [lastSelection, setLastSelection] = useState({ count: 0, total: 0, allMatching: false })
+
+  useEffect(() => {
+    if (!selectionBarActive) return
+
+    setSelectionBarHasRun(true)
+    setLastSelection({
+      count: allMatching ? total : live.size,
+      total,
+      allMatching,
+    })
+  }, [allMatching, live.size, selectionBarActive, total])
 
   return (
     <section className={cn('flex min-w-0 flex-col gap-3', className)} aria-busy={loading}>
-      <div className="relative h-9 overflow-hidden">
+      <div className="relative h-9">
         <div
           aria-hidden={selectionBarActive}
           className={cn(
-            'absolute inset-0 transition-[transform,opacity] duration-200 ease-out',
-            selectionBarActive ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
+            'absolute inset-0 z-20',
           )}
         >
           <div className="flex h-9 flex-wrap items-center gap-2">
@@ -1165,14 +1177,14 @@ export function DataTable<T>(props: DataTableProps<T>) {
         <div
           aria-hidden={!selectionBarActive}
           className={cn(
-            'absolute inset-0 transition-[transform,opacity] duration-200 ease-out',
-            selectionBarActive ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none',
+            'absolute inset-x-0 top-0 z-0 pointer-events-none',
+            selectionBarActive ? 'dt-selection-bar-enter pointer-events-auto' : selectionBarHasRun ? 'dt-selection-bar-exit' : 'invisible translate-y-full',
           )}
         >
           <BulkBar
-            count={live.size}
-            total={total}
-            allMatching={allMatching}
+            count={selectionBarActive ? live.size : lastSelection.count}
+            total={selectionBarActive ? total : lastSelection.total}
+            allMatching={selectionBarActive ? allMatching : lastSelection.allMatching}
             canSelectAllMatching={canSelectAllMatching}
             actions={bulkActions}
             getContext={() => buildContext(live, allMatching)}
@@ -1185,7 +1197,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
       <ActiveFilters chips={chips} labels={labels} onClearAll={clearAllFilters} />
 
-      <div className="relative overflow-hidden rounded-xl border border-border bg-card">
+      <div className="relative z-10 overflow-hidden rounded-xl border border-border bg-card">
       
         <div
           ref={scrollerRef}
