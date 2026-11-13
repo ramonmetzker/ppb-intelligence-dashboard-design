@@ -11,6 +11,7 @@ import { usePreferences } from '@/components/shell/preferences-provider'
 import { useNavigationTransition } from '@/components/app/route-progress'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { NAV_GROUPS, type AppNavGroup } from '@/components/shell/navigation'
+import { countUnassignedSalesModels, SALES_ASSIGNMENT_ROWS } from '@/lib/reference-bom-data'
 import { cn } from '@/lib/utils'
 
 export function AppSidebar() {
@@ -20,6 +21,7 @@ export function AppSidebar() {
   const { errorCount } = useRpas()
   const { t, user, setUserDialogOpen } = usePreferences()
   const [rawDataOpen, setRawDataOpen] = useState(false)
+  const referenceBomUnassignedCount = countUnassignedSalesModels(SALES_ASSIGNMENT_ROWS)
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
@@ -27,6 +29,11 @@ export function AppSidebar() {
     <ul className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-1')}>
       {group.items.map(({ label, href, icon: NavIcon }) => {
         const active = isActive(href)
+        const isReferenceBom = href === '/raw-data/reference-bom'
+        const count = isReferenceBom ? referenceBomUnassignedCount : href === '/rpa-monitor' ? errorCount : 0
+        const countLabel = isReferenceBom
+          ? `${count} ${count === 1 ? 'model' : 'models'} pending BOM assignment`
+          : `${count} failed ${count === 1 ? 'RPA' : 'RPAs'}`
         return (
           <li key={href}>
             <Link
@@ -59,16 +66,17 @@ export function AppSidebar() {
                 aria-hidden="true"
               />
               {!collapsed && <span className="truncate">{t.nav[label]}</span>}
-              {href === '/rpa-monitor' && errorCount > 0 && (
+              {count > 0 && (
                 <span
-                  aria-label={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
-                  title={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+                  aria-label={countLabel}
+                  title={countLabel}
                   className={cn(
-                    'tnum flex h-5 min-w-5 items-center justify-center rounded-md bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
+                    'tnum flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[11px] font-semibold text-primary-foreground',
+                    isReferenceBom ? 'bg-warning' : 'bg-critical',
                     collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
                   )}
                 >
-                  {errorCount > 99 ? '99+' : errorCount}
+                  {count > 99 ? '99+' : count}
                 </span>
               )}
             </Link>

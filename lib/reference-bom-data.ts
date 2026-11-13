@@ -64,6 +64,13 @@ export type SalesAssignmentRow = {
   children?: SalesAssignmentRow[]
 }
 
+export function countUnassignedSalesModels(rows: readonly SalesAssignmentRow[]): number {
+  return rows.reduce((count, row) => {
+    if (row.children?.length) return count + countUnassignedSalesModels(row.children)
+    return count + (row.referenceBom === 'Unassigned' ? 1 : 0)
+  }, 0)
+}
+
 export const SALES_ASSIGNMENT_ROWS: SalesAssignmentRow[] = [
   { id: 'sales-sm-097', originalModel: 'SM-097', newModel: 'SM-097', referenceBom: 'Unassigned', division: 100, totalVolume: 2400 },
   { id: 'sales-sm-144', originalModel: 'SM-144', newModel: 'SM-144', referenceBom: 'Unassigned', division: 100, totalVolume: 1280 },
