@@ -165,6 +165,28 @@ export type BulkAction<T> = {
   disabled?: (ctx: SelectionContext<T>) => boolean
 }
 
+export type RowReorderUpdate<T> = {
+  id: string
+  row: T
+  index: number
+  position: number
+}
+
+export type RowReorderContext<T> = {
+  activeId: string
+  overId: string
+  fromIndex: number
+  toIndex: number
+  rows: T[]
+  reorderedRows: T[]
+  updates: RowReorderUpdate<T>[]
+}
+
+export type DataTableRowReordering<T> = {
+  onReorder: (context: RowReorderContext<T>) => void
+  disabled?: boolean
+}
+
 export type Density = 'compact' | 'default' | 'comfortable'
 
 export type QueryChangeReason = 'page' | 'pageSize' | 'sort' | 'filter' | 'search' | 'reset'

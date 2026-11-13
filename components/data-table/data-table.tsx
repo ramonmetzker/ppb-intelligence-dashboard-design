@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentPropsWithoutRef,
   type CSSProperties,
   type DragEvent,
   type KeyboardEvent,
@@ -15,7 +16,20 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { AlertCircle, ChevronRight, MoreHorizontal, RefreshCw, SearchX } from 'lucide-react'
+import { AlertCircle, ChevronRight, GripVertical, MoreHorizontal, RefreshCw, SearchX } from 'lucide-react'
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+} from '@dnd-kit/core'
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -44,6 +58,7 @@ import {
   type DataTableColumnDefinition,
   type DataTableColumnGroup,
   type DataTableQuery,
+  type DataTableRowReordering,
   type Density,
   isDataTableColumnGroup,
   type QueryChangeReason,
@@ -79,6 +94,37 @@ const SELECT_WIDTH = 44
 const DEFAULT_COLUMN_WIDTH = 160
 const DEFAULT_MIN_COLUMN_WIDTH = 112
 const DEFAULT_MAX_COLUMN_WIDTH = 640
+const REORDER_WIDTH = 36
+
+type SortableTableRowProps = Omit<ComponentPropsWithoutRef<'tr'>, 'children'> & {
+  id: string
+  disabled?: boolean
+  children: (handleProps: {
+    attributes: DraggableAttributes
+    listeners: DraggableSyntheticListeners
+  }) => ReactNode
+}
+
+function SortableTableRow({ id, disabled = false, children, style, ...props }: SortableTableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled })
+
+  return (
+    <tr
+      ref={setNodeRef}
+      {...props}
+      style={{
+        ...style,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        position: isDragging ? 'relative' : undefined,
+        zIndex: isDragging ? 10 : undefined,
+        opacity: isDragging ? 0.7 : undefined,
+      }}
+    >
+      {children({ attributes, listeners })}
+    </tr>
+  )
+}
 
 function clampColumnWidth<T>(column: DataTableColumn<T>, width: number) {
   const min = column.minWidth ?? DEFAULT_MIN_COLUMN_WIDTH
@@ -136,6 +182,8 @@ export interface DataTableProps<T> {
   isRowSelectable?: (row: T) => boolean
   onSelectionChange?: (selection: SelectionContext<T>) => void
   bulkActions?: readonly BulkAction<T>[]
+  /** Enables drag-and-drop row ordering and reports the complete reordered list. */
+  rowReordering?: DataTableRowReordering<T>
 
   rowActions?: readonly RowAction<T>[] | ((row: T) => readonly RowAction<T>[])
   actionsWidth?: number
@@ -210,6 +258,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
     isRowSelectable,
     onSelectionChange,
     bulkActions = [],
+    rowReordering,
     rowActions,
     actionsWidth,
     getRowChildren,
@@ -240,6 +289,11 @@ export function DataTable<T>(props: DataTableProps<T>) {
   } = props
 
   const labels = useDataTableLabels(locale, labelOverrides)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  const rowReorderingEnabled = Boolean(rowReordering && !rowReordering.disabled)
   const storageKey = useDataTableStorageKey(persistenceKey)
   const columns = useMemo(
     () => columnDefinitions.flatMap((definition) => (isDataTableColumnGroup(definition) ? definition.children : [definition])),
@@ -313,6 +367,33 @@ export function DataTable<T>(props: DataTableProps<T>) {
     rows.forEach((row) => visit(row, 0))
     return next
   }, [expandedRows, getRowChildren, getRowId, rows])
+
+  const handleRowDragEnd = useCallback((event: DragEndEvent) => {
+    if (!rowReorderingEnabled || !rowReordering || !event.over || event.active.id === event.over.id) return
+
+    const activeId = String(event.active.id)
+    const overId = String(event.over.id)
+    const currentRows = displayRows.map(({ row }) => row)
+    const fromIndex = currentRows.findIndex((row) => getRowId(row) === activeId)
+    const toIndex = currentRows.findIndex((row) => getRowId(row) === overId)
+    if (fromIndex < 0 || toIndex < 0) return
+
+    const reorderedRows = arrayMove(currentRows, fromIndex, toIndex)
+    rowReordering.onReorder({
+      activeId,
+      overId,
+      fromIndex,
+      toIndex,
+      rows: currentRows,
+      reorderedRows,
+      updates: reorderedRows.map((row, index) => ({
+        id: getRowId(row),
+        row,
+        index,
+        position: index + 1,
+      })),
+    })
+  }, [displayRows, getRowId, rowReordering, rowReorderingEnabled])
 
   const toggleExpanded = (row: T) => {
     if (!getRowChildren?.(row).length) return
@@ -490,7 +571,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
     const growId = (middle.find((c) => c.grow) ?? middle[middle.length - 1])?.id
 
-    let leftCursor = selectable ? SELECT_WIDTH : 0
+    let leftCursor = (selectable ? SELECT_WIDTH : 0) + (rowReorderingEnabled ? REORDER_WIDTH : 0)
     const placedLeft: Placed<T>[] = left.map((column, index) => {
       const placed: Placed<T> = {
         column,
@@ -538,7 +619,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
         placedMiddle.map((p, i) => [p.column.id, placedMiddle.slice(0, i).reduce((acc, q) => acc + q.width, 0)]),
       ),
     }
-  }, [visibleColumns, pins, columnWidths, selectable, hasActions, resolvedActionsWidth])
+  }, [visibleColumns, pins, columnWidths, selectable, hasActions, resolvedActionsWidth, rowReorderingEnabled])
 
   const headerSegments = useMemo(() => {
     const segments: HeaderSegment<T>[] = []
@@ -1138,7 +1219,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
   const pinnedCell =
     'isolate z-20 !bg-card group-hover/row:!bg-muted group-data-[selected=true]/row:!bg-brand-soft'
 
-  const totalColumns = layout.placed.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)
+  const totalColumns = layout.placed.length + (selectable ? 1 : 0) + (rowReorderingEnabled ? 1 : 0) + (hasActions ? 1 : 0)
   const showSkeleton = loading && rows.length === 0
   const showError = !loading && Boolean(error)
   const showEmpty = !loading && !showError && rows.length === 0
@@ -1247,7 +1328,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
       <ActiveFilters chips={chips} labels={labels} onClearAll={clearAllFilters} />
 
       <div className="relative z-10 overflow-hidden rounded-xl border border-border bg-card">
-      
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleRowDragEnd}>
+          <SortableContext items={displayRows.map(({ row }) => getRowId(row))} strategy={verticalListSortingStrategy}>
         <div
           ref={scrollerRef}
           role="region"
@@ -1281,6 +1363,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
             <caption className="sr-only">{caption}</caption>
             <colgroup>
               {selectable && <col style={{ width: SELECT_WIDTH }} />}
+              {rowReorderingEnabled && <col style={{ width: REORDER_WIDTH }} />}
               {layout.placed.map((p) => (
                 <col key={p.column.id} style={p.grow ? { minWidth: p.width } : { width: p.width }} />
               ))}
@@ -1304,6 +1387,18 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       disabled={pageSelectable.length === 0}
                       onCheckedChange={(checked) => togglePage(checked)}
                     />
+                  </th>
+                )}
+
+                {rowReorderingEnabled && (
+                  <th
+                    scope="col"
+                    rowSpan={hasVisibleColumnGroups ? 2 : undefined}
+                    aria-label="Reorder rows"
+                    style={{ position: 'sticky', left: selectable ? SELECT_WIDTH : 0 }}
+                    className={cn('dt-cell z-30 h-10 border-b border-border bg-muted', bordered && 'border-r border-border', stickyHeader && 'top-0')}
+                  >
+                    <span className="sr-only">Reorder rows</span>
                   </th>
                 )}
 
@@ -1377,6 +1472,9 @@ export function DataTable<T>(props: DataTableProps<T>) {
                     {selectable && (
                       <td className={cn(cellBase, rowHeight, pinnedCell)} style={{ position: 'sticky', left: 0 }} />
                     )}
+                    {rowReorderingEnabled && (
+                      <td className={cn(cellBase, rowHeight, pinnedCell)} style={{ position: 'sticky', left: selectable ? SELECT_WIDTH : 0 }} />
+                    )}
                     {layout.placed.map((placed) => (
                       <td
                         key={placed.column.id}
@@ -1444,8 +1542,10 @@ export function DataTable<T>(props: DataTableProps<T>) {
                 const isSelected = live.has(id)
                 const hasChildren = getRowChildren ? getRowChildren(row).length > 0 : false
                 return (
-                  <tr
+                  <SortableTableRow
                     key={id}
+                    id={id}
+                    disabled={!rowReorderingEnabled || depth > 0}
                     data-depth={depth}
                     data-selected={isSelected}
                     tabIndex={onRowClick ? 0 : undefined}
@@ -1460,6 +1560,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
                       getRowClassName?.(row),
                     )}
                   >
+                    {({ attributes: dragAttributes, listeners: dragListeners }) => (
+                      <>
                     {selectable && (
                       <td
                         data-edge={layout.leftEdgeOnSelect ? 'left' : undefined}
@@ -1475,6 +1577,27 @@ export function DataTable<T>(props: DataTableProps<T>) {
                           disabled={!isSelectable(row)}
                           onCheckedChange={(checked) => toggleRow(row, rowIndex, checked)}
                         />
+                      </td>
+                    )}
+
+                    {rowReorderingEnabled && (
+                      <td
+                        data-no-row-click
+                        style={{ position: 'sticky', left: selectable ? SELECT_WIDTH : 0 }}
+                        className={cn(cellBase, rowHeight, pinnedCell, 'cursor-grab active:cursor-grabbing')}
+                      >
+                        <button
+                          type="button"
+                          aria-label="Reorder row"
+                          title="Drag to reorder"
+                          data-no-row-click
+                          className="mx-auto flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                          {...dragAttributes}
+                          {...dragListeners}
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <GripVertical aria-hidden="true" className="size-4" />
+                        </button>
                       </td>
                     )}
 
@@ -1546,12 +1669,16 @@ export function DataTable<T>(props: DataTableProps<T>) {
                         {renderRowActions(row)}
                       </td>
                     )}
-                  </tr>
+                      </>
+                    )}
+                  </SortableTableRow>
                 )
               })}
             </tbody>
           </table>
         </div>
+          </SortableContext>
+        </DndContext>
 
         {pagination && total > 0 && (
           <div className="border-t border-border px-3 py-2">

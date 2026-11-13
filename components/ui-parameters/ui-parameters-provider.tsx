@@ -7,6 +7,7 @@ type UiParametersContextValue = {
   parameters: readonly UiParameter[]
   addParameter: (values: UiParameterFormValues) => void
   updateParameter: (id: string, values: UiParameterFormValues) => void
+  updateParameterOrders: (updates: readonly { id: string; order: number }[]) => void
   removeParameters: (ids: string[]) => void
   updateParameters: (ids: string[], values: Partial<Pick<UiParameter, 'display' | 'collapse'>>) => void
 }
@@ -27,6 +28,14 @@ export function UiParametersProvider({ children }: { children: ReactNode }) {
     setParameters((current) => current.map((parameter) => parameter.id === id ? { ...parameter, ...values } : parameter))
   }, [])
 
+  const updateParameterOrders = useCallback((updates: readonly { id: string; order: number }[]) => {
+    const orders = new Map(updates.map(({ id, order }) => [id, order]))
+    setParameters((current) => current.map((parameter) => {
+      const order = orders.get(parameter.id)
+      return order === undefined ? parameter : { ...parameter, order }
+    }))
+  }, [])
+
   const removeParameters = useCallback((ids: string[]) => {
     const removedIds = new Set(ids)
     setParameters((current) => current.filter((parameter) => !removedIds.has(parameter.id)))
@@ -38,8 +47,8 @@ export function UiParametersProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ parameters, addParameter, updateParameter, removeParameters, updateParameters }),
-    [parameters, addParameter, updateParameter, removeParameters, updateParameters],
+    () => ({ parameters, addParameter, updateParameter, updateParameterOrders, removeParameters, updateParameters }),
+    [parameters, addParameter, updateParameter, updateParameterOrders, removeParameters, updateParameters],
   )
 
   return <UiParametersContext.Provider value={value}>{children}</UiParametersContext.Provider>

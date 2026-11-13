@@ -100,7 +100,7 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
 }
 
 export function UiParametersView() {
-  const { parameters, addParameter, updateParameter, removeParameters, updateParameters } = useUiParameters()
+  const { parameters, addParameter, updateParameter, updateParameterOrders, removeParameters, updateParameters } = useUiParameters()
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_QUERY)
   const [year, setYear] = useState<UiParameterYear>(UI_PARAMETER_YEARS[1])
   const [editing, setEditing] = useState<UiParameter | null>(null)
@@ -195,6 +195,9 @@ export function UiParametersView() {
         toolbarStart={<YearSelector year={year} onChange={setYear} />}
         selectable
         bulkActions={bulkActions}
+        rowReordering={{
+          onReorder: ({ updates }) => updateParameterOrders(updates.map(({ id, position }) => ({ id, order: position }))),
+        }}
         rowActions={rowActions}
         onRowClick={openEdit}
         columnPinning={false}
