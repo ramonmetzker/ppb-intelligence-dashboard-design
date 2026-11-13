@@ -1118,6 +1118,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
           aria-hidden={selectionBarActive}
           className={cn(
             'absolute inset-0 z-20',
+            selectionBarActive ? 'dt-toolbar-controls-exit' : selectionBarHasRun ? 'dt-toolbar-controls-enter' : '',
           )}
         >
           <div className="flex h-9 flex-wrap items-center gap-2">
