@@ -52,6 +52,7 @@ import {
   type SortDirection,
 } from '@/lib/data-table/types'
 import { cn } from '@/lib/utils'
+import { PpbLoadingMark } from '@/components/brand/ppb-mark'
 import { BulkBar } from './bulk-bar'
 import { downloadCsv, downloadJson, type ExportColumn } from './export-utils'
 import { describeFilter, type DataTableLabels } from './filter-utils'
@@ -1172,8 +1173,20 @@ export function DataTable<T>(props: DataTableProps<T>) {
           data-scrolled-right={scrollState.right}
           onScroll={measure}
           style={{ maxHeight }}
-          className="dt-scroller overflow-auto overscroll-x-contain outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+          className="dt-scroller relative overflow-auto overscroll-x-contain outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
         >
+          {loading && (
+            <div
+              role="status"
+              aria-label={labels.loading}
+              className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-card/40 backdrop-blur-[2px]"
+            >
+              <div className="flex items-center justify-center rounded-full border border-border/70 bg-card/75 p-4 shadow-lg shadow-foreground/10">
+                <PpbLoadingMark size={42} className="text-brand" />
+                <span className="sr-only">{labels.loading}</span>
+              </div>
+            </div>
+          )}
           <table
             ref={tableRef}
             className="border-separate border-spacing-0 text-[13px]"
