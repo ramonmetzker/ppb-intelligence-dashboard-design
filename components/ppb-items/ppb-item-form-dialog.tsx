@@ -3,13 +3,13 @@
 import { useId, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -34,8 +34,8 @@ type Props = {
 
 export function PpbItemFormDialog({ open, onOpenChange, item, items, onSubmit }: Props) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-md">
         <PpbItemForm
           key={`${item?.id ?? 'new'}-${open}`}
           item={item}
@@ -46,8 +46,8 @@ export function PpbItemFormDialog({ open, onOpenChange, item, items, onSubmit }:
             onOpenChange(false)
           }}
         />
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -86,48 +86,56 @@ function PpbItemForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-      <DialogHeader>
-        <DialogTitle>{item ? 'Edit PPB item' : 'New PPB item'}</DialogTitle>
-        <DialogDescription>
+    <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+      <SheetHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
+        <SheetTitle>{item ? 'Edit PPB item' : 'New PPB item'}</SheetTitle>
+        <SheetDescription>
           Item slugs are generated automatically from the item name. Mapping and Active are stored as Y or N.
-        </DialogDescription>
-      </DialogHeader>
+        </SheetDescription>
+      </SheetHeader>
 
-      <Field id={`${uid}-name`} label="Item Name" error={errors.itemName}>
-        <Input
-          id={`${uid}-name`}
-          value={itemName}
-          autoFocus
-          aria-invalid={Boolean(errors.itemName)}
-          onChange={(event) => setItemName(event.target.value)}
-        />
-      </Field>
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field id={`${uid}-name`} label="Item Name" error={errors.itemName}>
+              <Input
+                id={`${uid}-name`}
+                value={itemName}
+                autoFocus
+                aria-invalid={Boolean(errors.itemName)}
+                onChange={(event) => setItemName(event.target.value)}
+              />
+            </Field>
+          </div>
 
-      <Field id={`${uid}-slug`} label="Item Slug" error={errors.itemSlug} hint="Generated from Item Name.">
-        <Input id={`${uid}-slug`} value={itemSlug} readOnly disabled className="font-mono" aria-invalid={Boolean(errors.itemSlug)} />
-      </Field>
+          <Field id={`${uid}-slug`} label="Item Slug" error={errors.itemSlug} hint="Generated from Item Name.">
+            <Input id={`${uid}-slug`} value={itemSlug} readOnly disabled className="font-mono" aria-invalid={Boolean(errors.itemSlug)} />
+          </Field>
 
-      <Field id={`${uid}-category`} label="Category" error={errors.category}>
-        <Select value={category} onValueChange={(value) => value && setCategory(value as PpbCategory)}>
-          <SelectTrigger id={`${uid}-category`} aria-label="Category">
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {PPB_CATEGORIES.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </Field>
+          <Field id={`${uid}-category`} label="Category" error={errors.category}>
+            <Select value={category} onValueChange={(value) => value && setCategory(value as PpbCategory)}>
+              <SelectTrigger id={`${uid}-category`} aria-label="Category">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {PPB_CATEGORIES.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
 
-      <BooleanField id={`${uid}-mapping`} label="Mapping" value={mapping} onChange={setMapping} hint="Stored as Y or N in the source data." />
-      <BooleanField id={`${uid}-active`} label="Active" value={active} onChange={setActive} hint="Inactive items remain visible for traceability." />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <BooleanField id={`${uid}-mapping`} label="Mapping" value={mapping} onChange={setMapping} hint="Stored as Y or N in the source data." />
+          <BooleanField id={`${uid}-active`} label="Active" value={active} onChange={setActive} hint="Inactive items remain visible for traceability." />
+        </div>
+      </div>
 
-      <DialogFooter>
+      <SheetFooter className="shrink-0 border-t border-border bg-muted/30 px-6 py-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">{item ? 'Save changes' : 'Create item'}</Button>
-      </DialogFooter>
+      </SheetFooter>
     </form>
   )
 }
