@@ -3,13 +3,13 @@
 import { useId, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -23,6 +23,13 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { type PpbItem, type PpbScore, type PpbScoreType, type YesNo } from '@/lib/ppb-items/data'
 
 const SCORE_TYPES: PpbScoreType[] = ['Points', 'Quota %']
+
+function formatDateInput(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 4) return digits
+  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`
+}
 
 export type PpbScoreFormValues = Omit<PpbScore, 'id'>
 
@@ -39,8 +46,8 @@ type Errors = Partial<Record<keyof PpbScoreFormValues, string>>
 
 export function PpbScoreFormDialog({ open, onOpenChange, score, scores, items, onSubmit }: Props) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-md">
         <PpbScoreForm
           key={`${score?.id ?? 'new'}-${open}`}
           score={score}
@@ -52,8 +59,8 @@ export function PpbScoreFormDialog({ open, onOpenChange, score, scores, items, o
             onOpenChange(false)
           }}
         />
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -71,7 +78,7 @@ function PpbScoreForm({
   const [sedaUsage, setSedaUsage] = useState<YesNo>(score?.sedaUsage ?? 'Y')
   const [autoCount, setAutoCount] = useState<YesNo>(score?.autoCount ?? 'N')
   const [validFrom, setValidFrom] = useState(score?.validFrom ?? '')
-  const [validTo, setValidTo] = useState(score?.validTo ?? '')
+  const [validTo, setValidTo] = useState(score?.validTo ?? '2999-12-31')
   const [errors, setErrors] = useState<Errors>({})
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -81,9 +88,12 @@ function PpbScoreForm({
 
     if (!itemId) next.itemId = 'Select an item.'
     if (!scoreValue || !Number.isFinite(cleanScore) || cleanScore < 0) next.score = 'Enter a score of zero or greater.'
-    if (!validFrom) next.validFrom = 'Select a start date.'
-    if (!validTo) next.validTo = 'Select an end date.'
-    if (validFrom && validTo && validFrom > validTo) next.validTo = 'Valid To must be on or after Valid From.'
+    const isIsoDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value)
+    if (!validFrom) next.validFrom = 'Enter a start date.'
+    else if (!isIsoDate(validFrom)) next.validFrom = 'Use YYYY-MM-DD.'
+    if (!validTo) next.validTo = 'Enter an end date.'
+    else if (!isIsoDate(validTo)) next.validTo = 'Use YYYY-MM-DD.'
+    if (isIsoDate(validFrom) && isIsoDate(validTo) && validFrom > validTo) next.validTo = 'Valid To must be on or after Valid From.'
     if (scores.some((current) => current.id !== score?.id && current.itemId === itemId && current.validFrom === validFrom)) {
       next.validFrom = 'This item already has a score starting on this date.'
     }
@@ -95,48 +105,68 @@ function PpbScoreForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-      <DialogHeader>
-        <DialogTitle>{score ? 'Edit score' : 'New score'}</DialogTitle>
-        <DialogDescription>
-          Define the yearly PPB score behavior for an item. Values are mock data stored in memory.
-        </DialogDescription>
-      </DialogHeader>
+    <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+      <SheetHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
+        <SheetTitle>{score ? 'Edit score' : 'New score'}</SheetTitle>
+        <SheetDescription>
+          Define the yearly PPB score behavior for an item. Valid To defaults to 2999-12-31.
+        </SheetDescription>
+      </SheetHeader>
 
-      <Field id={`${uid}-item`} label="Item" error={errors.itemId}>
-        <Select value={itemId} onValueChange={(value) => value && setItemId(value)}>
-          <SelectTrigger id={`${uid}-item`} aria-label="Item">
-            <SelectValue>{items.find((item) => item.id === itemId)?.itemName ?? 'Select an item'}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {items.map((item) => <SelectItem key={item.id} value={item.id}>{item.itemName}</SelectItem>)}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </Field>
+      <div className="grid min-h-0 flex-1 auto-rows-min gap-5 overflow-y-auto px-6 py-6 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Field id={`${uid}-item`} label="Item" error={errors.itemId}>
+            <Select value={itemId} onValueChange={(value) => value && setItemId(value)}>
+              <SelectTrigger id={`${uid}-item`} className="w-full" aria-label="Item">
+                <SelectValue>{items.find((item) => item.id === itemId)?.itemName ?? 'Select an item'}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {items.map((item) => <SelectItem key={item.id} value={item.id}>{item.itemName}</SelectItem>)}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
+        </div>
 
-      <Field id={`${uid}-score`} label="Score" error={errors.score} hint="Use a percentage value when Type is Quota %." >
-        <Input id={`${uid}-score`} type="number" min="0" step="0.01" value={scoreValue} aria-invalid={Boolean(errors.score)} onChange={(event) => setScoreValue(event.target.value)} />
-      </Field>
-
-      <OptionField id={`${uid}-type`} label="Type" value={type} options={SCORE_TYPES} onChange={setType} />
-      <BooleanField id={`${uid}-seda-usage`} label="SEDA Usage" value={sedaUsage} onChange={setSedaUsage} hint="Whether the item accumulates points for SEDA." />
-      <BooleanField id={`${uid}-auto-count`} label="Auto Count" value={autoCount} onChange={setAutoCount} hint="Whether the item always counts 100% independently of calculations." />
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field id={`${uid}-valid-from`} label="Valid From" error={errors.validFrom}>
-          <Input id={`${uid}-valid-from`} type="date" value={validFrom} aria-invalid={Boolean(errors.validFrom)} onChange={(event) => setValidFrom(event.target.value)} />
+        <Field id={`${uid}-score`} label="Score" error={errors.score} hint="Use a percentage value when Type is Quota %.">
+          <Input id={`${uid}-score`} type="number" min="0" step="0.01" value={scoreValue} aria-invalid={Boolean(errors.score)} onChange={(event) => setScoreValue(event.target.value)} />
         </Field>
-        <Field id={`${uid}-valid-to`} label="Valid To" error={errors.validTo}>
-          <Input id={`${uid}-valid-to`} type="date" value={validTo} aria-invalid={Boolean(errors.validTo)} onChange={(event) => setValidTo(event.target.value)} />
+        <OptionField id={`${uid}-type`} label="Type" value={type} options={SCORE_TYPES} onChange={setType} />
+
+        <BooleanField id={`${uid}-seda-usage`} label="SEDA Usage" value={sedaUsage} onChange={setSedaUsage} hint="Whether the item accumulates points for SEDA." />
+        <BooleanField id={`${uid}-auto-count`} label="Auto Count" value={autoCount} onChange={setAutoCount} hint="Whether the item always counts 100% independently of calculations." />
+
+        <Field id={`${uid}-valid-from`} label="Valid From" error={errors.validFrom} hint="YYYY-MM-DD">
+          <Input
+            id={`${uid}-valid-from`}
+            type="text"
+            inputMode="numeric"
+            placeholder="YYYY-MM-DD"
+            maxLength={10}
+            value={validFrom}
+            aria-invalid={Boolean(errors.validFrom)}
+            onChange={(event) => setValidFrom(formatDateInput(event.target.value))}
+          />
+        </Field>
+        <Field id={`${uid}-valid-to`} label="Valid To" error={errors.validTo} hint="YYYY-MM-DD">
+          <Input
+            id={`${uid}-valid-to`}
+            type="text"
+            inputMode="numeric"
+            placeholder="YYYY-MM-DD"
+            maxLength={10}
+            value={validTo}
+            aria-invalid={Boolean(errors.validTo)}
+            onChange={(event) => setValidTo(formatDateInput(event.target.value))}
+          />
         </Field>
       </div>
 
-      <DialogFooter>
+      <SheetFooter className="shrink-0 border-t border-border bg-muted/30 px-6 py-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">{score ? 'Save changes' : 'Create score'}</Button>
-      </DialogFooter>
+      </SheetFooter>
     </form>
   )
 }
@@ -163,9 +193,9 @@ function OptionField({
         variant="outline"
         spacing={0}
         aria-labelledby={id}
-        className="w-fit"
+        className="grid w-full grid-cols-2"
       >
-        {options.map((option) => <ToggleGroupItem key={option} value={option} className="min-w-24 data-pressed:bg-brand data-pressed:text-primary-foreground">{option}</ToggleGroupItem>)}
+        {options.map((option) => <ToggleGroupItem key={option} value={option} className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">{option}</ToggleGroupItem>)}
       </ToggleGroup>
     </div>
   )
@@ -193,10 +223,10 @@ function BooleanField({
         variant="outline"
         spacing={0}
         aria-labelledby={id}
-        className="w-fit"
+        className="grid w-full grid-cols-2"
       >
-        <ToggleGroupItem value="Y" className="min-w-16 data-pressed:bg-brand data-pressed:text-primary-foreground">Yes</ToggleGroupItem>
-        <ToggleGroupItem value="N" className="min-w-16 data-pressed:bg-brand data-pressed:text-primary-foreground">No</ToggleGroupItem>
+        <ToggleGroupItem value="Y" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">Yes</ToggleGroupItem>
+        <ToggleGroupItem value="N" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">No</ToggleGroupItem>
       </ToggleGroup>
       <p className="text-xs text-muted-foreground">{hint}</p>
     </div>
