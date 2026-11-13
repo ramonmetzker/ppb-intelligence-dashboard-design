@@ -20,6 +20,7 @@ import {
   type ReferenceBomRow,
   type SalesAssignmentRow,
 } from '@/lib/reference-bom-data'
+import { PopConfirm } from '@/components/pop-confirm'
 import { ReferenceBomAssignmentDialog } from './reference-bom-assignment-dialog'
 
 const getSalesChildren = (row: SalesAssignmentRow) => row.children ?? []
@@ -184,9 +185,17 @@ function SalesSplitDialog({ row, open, onOpenChange, onSave }: { row: SalesAssig
                   <span className="tnum w-9 whitespace-nowrap text-right text-[12px] font-semibold">{draft.division}%</span>
                 </label>
                 <span className="tnum whitespace-nowrap text-right text-[12px] text-muted-foreground">{Math.round((row?.totalVolume ?? 0) * draft.division / 100).toLocaleString('en-US')}</span>
-                <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${draft.newModel}`} className="size-8 text-muted-foreground hover:text-destructive" onClick={() => setDrafts((current) => current.filter((item) => item.id !== draft.id))}>
-                  <Trash2 className="size-3.5" aria-hidden="true" />
-                </Button>
+                <PopConfirm
+                  trigger={
+                    <Button type="button" variant="ghost" size="icon" aria-label={`Remove ${draft.newModel}`} className="size-8 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="size-3.5" aria-hidden="true" />
+                    </Button>
+                  }
+                  title={`Remove ${draft.newModel}?`}
+                  description="This submodel will be removed from the split."
+                  confirmLabel="Remove"
+                  onConfirm={() => setDrafts((current) => current.filter((item) => item.id !== draft.id))}
+                />
               </div>
             ))}
           </div>

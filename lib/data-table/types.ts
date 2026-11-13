@@ -123,11 +123,19 @@ export function isDataTableColumnGroup<T>(
   return 'children' in column
 }
 
+export type ActionConfirm = {
+  title: string
+  description?: string
+  confirmLabel?: string
+  cancelLabel?: string
+}
+
 export type RowAction<T> = {
   id: string
   label: string
   icon?: ReactNode
   onSelect: (row: T) => void
+  confirm?: ActionConfirm | ((row: T) => ActionConfirm)
   tone?: 'default' | 'destructive'
   disabled?: boolean
   hidden?: boolean
@@ -152,6 +160,7 @@ export type BulkAction<T> = {
   label: string
   icon?: ReactNode
   onSelect: (ctx: SelectionContext<T>) => void
+  confirm?: ActionConfirm | ((ctx: SelectionContext<T>) => ActionConfirm)
   tone?: 'default' | 'destructive'
   disabled?: (ctx: SelectionContext<T>) => boolean
 }

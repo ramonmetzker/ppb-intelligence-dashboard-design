@@ -254,6 +254,10 @@ export function PpbItemsView() {
       icon: <Trash2 aria-hidden="true" />,
       tone: 'destructive',
       separatorBefore: true,
+      confirm: {
+        title: 'Delete PPB item?',
+        description: 'This item and its related mappings and scores will be removed.',
+      },
       onSelect: (item) => removeItems([item.id]),
     },
   ]
@@ -265,6 +269,10 @@ export function PpbItemsView() {
       icon: <Trash2 aria-hidden="true" />,
       tone: 'destructive',
       separatorBefore: true,
+      confirm: {
+        title: 'Delete NCM mapping?',
+        description: 'This mapping will be removed from the current list.',
+      },
       onSelect: (mapping) => removeMappings([mapping.id]),
     },
   ]
@@ -276,17 +284,51 @@ export function PpbItemsView() {
       icon: <Trash2 aria-hidden="true" />,
       tone: 'destructive',
       separatorBefore: true,
+      confirm: {
+        title: 'Delete PPB score?',
+        description: 'This score will be removed from the current list.',
+      },
       onSelect: (score) => removeScores([score.id]),
     },
   ]
   const itemBulkActions: BulkAction<PpbItem>[] = [
-    { id: 'delete', label: 'Delete', icon: <Trash2 aria-hidden="true" />, tone: 'destructive', onSelect: ({ ids }) => removeItems(ids) },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      confirm: (context) => ({
+        title: `Delete ${context.count} PPB items?`,
+        description: 'Their related mappings and scores will also be removed.',
+      }),
+      onSelect: ({ ids }) => removeItems(ids),
+    },
   ]
   const mappingBulkActions: BulkAction<PpbNcmMapping>[] = [
-    { id: 'delete', label: 'Delete', icon: <Trash2 aria-hidden="true" />, tone: 'destructive', onSelect: ({ ids }) => removeMappings(ids) },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      confirm: (context) => ({
+        title: `Delete ${context.count} NCM mappings?`,
+        description: 'This action cannot be undone.',
+      }),
+      onSelect: ({ ids }) => removeMappings(ids),
+    },
   ]
   const scoreBulkActions: BulkAction<PpbScore>[] = [
-    { id: 'delete', label: 'Delete', icon: <Trash2 aria-hidden="true" />, tone: 'destructive', onSelect: ({ ids }) => removeScores(ids) },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      confirm: (context) => ({
+        title: `Delete ${context.count} scores?`,
+        description: 'This action cannot be undone.',
+      }),
+      onSelect: ({ ids }) => removeScores(ids),
+    },
   ]
 
   return (

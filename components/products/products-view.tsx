@@ -101,6 +101,10 @@ export function ProductsView() {
       icon: <Trash2 aria-hidden="true" />,
       tone: 'destructive',
       separatorBefore: true,
+      confirm: {
+        title: 'Delete product?',
+        description: 'This product will be removed from the current list.',
+      },
       onSelect: (product) => remove([product.product_slug]),
     },
   ]
@@ -111,6 +115,10 @@ export function ProductsView() {
       label: 'Delete',
       icon: <Trash2 aria-hidden="true" />,
       tone: 'destructive',
+      confirm: (context) => ({
+        title: `Delete ${context.count} products?`,
+        description: 'This action cannot be undone.',
+      }),
       onSelect: ({ ids }) => remove(ids),
     },
   ]

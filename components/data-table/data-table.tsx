@@ -53,6 +53,7 @@ import {
 } from '@/lib/data-table/types'
 import { cn } from '@/lib/utils'
 import { PpbLoadingMark, PpbMark } from '@/components/brand/ppb-mark'
+import { PopConfirm } from '@/components/pop-confirm'
 import { BulkBar } from './bulk-bar'
 import { downloadCsv, downloadJson, type ExportColumn } from './export-utils'
 import { describeFilter, type DataTableLabels } from './filter-utils'
@@ -1039,20 +1040,36 @@ export function DataTable<T>(props: DataTableProps<T>) {
     const menu = list.filter((a) => !inline.includes(a))
     return (
       <div className="flex items-center justify-end gap-0.5 opacity-70 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100">
-        {inline.map((action) => (
-          <Button
-            key={action.id}
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            aria-label={action.label}
-            title={action.label}
-            disabled={action.disabled}
-            onClick={() => action.onSelect(row)}
-          >
-            {action.icon}
-          </Button>
-        ))}
+        {inline.map((action) => {
+          const confirmation = typeof action.confirm === 'function' ? action.confirm(row) : action.confirm
+          const trigger = (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              aria-label={action.label}
+              title={action.label}
+              disabled={action.disabled}
+              onClick={confirmation ? undefined : () => action.onSelect(row)}
+            >
+              {action.icon}
+            </Button>
+          )
+
+          return confirmation ? (
+            <PopConfirm
+              key={action.id}
+              trigger={trigger}
+              title={confirmation.title}
+              description={confirmation.description}
+              confirmLabel={confirmation.confirmLabel}
+              cancelLabel={confirmation.cancelLabel}
+              onConfirm={() => action.onSelect(row)}
+            />
+          ) : (
+            <span key={action.id}>{trigger}</span>
+          )
+        })}
         {menu.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -1062,19 +1079,50 @@ export function DataTable<T>(props: DataTableProps<T>) {
               <MoreHorizontal aria-hidden="true" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-40">
-              {menu.map((action, index) => (
-                <div key={action.id}>
-                  {action.separatorBefore && index > 0 && <DropdownMenuSeparator />}
+              {menu.map((action, index) => {
+                const confirmation = typeof action.confirm === 'function' ? action.confirm(row) : action.confirm
+                const trigger = confirmation ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={action.disabled}
+                    className={cn(
+                      'relative flex w-full cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-left text-sm outline-hidden select-none hover:bg-accent focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
+                      action.tone === 'destructive' && 'text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive',
+                    )}
+                  >
+                    {action.icon}
+                    {action.label}
+                  </button>
+                ) : (
                   <DropdownMenuItem
                     disabled={action.disabled}
-                    variant={action.tone === 'destructive' ? 'destructive' : 'default'}
+                    variant="default"
                     onClick={() => action.onSelect(row)}
                   >
                     {action.icon}
                     {action.label}
                   </DropdownMenuItem>
-                </div>
-              ))}
+                )
+
+                return (
+                  <div key={action.id}>
+                    {action.separatorBefore && index > 0 && <DropdownMenuSeparator />}
+                    {confirmation ? (
+                      <PopConfirm
+                        trigger={trigger}
+                        title={confirmation.title}
+                        description={confirmation.description}
+                        confirmLabel={confirmation.confirmLabel}
+                        cancelLabel={confirmation.cancelLabel}
+                        onConfirm={() => action.onSelect(row)}
+                      />
+                    ) : (
+                      trigger
+                    )}
+                  </div>
+                )
+              })}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

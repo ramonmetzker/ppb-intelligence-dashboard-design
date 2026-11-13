@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PopConfirm } from '@/components/pop-confirm'
 import type { BulkAction, SelectionContext } from '@/lib/data-table/types'
 import type { DataTableLabels } from './filter-utils'
 
@@ -57,20 +58,36 @@ export function BulkBar<T>({
       {allMatching && <span className="shrink-0 text-brand-deep/75">{labels.allMatchingSelected(total)}</span>}
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        {actions.map((action) => (
-          <Button
-            key={action.id}
-            type="button"
-            size="xs"
-            variant={action.tone === 'destructive' ? 'destructive' : 'outline'}
-            className={action.tone === 'destructive' ? 'h-7' : 'h-7 border-brand/25 bg-card text-foreground hover:bg-muted'}
-            disabled={action.disabled?.(context)}
-            onClick={() => action.onSelect(getContext())}
-          >
-            {action.icon}
-            {action.label}
-          </Button>
-        ))}
+        {actions.map((action) => {
+          const confirmation = typeof action.confirm === 'function' ? action.confirm(context) : action.confirm
+          const trigger = (
+            <Button
+              type="button"
+              size="xs"
+              variant={action.tone === 'destructive' ? 'destructive' : 'outline'}
+              className={action.tone === 'destructive' ? 'h-7' : 'h-7 border-brand/25 bg-card text-foreground hover:bg-muted'}
+              disabled={action.disabled?.(context)}
+              onClick={confirmation ? undefined : () => action.onSelect(getContext())}
+            >
+              {action.icon}
+              {action.label}
+            </Button>
+          )
+
+          return confirmation ? (
+            <PopConfirm
+              key={action.id}
+              trigger={trigger}
+              title={confirmation.title}
+              description={confirmation.description}
+              confirmLabel={confirmation.confirmLabel}
+              cancelLabel={confirmation.cancelLabel}
+              onConfirm={() => action.onSelect(getContext())}
+            />
+          ) : (
+            <span key={action.id}>{trigger}</span>
+          )
+        })}
         <Button type="button" variant="ghost" size="xs" className="h-7 px-1.5 text-brand-deep hover:bg-brand/10" onClick={onClear}>
           <X aria-hidden="true" />
           <span className="hidden sm:inline">{labels.clearSelection}</span>
