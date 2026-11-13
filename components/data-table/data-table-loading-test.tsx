@@ -53,12 +53,12 @@ const COLUMNS: DataTableColumnDefinition<DemoRow>[] = [
   },
 ]
 
-type TableMode = 'ready' | 'loading' | 'empty'
+type TableMode = 'ready' | 'loading' | 'empty' | 'error'
 
 export function DataTableLoadingTestView() {
   const [mode, setMode] = useState<TableMode>('ready')
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const rows = useMemo(() => (mode === 'empty' ? [] : DEMO_ROWS), [mode])
+  const rows = useMemo(() => (mode === 'empty' || mode === 'error' ? [] : DEMO_ROWS), [mode])
 
   useEffect(() => {
     return () => {
@@ -76,7 +76,7 @@ export function DataTableLoadingTestView() {
     <>
       <PageHeader
         title="DataTable states"
-        description="A small playground for checking the table loading overlay, empty state, and horizontal column navigation."
+        description="A small playground for checking loading, error, empty, and horizontal table states."
       >
         <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant={mode === 'ready' ? 'default' : 'outline'} onClick={() => setMode('ready')}>
@@ -87,6 +87,9 @@ export function DataTableLoadingTestView() {
           </Button>
           <Button type="button" variant={mode === 'empty' ? 'default' : 'outline'} onClick={() => setMode('empty')}>
             Empty state
+          </Button>
+          <Button type="button" variant={mode === 'error' ? 'default' : 'outline'} onClick={() => setMode('error')}>
+            Error state
           </Button>
         </div>
       </PageHeader>
@@ -108,6 +111,8 @@ export function DataTableLoadingTestView() {
           columns={COLUMNS}
           data={rows}
           loading={mode === 'loading'}
+          error={mode === 'error' ? 'The data request failed. Check your connection and try again.' : null}
+          onRetry={() => setMode('ready')}
           getRowId={(row) => row.id}
           maxHeight="min(68dvh, 640px)"
         />

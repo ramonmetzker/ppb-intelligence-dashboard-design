@@ -15,7 +15,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
-import { ChevronRight, MoreHorizontal, SearchX } from 'lucide-react'
+import { AlertCircle, ChevronRight, MoreHorizontal, RefreshCw, SearchX } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -118,6 +118,10 @@ export interface DataTableProps<T> {
   /** Server mode: total number of rows matching the query, for the pager. */
   totalRows?: number
   loading?: boolean
+  /** Message shown when the table cannot load its data. */
+  error?: string | null
+  /** Retries the current data request when provided. */
+  onRetry?: () => void
 
   /** Controlled query. Omit to let the table own it (use `defaultQuery` for the initial value). */
   query?: DataTableQuery
@@ -194,6 +198,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
     mode = 'client',
     totalRows,
     loading = false,
+    error = null,
+    onRetry,
     query: controlledQuery,
     defaultQuery,
     onQueryChange,
@@ -1086,13 +1092,15 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   const totalColumns = layout.placed.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0)
   const showSkeleton = loading && rows.length === 0
-  const showEmpty = !loading && rows.length === 0
+  const showError = !loading && Boolean(error)
+  const showEmpty = !loading && !showError && rows.length === 0
   const treeColumnId = layout.placed.find((placed) => !placed.pin)?.column.id ?? layout.placed[0]?.column.id
   const colSpanStyle: CSSProperties = { width: scrollState.viewport || undefined }
 
   return (
     <section className={cn('flex min-w-0 flex-col gap-3', className)} aria-busy={loading}>
-      {selectedCount > 0 && bulkActions.length > 0 ? (
+      <div className="min-h-9">
+        {selectedCount > 0 && bulkActions.length > 0 ? (
         <BulkBar
           count={live.size}
           total={total}
@@ -1157,7 +1165,8 @@ export function DataTable<T>(props: DataTableProps<T>) {
             {toolbarEnd}
           </div>
         </div>
-      )}
+        )}
+      </div>
 
       <ActiveFilters chips={chips} labels={labels} onClearAll={clearAllFilters} />
 
@@ -1307,6 +1316,26 @@ export function DataTable<T>(props: DataTableProps<T>) {
                   </tr>
                 ))}
 
+              {showError && (
+                <tr>
+                  <td colSpan={totalColumns} className="h-64 p-0">
+                    <div style={colSpanStyle} className="sticky left-0 flex h-64 flex-col items-center justify-center gap-2 px-6 text-center" role="alert">
+                      <span className="flex size-10 items-center justify-center rounded-full bg-critical/10 text-critical">
+                        <AlertCircle aria-hidden="true" className="size-5" />
+                      </span>
+                      <p className="text-sm font-medium">{labels.loadError}</p>
+                      <p className="max-w-md text-[13px] text-muted-foreground">{error || labels.loadErrorHint}</p>
+                      {onRetry && (
+                        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+                          <RefreshCw aria-hidden="true" data-icon="inline-start" />
+                          {labels.retry}
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
+
               {showEmpty && (
                 <tr>
                   <td colSpan={totalColumns} className="h-64 p-0">
@@ -1334,7 +1363,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
                 </tr>
               )}
 
-              {displayRows.map(({ row, depth }, rowIndex) => {
+              {!showError && displayRows.map(({ row, depth }, rowIndex) => {
                 const id = getRowId(row)
                 const isSelected = live.has(id)
                 const hasChildren = getRowChildren ? getRowChildren(row).length > 0 : false

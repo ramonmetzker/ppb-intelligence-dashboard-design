@@ -29,33 +29,41 @@ export function BulkBar<T>({
   onSelectAllMatching,
 }: Props<T>) {
   const context = getContext()
+  const selectedLabel = labels.selectedCount(allMatching ? total : count)
+
   return (
     <div
       role="region"
-      aria-label={labels.selectedCount(count)}
-      className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-brand/30 bg-brand-soft px-3 py-1.5 text-[13px] text-brand-deep"
+      aria-label={selectedLabel}
+      className="flex h-9 min-h-9 min-w-0 items-center gap-2 overflow-x-auto rounded-lg border border-brand/30 bg-brand-soft px-2 text-[13px] text-brand-deep"
     >
-      <p className="tnum font-medium" aria-live="polite">
-        {labels.selectedCount(allMatching ? total : count)}
-      </p>
+      <span className="inline-flex h-6 shrink-0 items-center rounded-md bg-brand/15 px-2 font-semibold tnum" aria-live="polite">
+        {allMatching ? total : count}
+      </span>
+      <p className="min-w-0 shrink truncate font-medium">{selectedLabel}</p>
 
-      {allMatching ? (
-        <p className="text-brand-deep/80">{labels.allMatchingSelected(total)}</p>
-      ) : (
-        canSelectAllMatching && (
-          <Button type="button" variant="link" size="sm" className="h-auto p-0 text-[13px] text-brand-deep" onClick={onSelectAllMatching}>
-            {labels.selectAllMatching(total)}
-          </Button>
-        )
+      {!allMatching && canSelectAllMatching && (
+        <Button
+          type="button"
+          variant="link"
+          size="xs"
+          className="h-7 shrink-0 px-1.5 text-brand-deep hover:text-brand-deep"
+          onClick={onSelectAllMatching}
+        >
+          {labels.selectAllMatching(total)}
+        </Button>
       )}
 
-      <div className="ml-auto flex flex-wrap items-center gap-1.5">
+      {allMatching && <span className="shrink-0 text-brand-deep/75">{labels.allMatchingSelected(total)}</span>}
+
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         {actions.map((action) => (
           <Button
             key={action.id}
             type="button"
+            size="xs"
             variant={action.tone === 'destructive' ? 'destructive' : 'outline'}
-            className={action.tone === 'destructive' ? undefined : 'bg-card'}
+            className={action.tone === 'destructive' ? 'h-7' : 'h-7 border-brand/25 bg-card text-foreground hover:bg-muted'}
             disabled={action.disabled?.(context)}
             onClick={() => action.onSelect(getContext())}
           >
@@ -63,9 +71,10 @@ export function BulkBar<T>({
             {action.label}
           </Button>
         ))}
-        <Button type="button" variant="ghost" onClick={onClear}>
+        <Button type="button" variant="ghost" size="xs" className="h-7 px-1.5 text-brand-deep hover:bg-brand/10" onClick={onClear}>
           <X aria-hidden="true" />
-          {labels.clearSelection}
+          <span className="hidden sm:inline">{labels.clearSelection}</span>
+          <span className="sr-only sm:hidden">{labels.clearSelection}</span>
         </Button>
       </div>
     </div>
