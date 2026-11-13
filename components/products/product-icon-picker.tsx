@@ -48,7 +48,7 @@ export function ProductIconPicker({ value, onChange }: Props) {
           type="button"
           role="radio"
           aria-checked={customSelected}
-          aria-label="Custom SVG"
+          aria-label="Custom icon"
           onClick={() => onChange(selectedPreset ? '' : value)}
           className={cn(
             'flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-muted-foreground transition-colors focus-visible:outline-2 focus-visible:outline-ring',
@@ -56,7 +56,7 @@ export function ProductIconPicker({ value, onChange }: Props) {
           )}
         >
           <Code2 className="size-5" aria-hidden="true" />
-          <span className="truncate text-[10px] font-medium">Custom SVG</span>
+          <span className="truncate text-[10px] font-medium">Custom</span>
         </button>
       </div>
 
@@ -64,19 +64,11 @@ export function ProductIconPicker({ value, onChange }: Props) {
         <Textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder='<svg viewBox="0 0 24 24">...</svg>'
-          aria-label="Custom product icon SVG"
-          className="min-h-28 resize-y font-mono text-xs"
+          aria-label="Custom product icon"
+          className="min-h-24 resize-y font-mono text-xs"
           spellCheck={false}
         />
       )}
-
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span className="flex size-7 items-center justify-center rounded-md bg-muted">
-          <ProductIcon icon={value} className="size-4" />
-        </span>
-        <span>{customSelected ? 'Paste a complete SVG. It will be stored as SVG.' : 'Stored as an SVG from the selected Lucide icon.'}</span>
-      </div>
     </div>
   )
 }

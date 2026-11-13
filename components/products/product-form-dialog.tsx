@@ -11,18 +11,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { formatPlants, parsePlants, slugify, type Gbm, type Product, type YesNo } from '@/lib/products/data'
 import { productIconSvg, sanitizeIconSvg } from '@/lib/products/icons'
-import { PlantTags } from './plant-tags'
+import { PlantsTagsInput } from './plants-tags-input'
 import { ProductIconPicker } from './product-icon-picker'
 
 export type ProductFormValues = Pick<
@@ -71,9 +63,6 @@ function ProductForm({
 }: Pick<Props, 'product' | 'gbm' | 'products' | 'onSubmit'> & { onCancel: () => void }) {
   const uid = useId()
   const [productName, setProductName] = useState(product?.product_name ?? '')
-  const [productSlug, setProductSlug] = useState(product?.product_slug ?? '')
-  const [slugTouched, setSlugTouched] = useState(Boolean(product))
-  const [productCode, setProductCode] = useState(product?.product_code ?? '')
   const [plants, setPlants] = useState(product?.plants ?? '')
   const [icon, setIcon] = useState(product?.icon ?? productIconSvg('package'))
   const [activeYn, setActiveYn] = useState<YesNo>(product?.active_yn ?? 'Y')
@@ -83,8 +72,8 @@ function ProductForm({
     event.preventDefault()
     const next: Errors = {}
     const cleanName = productName.trim()
-    const cleanSlug = slugify(productSlug)
-    const cleanCode = productCode.trim().toUpperCase()
+    const cleanSlug = slugify(cleanName)
+    const cleanCode = cleanSlug.replaceAll('-', '_').toUpperCase()
     const cleanIcon = sanitizeIconSvg(icon)
 
     if (!cleanName) next.product_name = 'Enter a product name.'
@@ -97,7 +86,7 @@ function ProductForm({
       next.product_code = 'This code is already used by another product.'
     }
     if (parsePlants(plants).length === 0) next.plants = 'Add at least one plant, separated by commas.'
-    if (!cleanIcon) next.icon = 'Choose an icon or paste a valid SVG.'
+    if (!cleanIcon) next.icon = 'Choose an icon.'
 
     setErrors(next)
     if (Object.keys(next).length > 0) return
@@ -114,16 +103,15 @@ function ProductForm({
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
-      <SheetHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
+      <SheetHeader className="shrink-0 border-b border-border px-5 py-4 pr-14">
         <SheetTitle>{product ? 'Edit product' : 'New product'}</SheetTitle>
         <SheetDescription>
-          {product ? 'Changes update the product master data right away.' : `Create a product for the ${gbm} GBM.`}{' '}
-          Product icons are stored as SVG.
+          {product ? 'Update the product details.' : `Add a product to the ${gbm} GBM.`}
         </SheetDescription>
       </SheetHeader>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
-        <div className="grid gap-5 sm:grid-cols-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Field id={`${uid}-name`} label="Product Name" error={errors.product_name}>
               <Input
@@ -131,67 +119,58 @@ function ProductForm({
                 value={productName}
                 autoFocus
                 aria-invalid={Boolean(errors.product_name)}
-                onChange={(event) => {
-                  setProductName(event.target.value)
-                  if (!slugTouched) setProductSlug(slugify(event.target.value))
-                }}
+                onChange={(event) => setProductName(event.target.value)}
               />
             </Field>
           </div>
 
-          <Field id={`${uid}-slug`} label="Product Slug" error={errors.product_slug} hint="Used in URLs and integrations.">
+          <Field id={`${uid}-slug`} label="Product Slug" error={errors.product_slug}>
             <Input
               id={`${uid}-slug`}
-              value={productSlug}
-              className="font-mono"
+              value={slugify(productName)}
+              className="bg-muted font-mono"
               aria-invalid={Boolean(errors.product_slug)}
-              onChange={(event) => {
-                setProductSlug(event.target.value)
-                setSlugTouched(true)
-              }}
+              readOnly
             />
           </Field>
 
-          <Field id={`${uid}-code`} label="Product Code" error={errors.product_code} hint="Unique code from the source system.">
+          <Field id={`${uid}-code`} label="Product Code" error={errors.product_code}>
             <Input
               id={`${uid}-code`}
-              value={productCode}
-              className="font-mono uppercase"
+              value={slugify(productName).replaceAll('-', '_').toUpperCase()}
+              className="bg-muted font-mono uppercase"
               aria-invalid={Boolean(errors.product_code)}
-              onChange={(event) => setProductCode(event.target.value)}
+              readOnly
             />
           </Field>
         </div>
 
-        <Field id={`${uid}-plants`} label="Plants" error={errors.plants} hint="Separate plants with commas.">
-          <Input
+        <Field id={`${uid}-plants`} label="Plants" error={errors.plants}>
+          <PlantsTagsInput
             id={`${uid}-plants`}
             value={plants}
-            placeholder="Manaus, Suwon, Hanoi"
-            aria-invalid={Boolean(errors.plants)}
-            onChange={(event) => setPlants(event.target.value)}
+            placeholder="Add a plant"
+            invalid={Boolean(errors.plants)}
+            onChange={setPlants}
           />
-          <div className="min-h-6" aria-live="polite">
-            <PlantTags value={plants} className="flex-wrap" />
-          </div>
         </Field>
 
         <div className="flex flex-col gap-1.5">
           <span id={`${uid}-icon-label`} className="text-xs font-medium text-foreground">Icon</span>
           <ProductIconPicker value={icon} onChange={setIcon} />
-          {errors.icon ? <p role="alert" className="text-xs text-critical">{errors.icon}</p> : <p className="text-xs text-muted-foreground">Choose a common Lucide icon or paste your own SVG markup.</p>}
+          {errors.icon ? <p role="alert" className="text-xs text-critical">{errors.icon}</p> : null}
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field id={`${uid}-gbm`} label="GBM" hint="The page GBM is applied to new products.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id={`${uid}-gbm`} label="GBM">
             <Input id={`${uid}-gbm`} value={gbm} readOnly disabled />
           </Field>
 
-          <BooleanField id={`${uid}-active`} label="Active" value={activeYn} onChange={setActiveYn} hint="Inactive products remain visible for traceability." />
+          <BooleanField id={`${uid}-active`} label="Active" value={activeYn} onChange={setActiveYn} />
         </div>
       </div>
 
-      <SheetFooter className="shrink-0 border-t border-border bg-muted/30 px-6 py-4 sm:flex-row sm:justify-end">
+      <SheetFooter className="shrink-0 border-t border-border bg-muted/30 px-5 py-3 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">{product ? 'Save changes' : 'Create product'}</Button>
       </SheetFooter>
@@ -204,13 +183,11 @@ function BooleanField({
   label,
   value,
   onChange,
-  hint,
 }: {
   id: string
   label: string
   value: YesNo
   onChange: (value: YesNo) => void
-  hint: string
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -226,7 +203,6 @@ function BooleanField({
         <ToggleGroupItem value="Y" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">Yes</ToggleGroupItem>
         <ToggleGroupItem value="N" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">No</ToggleGroupItem>
       </ToggleGroup>
-      <p className="text-xs text-muted-foreground">{hint}</p>
     </div>
   )
 }
