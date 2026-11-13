@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { CaretDown, CaretRight, CaretUpDown } from '@phosphor-icons/react'
+import { CaretRight, CaretUpDown } from '@phosphor-icons/react'
 import { PpbLoadingMark, PpbMark } from '@/components/brand/ppb-mark'
 import { useRpas } from '@/components/rpa/rpa-provider'
 import { useShell } from '@/components/shell/shell-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
 import { useNavigationTransition } from '@/components/app/route-progress'
-import { NAV_GROUPS } from '@/components/shell/navigation'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { NAV_GROUPS, type AppNavGroup } from '@/components/shell/navigation'
 import { cn } from '@/lib/utils'
 
 export function AppSidebar() {
@@ -21,6 +22,61 @@ export function AppSidebar() {
   const [rawDataOpen, setRawDataOpen] = useState(false)
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
+
+  const renderItems = (group: AppNavGroup, compact = false) => (
+    <ul className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-1')}>
+      {group.items.map(({ label, href, icon: NavIcon }) => {
+        const active = isActive(href)
+        return (
+          <li key={href}>
+            <Link
+              href={href}
+              aria-current={active ? 'page' : undefined}
+              aria-label={collapsed ? t.nav[label] : undefined}
+              title={collapsed ? t.nav[label] : undefined}
+              className={cn(
+                'relative flex items-center rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
+                compact ? 'h-8 text-[12px]' : 'h-10 text-[13px]',
+                collapsed ? 'justify-center px-0' : compact ? 'gap-2.5 px-2.5' : 'gap-3 px-3',
+                active
+                  ? 'bg-sidebar-accent text-white'
+                  : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-white',
+              )}
+            >
+              {active && (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-y-1.5 left-0 w-0.5 rounded-r-full bg-(--sidebar-highlight)"
+                />
+              )}
+              <NavIcon
+                size={compact ? 17 : 19}
+                weight={active ? 'fill' : 'regular'}
+                className={cn(
+                  'shrink-0',
+                  active ? 'text-(--sidebar-highlight)' : 'text-sidebar-foreground/50',
+                )}
+                aria-hidden="true"
+              />
+              {!collapsed && <span className="truncate">{t.nav[label]}</span>}
+              {href === '/rpa-monitor' && errorCount > 0 && (
+                <span
+                  aria-label={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+                  title={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+                  className={cn(
+                    'tnum flex h-5 min-w-5 items-center justify-center rounded-md bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
+                    collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
+                  )}
+                >
+                  {errorCount > 99 ? '99+' : errorCount}
+                </span>
+              )}
+            </Link>
+          </li>
+        )
+      })}
+    </ul>
+  )
 
   return (
     <aside
@@ -66,86 +122,35 @@ export function AppSidebar() {
             const groupHasActiveItem = group.items.some(({ href }) => isActive(href))
             const groupOpen = collapsed || !isCollapsible || rawDataOpen || groupHasActiveItem
 
-            return (
+            return isCollapsible && !collapsed ? (
+              <Collapsible key={group.label} open={groupOpen} onOpenChange={setRawDataOpen}>
+                <CollapsibleTrigger className="group mb-1 flex h-7 w-full items-center justify-between rounded-md px-2.5 text-left text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase transition-colors hover:bg-white/5 hover:text-sidebar-foreground/70 focus-visible:outline-2 focus-visible:outline-ring">
+                  <span>{t.nav[group.label]}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="rounded bg-sidebar-accent/70 px-1.5 py-0.5 text-[9px] tracking-normal text-sidebar-foreground/45">
+                      {group.items.length}
+                    </span>
+                    <CaretRight
+                      size={13}
+                      className="transition-transform duration-200 group-data-panel-open:rotate-90"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="h-[var(--collapsible-panel-height)] overflow-hidden transition-[height] duration-200 ease-out data-[ending-style]:h-0 data-[starting-style]:h-0">
+                  {renderItems(group, true)}
+                </CollapsibleContent>
+              </Collapsible>
+            ) : (
               <div key={group.label}>
                 {collapsed ? (
                   <div className="mx-2 mb-2 h-px bg-sidebar-border" aria-hidden="true" />
-                ) : isCollapsible ? (
-                  <button
-                    type="button"
-                    onClick={() => setRawDataOpen((current) => !current)}
-                    aria-expanded={groupOpen}
-                    aria-controls="sidebar-raw-data"
-                    className="mb-1 flex h-7 w-full items-center justify-between rounded-md px-2.5 text-left text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase transition-colors hover:bg-white/5 hover:text-sidebar-foreground/70 focus-visible:outline-2 focus-visible:outline-ring"
-                  >
-                    <span>{t.nav[group.label]}</span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="rounded bg-sidebar-accent/70 px-1.5 py-0.5 text-[9px] tracking-normal text-sidebar-foreground/45">
-                        {group.items.length}
-                      </span>
-                      {groupOpen ? <CaretDown size={13} aria-hidden="true" /> : <CaretRight size={13} aria-hidden="true" />}
-                    </span>
-                  </button>
                 ) : (
                   <p className="mb-1.5 px-2.5 text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase">
                     {t.nav[group.label]}
                   </p>
                 )}
-                {groupOpen && (
-                  <ul id={isCollapsible ? 'sidebar-raw-data' : undefined} className="flex flex-col gap-1">
-                    {group.items.map(({ label, href, icon: NavIcon }) => {
-                      const active = isActive(href)
-                      return (
-                        <li key={href}>
-                          <Link
-                            href={href}
-                            aria-current={active ? 'page' : undefined}
-                            aria-label={collapsed ? t.nav[label] : undefined}
-                            title={collapsed ? t.nav[label] : undefined}
-                            className={cn(
-                              'relative flex h-10 items-center rounded-md text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
-                              collapsed ? 'justify-center px-0' : 'gap-3 px-3',
-                              active
-                                ? 'bg-sidebar-accent text-white'
-                                : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-white',
-                            )}
-                          >
-                            {active && (
-                              <span
-                                aria-hidden="true"
-                                className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-(--sidebar-highlight)"
-                              />
-                            )}
-                            <NavIcon
-                              size={19}
-                              weight={active ? 'fill' : 'regular'}
-                              className={cn(
-                                'shrink-0',
-                                active
-                                  ? 'text-(--sidebar-highlight)'
-                                  : 'text-sidebar-foreground/50',
-                              )}
-                              aria-hidden="true"
-                            />
-                            {!collapsed && <span className="truncate">{t.nav[label]}</span>}
-                            {href === '/rpa-monitor' && errorCount > 0 && (
-                              <span
-                                aria-label={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
-                                title={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
-                                className={cn(
-                                  'tnum flex h-5 min-w-5 items-center justify-center rounded-md bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
-                                  collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
-                                )}
-                              >
-                                {errorCount > 99 ? '99+' : errorCount}
-                              </span>
-                            )}
-                          </Link>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
+                {groupOpen && renderItems(group)}
               </div>
             )
           })}
