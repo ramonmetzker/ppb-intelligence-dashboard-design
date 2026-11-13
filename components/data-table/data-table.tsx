@@ -107,6 +107,7 @@ type SortableTableRowProps = Omit<ComponentPropsWithoutRef<'tr'>, 'children'> & 
 
 function SortableTableRow({ id, disabled = false, children, style, ...props }: SortableTableRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled })
+  const verticalTransform = transform ? { ...transform, x: 0 } : null
 
   return (
     <tr
@@ -114,7 +115,7 @@ function SortableTableRow({ id, disabled = false, children, style, ...props }: S
       {...props}
       style={{
         ...style,
-        transform: CSS.Transform.toString(transform),
+        transform: CSS.Transform.toString(verticalTransform),
         transition,
         position: isDragging ? 'relative' : undefined,
         zIndex: isDragging ? 10 : undefined,
