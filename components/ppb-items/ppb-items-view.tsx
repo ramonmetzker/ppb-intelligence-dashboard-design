@@ -221,10 +221,11 @@ export function PpbItemsView() {
   }
 
   const submitMapping = (values: PpbNcmMappingFormValues) => {
+    const lastUpdated = new Date().toISOString().slice(0, 10)
     setMappings((current) =>
       editingMapping
-        ? current.map((mapping) => (mapping.id === editingMapping.id ? { ...mapping, ...values } : mapping))
-        : [...current, { ...values, id: `${values.plant}-${values.ncm}-${values.itemId}-${Date.now()}` }],
+        ? current.map((mapping) => (mapping.id === editingMapping.id ? { ...mapping, ...values, lastUpdated } : mapping))
+        : [...current, { ...values, id: `${values.plant}-${values.ncm}-${values.itemId}-${Date.now()}`, lastUpdated }],
     )
   }
 
