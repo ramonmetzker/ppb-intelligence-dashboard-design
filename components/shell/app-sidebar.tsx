@@ -1,64 +1,16 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import {
-  Cube,
-  CaretUpDown,
-  ChartBar,
-  Database,
-  GitBranch,
-  Robot,
-  SquaresFour,
-  SlidersHorizontal,
-  Table,
-  Tag,
-} from '@phosphor-icons/react'
-import type { Icon } from '@phosphor-icons/react'
+import { CaretDown, CaretRight, CaretUpDown } from '@phosphor-icons/react'
 import { PpbLoadingMark, PpbMark } from '@/components/brand/ppb-mark'
 import { useRpas } from '@/components/rpa/rpa-provider'
 import { useShell } from '@/components/shell/shell-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
 import { useNavigationTransition } from '@/components/app/route-progress'
-import type { Dictionary } from '@/lib/i18n'
+import { NAV_GROUPS } from '@/components/shell/navigation'
 import { cn } from '@/lib/utils'
-
-type NavKey = keyof Dictionary['nav']
-
-const GROUPS: {
-  label: NavKey
-  items: { label: NavKey; href: string; icon: Icon }[]
-}[] = [
-  {
-    label: 'analyze',
-    items: [
-      { label: 'overview', href: '/', icon: SquaresFour },
-      { label: 'production', href: '/production', icon: ChartBar },
-      { label: 'items', href: '/items', icon: Cube },
-    ],
-  },
-  {
-    label: 'plan',
-    items: [{ label: 'simulation', href: '/simulation', icon: GitBranch }],
-  },
-  {
-    label: 'rawData',
-    items: [
-      { label: 'materials', href: '/raw-data/material-prices', icon: Tag },
-      { label: 'ppbItems', href: '/raw-data/ppb-items', icon: Cube },
-      { label: 'referenceBom', href: '/raw-data/reference-bom', icon: Table },
-      { label: 'products', href: '/products', icon: Database },
-      { label: 'sopDemand', href: '/raw-data/sop-demand', icon: Table },
-      { label: 'salesDemand', href: '/raw-data/sales-demand', icon: Table },
-      { label: 'uiParameters', href: '/raw-data/ui-parameters', icon: SlidersHorizontal },
-      { label: 'dataTableTest', href: '/raw-data/data-table-test', icon: Table },
-    ],
-  },
-  {
-    label: 'automations',
-    items: [{ label: 'rpaMonitor', href: '/rpa-monitor', icon: Robot }],
-  },
-]
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -66,6 +18,7 @@ export function AppSidebar() {
   const isNavigating = useNavigationTransition()
   const { errorCount } = useRpas()
   const { t, user, setUserDialogOpen } = usePreferences()
+  const [rawDataOpen, setRawDataOpen] = useState(false)
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
@@ -107,71 +60,95 @@ export function AppSidebar() {
           collapsed ? 'px-2.5' : 'px-3',
         )}
       >
-        <div className="flex flex-col gap-5">
-          {GROUPS.map((group) => (
-            <div key={group.label}>
-              {collapsed ? (
-                <div className="mx-2 mb-2 h-px bg-sidebar-border" aria-hidden="true" />
-              ) : (
-                <p className="mb-1.5 px-2.5 text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase">
-                  {t.nav[group.label]}
-                </p>
-              )}
-              <ul className="flex flex-col gap-1">
-                {group.items.map(({ label, href, icon: NavIcon }) => {
-                  const active = isActive(href)
-                  return (
-                    <li key={href}>
-                      <Link
-                        href={href}
-                        aria-current={active ? 'page' : undefined}
-                        aria-label={collapsed ? t.nav[label] : undefined}
-                        title={collapsed ? t.nav[label] : undefined}
-                        className={cn(
-                          'relative flex h-10 items-center rounded-md text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
-                          collapsed ? 'justify-center px-0' : 'gap-3 px-3',
-                          active
-                            ? 'bg-sidebar-accent text-white'
-                            : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-white',
-                        )}
-                      >
-                        {active && (
-                          <span
-                            aria-hidden="true"
-                            className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-(--sidebar-highlight)"
-                          />
-                        )}
-                        <NavIcon
-                          size={19}
-                          weight={active ? 'fill' : 'regular'}
-                          className={cn(
-                            'shrink-0',
-                            active
-                              ? 'text-(--sidebar-highlight)'
-                              : 'text-sidebar-foreground/50',
-                          )}
-                          aria-hidden="true"
-                        />
-                        {!collapsed && <span className="truncate">{t.nav[label]}</span>}
-                        {href === '/rpa-monitor' && errorCount > 0 && (
-                          <span
-                            aria-label={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
-                            title={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+        <div className="flex flex-col gap-4">
+          {NAV_GROUPS.map((group) => {
+            const isCollapsible = group.label === 'rawData'
+            const groupHasActiveItem = group.items.some(({ href }) => isActive(href))
+            const groupOpen = collapsed || !isCollapsible || rawDataOpen || groupHasActiveItem
+
+            return (
+              <div key={group.label}>
+                {collapsed ? (
+                  <div className="mx-2 mb-2 h-px bg-sidebar-border" aria-hidden="true" />
+                ) : isCollapsible ? (
+                  <button
+                    type="button"
+                    onClick={() => setRawDataOpen((current) => !current)}
+                    aria-expanded={groupOpen}
+                    aria-controls="sidebar-raw-data"
+                    className="mb-1 flex h-7 w-full items-center justify-between rounded-md px-2.5 text-left text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase transition-colors hover:bg-white/5 hover:text-sidebar-foreground/70 focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    <span>{t.nav[group.label]}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="rounded bg-sidebar-accent/70 px-1.5 py-0.5 text-[9px] tracking-normal text-sidebar-foreground/45">
+                        {group.items.length}
+                      </span>
+                      {groupOpen ? <CaretDown size={13} aria-hidden="true" /> : <CaretRight size={13} aria-hidden="true" />}
+                    </span>
+                  </button>
+                ) : (
+                  <p className="mb-1.5 px-2.5 text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase">
+                    {t.nav[group.label]}
+                  </p>
+                )}
+                {groupOpen && (
+                  <ul id={isCollapsible ? 'sidebar-raw-data' : undefined} className="flex flex-col gap-1">
+                    {group.items.map(({ label, href, icon: NavIcon }) => {
+                      const active = isActive(href)
+                      return (
+                        <li key={href}>
+                          <Link
+                            href={href}
+                            aria-current={active ? 'page' : undefined}
+                            aria-label={collapsed ? t.nav[label] : undefined}
+                            title={collapsed ? t.nav[label] : undefined}
                             className={cn(
-                              'tnum flex h-5 min-w-5 items-center justify-center rounded-md bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
-                              collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
+                              'relative flex h-10 items-center rounded-md text-[13px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
+                              collapsed ? 'justify-center px-0' : 'gap-3 px-3',
+                              active
+                                ? 'bg-sidebar-accent text-white'
+                                : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-white',
                             )}
                           >
-                            {errorCount > 99 ? '99+' : errorCount}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          ))}
+                            {active && (
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-(--sidebar-highlight)"
+                              />
+                            )}
+                            <NavIcon
+                              size={19}
+                              weight={active ? 'fill' : 'regular'}
+                              className={cn(
+                                'shrink-0',
+                                active
+                                  ? 'text-(--sidebar-highlight)'
+                                  : 'text-sidebar-foreground/50',
+                              )}
+                              aria-hidden="true"
+                            />
+                            {!collapsed && <span className="truncate">{t.nav[label]}</span>}
+                            {href === '/rpa-monitor' && errorCount > 0 && (
+                              <span
+                                aria-label={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+                                title={`${errorCount} failed ${errorCount === 1 ? 'RPA' : 'RPAs'}`}
+                                className={cn(
+                                  'tnum flex h-5 min-w-5 items-center justify-center rounded-md bg-critical px-1.5 text-[11px] font-semibold text-primary-foreground',
+                                  collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
+                                )}
+                              >
+                                {errorCount > 99 ? '99+' : errorCount}
+                              </span>
+                            )}
+                          </Link>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+              </div>
+            )
+          })}
         </div>
       </nav>
 

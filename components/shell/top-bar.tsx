@@ -7,6 +7,7 @@ import { SidebarPlanSwitcher } from '@/components/app/plan-switcher'
 import { GbmSelector } from '@/components/shell/gbm-selector'
 import { ProductContextSelector } from '@/components/shell/product-context-selector'
 import { NotificationCenter } from '@/components/shell/notification-center'
+import { GlobalNavigationCommand } from '@/components/shell/global-navigation-command'
 import { useShell } from '@/components/shell/shell-provider'
 import { useNotifications } from '@/components/shell/notification-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
@@ -77,6 +78,8 @@ export function TopBar() {
             />
             {syncing ? copy.syncingData : copy.closedUpdated(updated)}
           </p>
+
+          <GlobalNavigationCommand />
         </div>
 
         {hasContextSelectors && (
