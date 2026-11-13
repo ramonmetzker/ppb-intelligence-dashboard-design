@@ -1,26 +1,101 @@
 import type { ColumnSchema } from '@/lib/data-table/types'
+import { productIconSvg } from './icons'
 
 export const GBMS = ['MX', 'VD', 'DA'] as const
 export type Gbm = (typeof GBMS)[number]
+export type YesNo = 'Y' | 'N'
 
 export type Product = {
-  id: string
+  product_slug: string
+  product_name: string
+  product_code: string
   gbm: Gbm
-  name: string
-  slug: string
   /** Comma separated plant names, e.g. "Manaus, Suwon". Use `parsePlants` to read it. */
   plants: string
-  order: number
+  icon: string
+  active_yn: YesNo
+  created_at: string
+  updated_at: string
 }
 
 export const PRODUCT_SEED: readonly Product[] = [
-  { id: 'mobile', gbm: 'MX', name: 'Mobile', slug: 'mobile', plants: 'Gumi, Hanoi, Noida, Manaus', order: 1 },
-  { id: 'tablet', gbm: 'MX', name: 'Tablet', slug: 'tablet', plants: 'Hanoi, Manaus', order: 2 },
-  { id: 'wearables', gbm: 'MX', name: 'Wearables', slug: 'wearables', plants: 'Gumi, Hanoi', order: 3 },
-  { id: 'tv', gbm: 'VD', name: 'TV', slug: 'tv', plants: 'Tijuana, Manaus, Hanoi', order: 1 },
-  { id: 'monitor', gbm: 'VD', name: 'Monitor', slug: 'monitor', plants: 'Tijuana, Suwon', order: 2 },
-  { id: 'indoor-unit', gbm: 'DA', name: 'Indoor Unit', slug: 'indoor-unit', plants: 'Noida, Suwon, Manaus', order: 1 },
-  { id: 'outdoor-unit', gbm: 'DA', name: 'Outdoor Unit', slug: 'outdoor-unit', plants: 'Noida, Suwon', order: 2 },
+  {
+    product_slug: 'mobile',
+    product_name: 'Mobile',
+    product_code: 'MX-MOB',
+    gbm: 'MX',
+    plants: 'Gumi, Hanoi, Noida, Manaus',
+    icon: productIconSvg('smartphone'),
+    active_yn: 'Y',
+    created_at: '2026-11-01T09:00:00Z',
+    updated_at: '2026-11-12T14:30:00Z',
+  },
+  {
+    product_slug: 'tablet',
+    product_name: 'Tablet',
+    product_code: 'MX-TAB',
+    gbm: 'MX',
+    plants: 'Hanoi, Manaus',
+    icon: productIconSvg('tablet'),
+    active_yn: 'Y',
+    created_at: '2026-11-01T09:10:00Z',
+    updated_at: '2026-11-12T14:25:00Z',
+  },
+  {
+    product_slug: 'wearables',
+    product_name: 'Wearables',
+    product_code: 'MX-WEA',
+    gbm: 'MX',
+    plants: 'Gumi, Hanoi',
+    icon: productIconSvg('watch'),
+    active_yn: 'Y',
+    created_at: '2026-11-01T09:20:00Z',
+    updated_at: '2026-11-12T14:20:00Z',
+  },
+  {
+    product_slug: 'tv',
+    product_name: 'TV',
+    product_code: 'VD-TV',
+    gbm: 'VD',
+    plants: 'Tijuana, Manaus, Hanoi',
+    icon: productIconSvg('tv'),
+    active_yn: 'Y',
+    created_at: '2026-11-01T09:30:00Z',
+    updated_at: '2026-11-12T14:15:00Z',
+  },
+  {
+    product_slug: 'monitor',
+    product_name: 'Monitor',
+    product_code: 'VD-MON',
+    gbm: 'VD',
+    plants: 'Tijuana, Suwon',
+    icon: productIconSvg('monitor'),
+    active_yn: 'Y',
+    created_at: '2026-11-01T09:40:00Z',
+    updated_at: '2026-11-12T14:10:00Z',
+  },
+  {
+    product_slug: 'indoor-unit',
+    product_name: 'Indoor Unit',
+    product_code: 'DA-IN',
+    gbm: 'DA',
+    plants: 'Noida, Suwon, Manaus',
+    icon: productIconSvg('air-vent'),
+    active_yn: 'Y',
+    created_at: '2026-11-01T09:50:00Z',
+    updated_at: '2026-11-12T14:05:00Z',
+  },
+  {
+    product_slug: 'outdoor-unit',
+    product_name: 'Outdoor Unit',
+    product_code: 'DA-OUT',
+    gbm: 'DA',
+    plants: 'Noida, Suwon',
+    icon: productIconSvg('fan'),
+    active_yn: 'Y',
+    created_at: '2026-11-01T10:00:00Z',
+    updated_at: '2026-11-12T14:00:00Z',
+  },
 ]
 
 /** Splits the stored comma separated string into trimmed, de-duplicated plant names. */
@@ -49,13 +124,18 @@ export function slugify(value: string) {
 }
 
 export const PRODUCT_SCHEMA: ColumnSchema<Product>[] = [
-  { id: 'name', header: 'Product Name', kind: 'text' },
-  { id: 'slug', header: 'Product Slug', kind: 'text' },
+  { id: 'icon', header: 'Icon', kind: 'text' },
+  { id: 'product_name', header: 'Product Name', kind: 'text' },
+  { id: 'product_slug', header: 'Product Slug', kind: 'text' },
+  { id: 'product_code', header: 'Product Code', kind: 'text' },
+  { id: 'gbm', header: 'GBM', kind: 'text' },
   {
     id: 'plants',
     header: 'Plants',
     kind: 'text',
     searchText: (row) => parsePlants(row.plants).join(' '),
   },
-  { id: 'order', header: 'Order', kind: 'number' },
+  { id: 'active_yn', header: 'Active', kind: 'text' },
+  { id: 'created_at', header: 'Created At', kind: 'text' },
+  { id: 'updated_at', header: 'Updated At', kind: 'text' },
 ]

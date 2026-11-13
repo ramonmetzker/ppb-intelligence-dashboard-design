@@ -50,12 +50,12 @@ export function ProductContextSelector({ showYear = true, defaultYear = '2026' }
   const byGbm = useMemo(
     () =>
       Object.fromEntries(
-        GBMS.map((gbm) => [gbm, products.filter((item) => item.gbm === gbm).sort((a, b) => a.order - b.order)]),
+        GBMS.map((gbm) => [gbm, products.filter((item) => item.gbm === gbm).sort((a, b) => a.product_name.localeCompare(b.product_name))]),
       ) as Record<Gbm, Product[]>,
     [products],
   )
 
-  const appliedProduct = products.find((item) => item.id === applied.product) ?? byGbm.MX[0] ?? products[0]
+  const appliedProduct = products.find((item) => item.product_slug === applied.product) ?? byGbm.MX[0] ?? products[0]
   const draftProducts = byGbm[draft.gbm]
   const hasChanges = draft.product !== applied.product || (showYear && draft.year !== applied.year)
 
@@ -66,7 +66,7 @@ export function ProductContextSelector({ showYear = true, defaultYear = '2026' }
 
   const changeGbm = (gbm: Gbm | undefined) => {
     if (!gbm || gbm === draft.gbm) return
-    setDraft((current) => ({ ...current, gbm, product: byGbm[gbm][0]?.id ?? '' }))
+    setDraft((current) => ({ ...current, gbm, product: byGbm[gbm][0]?.product_slug ?? '' }))
   }
 
   const apply = () => {
@@ -80,18 +80,18 @@ export function ProductContextSelector({ showYear = true, defaultYear = '2026' }
         render={
           <Button
             variant="outline"
-            aria-label={`Product context: ${appliedProduct?.name ?? 'None'}, ${appliedProduct?.gbm ?? ''}${showYear ? `, ${applied.year}` : ''}`}
+              aria-label={`Product context: ${appliedProduct?.product_name ?? 'None'}, ${appliedProduct?.gbm ?? ''}${showYear ? `, ${applied.year}` : ''}`}
             className="h-10 w-64 justify-between border-sidebar-border bg-sidebar-accent/55 px-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-foreground"
           />
         }
       >
         <span className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-brand text-primary-foreground">
-            <ProductIcon slug={appliedProduct?.slug ?? ''} />
+            <ProductIcon icon={appliedProduct?.icon} slug={appliedProduct?.product_slug} />
           </span>
           <span className="flex min-w-0 flex-col items-start gap-0.5">
             <span className="truncate text-xs font-semibold leading-none">
-              {appliedProduct?.name ?? 'No products'}
+              {appliedProduct?.product_name ?? 'No products'}
             </span>
             <span className="text-[10px] leading-none font-medium text-sidebar-foreground/55">
               {appliedProduct?.gbm}{showYear ? ` · ${applied.year}` : ''}
@@ -141,14 +141,14 @@ export function ProductContextSelector({ showYear = true, defaultYear = '2026' }
             <p className="px-2 py-3 text-sm text-muted-foreground">No products for {draft.gbm} yet.</p>
           )}
           {draftProducts.map((item) => {
-            const selected = draft.product === item.id
+            const selected = draft.product === item.product_slug
             return (
               <button
-                key={item.id}
+                key={item.product_slug}
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => setDraft((current) => ({ ...current, product: item.id }))}
+                onClick={() => setDraft((current) => ({ ...current, product: item.product_slug }))}
                 className={cn(
                   'flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
                   selected ? 'bg-accent' : 'hover:bg-muted',
@@ -160,9 +160,9 @@ export function ProductContextSelector({ showYear = true, defaultYear = '2026' }
                     selected ? 'bg-brand text-primary-foreground' : 'bg-muted text-muted-foreground',
                   )}
                 >
-                  <ProductIcon slug={item.slug} className="size-4" />
+                  <ProductIcon icon={item.icon} slug={item.product_slug} className="size-4" />
                 </span>
-                <span className="flex-1 font-medium">{item.name}</span>
+                <span className="flex-1 font-medium">{item.product_name}</span>
                 {selected ? <Check className="size-4 text-brand" aria-hidden="true" /> : null}
               </button>
             )

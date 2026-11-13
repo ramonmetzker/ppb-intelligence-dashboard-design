@@ -3,18 +3,32 @@
 import { useId, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
-import { formatPlants, parsePlants, slugify, type Gbm, type Product } from '@/lib/products/data'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { formatPlants, parsePlants, slugify, type Gbm, type Product, type YesNo } from '@/lib/products/data'
+import { productIconSvg, sanitizeIconSvg } from '@/lib/products/icons'
 import { PlantTags } from './plant-tags'
+import { ProductIconPicker } from './product-icon-picker'
 
-export type ProductFormValues = Pick<Product, 'name' | 'slug' | 'plants' | 'order'>
+export type ProductFormValues = Pick<
+  Product,
+  'product_name' | 'product_slug' | 'product_code' | 'plants' | 'icon' | 'active_yn'
+>
 
 type Props = {
   open: boolean
@@ -28,9 +42,10 @@ type Props = {
 
 export function ProductFormDialog({ open, onOpenChange, product, gbm, products, onSubmit }: Props) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-lg">
         <ProductForm
+          key={`${product?.product_slug ?? 'new'}-${open}`}
           product={product}
           gbm={gbm}
           products={products}
@@ -40,8 +55,8 @@ export function ProductFormDialog({ open, onOpenChange, product, gbm, products, 
             onOpenChange(false)
           }}
         />
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -55,103 +70,164 @@ function ProductForm({
   onSubmit,
 }: Pick<Props, 'product' | 'gbm' | 'products' | 'onSubmit'> & { onCancel: () => void }) {
   const uid = useId()
-  const nextOrder = Math.max(0, ...products.filter((item) => item.gbm === gbm).map((item) => item.order)) + 1
-
-  const [name, setName] = useState(product?.name ?? '')
-  const [slug, setSlug] = useState(product?.slug ?? '')
+  const [productName, setProductName] = useState(product?.product_name ?? '')
+  const [productSlug, setProductSlug] = useState(product?.product_slug ?? '')
   const [slugTouched, setSlugTouched] = useState(Boolean(product))
+  const [productCode, setProductCode] = useState(product?.product_code ?? '')
   const [plants, setPlants] = useState(product?.plants ?? '')
-  const [order, setOrder] = useState(String(product?.order ?? nextOrder))
+  const [icon, setIcon] = useState(product?.icon ?? productIconSvg('package'))
+  const [activeYn, setActiveYn] = useState<YesNo>(product?.active_yn ?? 'Y')
   const [errors, setErrors] = useState<Errors>({})
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const next: Errors = {}
-    const cleanSlug = slugify(slug)
-    const parsedOrder = Number(order)
+    const cleanName = productName.trim()
+    const cleanSlug = slugify(productSlug)
+    const cleanCode = productCode.trim().toUpperCase()
+    const cleanIcon = sanitizeIconSvg(icon)
 
-    if (!name.trim()) next.name = 'Enter a product name.'
-    if (!cleanSlug) next.slug = 'Enter a slug using letters, numbers and dashes.'
-    else if (products.some((item) => item.slug === cleanSlug && item.id !== product?.id))
-      next.slug = 'This slug is already used by another product.'
+    if (!cleanName) next.product_name = 'Enter a product name.'
+    if (!cleanSlug) next.product_slug = 'Enter a slug using letters, numbers and dashes.'
+    else if (products.some((item) => item.product_slug === cleanSlug && item.product_slug !== product?.product_slug)) {
+      next.product_slug = 'This slug is already used by another product.'
+    }
+    if (!cleanCode) next.product_code = 'Enter a product code.'
+    else if (products.some((item) => item.product_code.toLowerCase() === cleanCode.toLowerCase() && item.product_slug !== product?.product_slug)) {
+      next.product_code = 'This code is already used by another product.'
+    }
     if (parsePlants(plants).length === 0) next.plants = 'Add at least one plant, separated by commas.'
-    if (!Number.isInteger(parsedOrder) || parsedOrder < 1) next.order = 'Use a whole number from 1.'
+    if (!cleanIcon) next.icon = 'Choose an icon or paste a valid SVG.'
 
     setErrors(next)
     if (Object.keys(next).length > 0) return
 
-    onSubmit({ name: name.trim(), slug: cleanSlug, plants: formatPlants(parsePlants(plants)), order: parsedOrder })
+    onSubmit({
+      product_name: cleanName,
+      product_slug: cleanSlug,
+      product_code: cleanCode,
+      plants: formatPlants(parsePlants(plants)),
+      icon: cleanIcon,
+      active_yn: activeYn,
+    })
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      <DialogHeader>
-        <DialogTitle>{product ? 'Edit product' : 'New product'}</DialogTitle>
-        <DialogDescription>
-          {product ? 'Changes update the top bar selector right away.' : `The product is added to the ${gbm} GBM.`}
-        </DialogDescription>
-      </DialogHeader>
+    <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+      <SheetHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
+        <SheetTitle>{product ? 'Edit product' : 'New product'}</SheetTitle>
+        <SheetDescription>
+          {product ? 'Changes update the product master data right away.' : `Create a product for the ${gbm} GBM.`}{' '}
+          Product icons are stored as SVG.
+        </SheetDescription>
+      </SheetHeader>
 
-      <Field id={`${uid}-name`} label="Product name" error={errors.name}>
-        <Input
-          id={`${uid}-name`}
-          value={name}
-          autoFocus
-          aria-invalid={Boolean(errors.name)}
-          onChange={(event) => {
-            setName(event.target.value)
-            if (!slugTouched) setSlug(slugify(event.target.value))
-          }}
-        />
-      </Field>
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field id={`${uid}-name`} label="Product Name" error={errors.product_name}>
+              <Input
+                id={`${uid}-name`}
+                value={productName}
+                autoFocus
+                aria-invalid={Boolean(errors.product_name)}
+                onChange={(event) => {
+                  setProductName(event.target.value)
+                  if (!slugTouched) setProductSlug(slugify(event.target.value))
+                }}
+              />
+            </Field>
+          </div>
 
-      <Field id={`${uid}-slug`} label="Product slug" error={errors.slug} hint="Used in URLs and integrations.">
-        <Input
-          id={`${uid}-slug`}
-          value={slug}
-          className="font-mono"
-          aria-invalid={Boolean(errors.slug)}
-          onChange={(event) => {
-            setSlug(event.target.value)
-            setSlugTouched(true)
-          }}
-        />
-      </Field>
+          <Field id={`${uid}-slug`} label="Product Slug" error={errors.product_slug} hint="Used in URLs and integrations.">
+            <Input
+              id={`${uid}-slug`}
+              value={productSlug}
+              className="font-mono"
+              aria-invalid={Boolean(errors.product_slug)}
+              onChange={(event) => {
+                setProductSlug(event.target.value)
+                setSlugTouched(true)
+              }}
+            />
+          </Field>
 
-      <Field id={`${uid}-plants`} label="Plants" error={errors.plants} hint="Separate plants with commas.">
-        <Input
-          id={`${uid}-plants`}
-          value={plants}
-          placeholder="Manaus, Suwon, Hanoi"
-          aria-invalid={Boolean(errors.plants)}
-          onChange={(event) => setPlants(event.target.value)}
-        />
-        <div className="min-h-6" aria-live="polite">
-          <PlantTags value={plants} className="flex-wrap" />
+          <Field id={`${uid}-code`} label="Product Code" error={errors.product_code} hint="Unique code from the source system.">
+            <Input
+              id={`${uid}-code`}
+              value={productCode}
+              className="font-mono uppercase"
+              aria-invalid={Boolean(errors.product_code)}
+              onChange={(event) => setProductCode(event.target.value)}
+            />
+          </Field>
         </div>
-      </Field>
 
-      <Field id={`${uid}-order`} label="Order" error={errors.order} hint="Position in the product selector.">
-        <Input
-          id={`${uid}-order`}
-          type="number"
-          min={1}
-          step={1}
-          inputMode="numeric"
-          value={order}
-          className="w-28"
-          aria-invalid={Boolean(errors.order)}
-          onChange={(event) => setOrder(event.target.value)}
-        />
-      </Field>
+        <Field id={`${uid}-plants`} label="Plants" error={errors.plants} hint="Separate plants with commas.">
+          <Input
+            id={`${uid}-plants`}
+            value={plants}
+            placeholder="Manaus, Suwon, Hanoi"
+            aria-invalid={Boolean(errors.plants)}
+            onChange={(event) => setPlants(event.target.value)}
+          />
+          <div className="min-h-6" aria-live="polite">
+            <PlantTags value={plants} className="flex-wrap" />
+          </div>
+        </Field>
 
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
+        <div className="flex flex-col gap-1.5">
+          <span id={`${uid}-icon-label`} className="text-xs font-medium text-foreground">Icon</span>
+          <ProductIconPicker value={icon} onChange={setIcon} />
+          {errors.icon ? <p role="alert" className="text-xs text-critical">{errors.icon}</p> : <p className="text-xs text-muted-foreground">Choose a common Lucide icon or paste your own SVG markup.</p>}
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field id={`${uid}-gbm`} label="GBM" hint="The page GBM is applied to new products.">
+            <Input id={`${uid}-gbm`} value={gbm} readOnly disabled />
+          </Field>
+
+          <BooleanField id={`${uid}-active`} label="Active" value={activeYn} onChange={setActiveYn} hint="Inactive products remain visible for traceability." />
+        </div>
+      </div>
+
+      <SheetFooter className="shrink-0 border-t border-border bg-muted/30 px-6 py-4 sm:flex-row sm:justify-end">
+        <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">{product ? 'Save changes' : 'Create product'}</Button>
-      </DialogFooter>
+      </SheetFooter>
     </form>
+  )
+}
+
+function BooleanField({
+  id,
+  label,
+  value,
+  onChange,
+  hint,
+}: {
+  id: string
+  label: string
+  value: YesNo
+  onChange: (value: YesNo) => void
+  hint: string
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span id={id} className="text-xs font-medium text-foreground">{label}</span>
+      <ToggleGroup
+        value={[value]}
+        onValueChange={(values) => values[values.length - 1] && onChange(values[values.length - 1] as YesNo)}
+        variant="outline"
+        spacing={0}
+        aria-labelledby={id}
+        className="grid w-full grid-cols-2"
+      >
+        <ToggleGroupItem value="Y" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">Yes</ToggleGroupItem>
+        <ToggleGroupItem value="N" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">No</ToggleGroupItem>
+      </ToggleGroup>
+      <p className="text-xs text-muted-foreground">{hint}</p>
+    </div>
   )
 }
 
@@ -170,17 +246,9 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-medium text-foreground">
-        {label}
-      </label>
+      <label htmlFor={id} className="text-xs font-medium text-foreground">{label}</label>
       {children}
-      {error ? (
-        <p role="alert" className="text-xs text-critical">
-          {error}
-        </p>
-      ) : hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      ) : null}
+      {error ? <p role="alert" className="text-xs text-critical">{error}</p> : hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   )
 }

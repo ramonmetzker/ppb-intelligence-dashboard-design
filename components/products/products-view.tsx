@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageActions } from '@/components/app/page-actions'
+import { YesNoBadge } from '@/components/app/yes-no-badge'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
 import { Button } from '@/components/ui/button'
@@ -24,32 +25,44 @@ const base = (id: keyof Product) => schemaById.get(id)!
 
 const COLUMNS: DataTableColumn<Product>[] = [
   {
-    ...base('name'),
-    width: 220,
-    pin: 'left',
+    ...base('icon'),
+    width: 76,
+    minWidth: 76,
     hideable: false,
+    sortable: false,
     cell: ({ row }) => (
-      <span className="inline-flex items-center gap-2.5 font-medium">
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-          <ProductIcon slug={row.slug} className="size-3.5" />
-        </span>
-        {row.name}
+      <span className="flex size-7 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <ProductIcon icon={row.icon} slug={row.product_slug} className="size-4" />
       </span>
     ),
   },
-  { ...base('slug'), width: 200, cell: ({ row }) => <span className="font-mono text-xs">{row.slug}</span> },
+  {
+    ...base('product_name'),
+    width: 220,
+    pin: 'left',
+    hideable: false,
+    cell: ({ row }) => <span className="font-medium">{row.product_name}</span>,
+  },
+  { ...base('product_slug'), width: 190, cell: ({ row }) => <span className="font-mono text-xs">{row.product_slug}</span> },
+  { ...base('product_code'), width: 140, cell: ({ row }) => <span className="font-mono text-xs">{row.product_code}</span> },
+  { ...base('gbm'), width: 90, align: 'center', cell: ({ row }) => <span className="font-semibold">{row.gbm}</span> },
   {
     ...base('plants'),
-    width: 360,
+    width: 320,
     grow: true,
     sortable: false,
     description: 'Comma separated in the source data, shown here as one tag per plant.',
     cell: ({ row }) => <PlantTags value={row.plants} max={4} />,
   },
-  { ...base('order'), width: 140, align: 'right' },
+  {
+    ...base('active_yn'),
+    width: 100,
+    align: 'center',
+    cell: ({ row }) => <YesNoBadge value={row.active_yn} />,
+  },
 ]
 
-const DEFAULT_PRODUCT_QUERY: DataTableQuery = { ...DEFAULT_QUERY, sort: [{ id: 'order', direction: 'asc' }] }
+const DEFAULT_PRODUCT_QUERY: DataTableQuery = { ...DEFAULT_QUERY, sort: [{ id: 'product_name', direction: 'asc' }] }
 
 export function ProductsView() {
   const { products, setProducts, gbm } = useProducts()
@@ -67,14 +80,18 @@ export function ProductsView() {
     setEditing(product)
     setFormOpen(true)
   }
-  const remove = (ids: string[]) => setProducts((current) => current.filter((product) => !ids.includes(product.id)))
+  const remove = (slugs: string[]) => setProducts((current) => current.filter((product) => !slugs.includes(product.product_slug)))
 
-  const submit = (values: ProductFormValues) =>
+  const submit = (values: ProductFormValues) => {
+    const now = new Date().toISOString()
     setProducts((current) =>
       editing
-        ? current.map((product) => (product.id === editing.id ? { ...product, ...values } : product))
-        : [...current, { ...values, id: values.slug, gbm }],
+        ? current.map((product) =>
+            product.product_slug === editing.product_slug ? { ...product, ...values, updated_at: now } : product,
+          )
+        : [...current, { ...values, gbm, created_at: now, updated_at: now }],
     )
+  }
 
   const rowActions: RowAction<Product>[] = [
     { id: 'edit', label: 'Edit', icon: <Pencil aria-hidden="true" />, inline: true, onSelect: openEdit },
@@ -84,7 +101,7 @@ export function ProductsView() {
       icon: <Trash2 aria-hidden="true" />,
       tone: 'destructive',
       separatorBefore: true,
-      onSelect: (product) => remove([product.id]),
+      onSelect: (product) => remove([product.product_slug]),
     },
   ]
 
@@ -102,7 +119,7 @@ export function ProductsView() {
     <>
       <PageHeader
         title="Products"
-        description={`Master data for the ${gbm} products offered in the top bar selector. Plants are stored as a comma separated list.`}
+        description={`Product master data from the ${gbm} GBM database contract: slug, name, code, plants, icon and status.`}
       >
         <PageActions
           primary={
@@ -120,7 +137,7 @@ export function ProductsView() {
         persistenceKey={`products.${gbm}`}
         columns={COLUMNS}
         data={rows}
-        getRowId={(row) => row.id}
+        getRowId={(row) => row.product_slug}
         query={query}
         onQueryChange={setQuery}
         selectable

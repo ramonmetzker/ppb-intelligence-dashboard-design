@@ -1,8 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleX, Pencil, Plus } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/app/page-header'
+import { YesNoBadge } from '@/components/app/yes-no-badge'
 import { DataTable } from '@/components/data-table/data-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,16 +21,6 @@ import { PpbScoreFormDialog, type PpbScoreFormValues } from './ppb-score-form-di
 
 const schemaById = new Map(PPB_ITEM_SCHEMA.map((schema) => [schema.id, schema]))
 const base = (id: string) => schemaById.get(id)!
-
-function YesNoBadge({ value }: { value: 'Y' | 'N' }) {
-  const enabled = value === 'Y'
-  return (
-    <Badge variant={enabled ? 'secondary' : 'outline'} className="gap-1.5">
-      {enabled ? <CheckCircle2 aria-hidden="true" /> : <CircleX aria-hidden="true" />}
-      {enabled ? 'Yes' : 'No'}
-    </Badge>
-  )
-}
 
 const COLUMNS: DataTableColumn<PpbItem>[] = [
   { ...base('itemName'), width: 240, pin: 'left', hideable: false, grow: true },
