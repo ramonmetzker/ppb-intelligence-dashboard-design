@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
+import { IsoDatePickerInput } from '@/components/ui/date-picker-input'
 import {
   Select,
   SelectContent,
@@ -23,13 +24,6 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { type PpbItem, type PpbScore, type PpbScoreType, type YesNo } from '@/lib/ppb-items/data'
 
 const SCORE_TYPES: PpbScoreType[] = ['Points', 'Quota %']
-
-function formatDateInput(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 8)
-  if (digits.length <= 4) return digits
-  if (digits.length <= 6) return `${digits.slice(0, 4)}-${digits.slice(4)}`
-  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6)}`
-}
 
 export type PpbScoreFormValues = Omit<PpbScore, 'id'>
 
@@ -138,28 +132,10 @@ function PpbScoreForm({
         <BooleanField id={`${uid}-auto-count`} label="Auto Count" value={autoCount} onChange={setAutoCount} hint="Whether the item always counts 100% independently of calculations." />
 
         <Field id={`${uid}-valid-from`} label="Valid From" error={errors.validFrom} hint="YYYY-MM-DD">
-          <Input
-            id={`${uid}-valid-from`}
-            type="text"
-            inputMode="numeric"
-            placeholder="YYYY-MM-DD"
-            maxLength={10}
-            value={validFrom}
-            aria-invalid={Boolean(errors.validFrom)}
-            onChange={(event) => setValidFrom(formatDateInput(event.target.value))}
-          />
+          <IsoDatePickerInput id={`${uid}-valid-from`} value={validFrom} invalid={Boolean(errors.validFrom)} onChange={setValidFrom} />
         </Field>
         <Field id={`${uid}-valid-to`} label="Valid To" error={errors.validTo} hint="YYYY-MM-DD">
-          <Input
-            id={`${uid}-valid-to`}
-            type="text"
-            inputMode="numeric"
-            placeholder="YYYY-MM-DD"
-            maxLength={10}
-            value={validTo}
-            aria-invalid={Boolean(errors.validTo)}
-            onChange={(event) => setValidTo(formatDateInput(event.target.value))}
-          />
+          <IsoDatePickerInput id={`${uid}-valid-to`} value={validTo} invalid={Boolean(errors.validTo)} onChange={setValidTo} />
         </Field>
       </div>
 
