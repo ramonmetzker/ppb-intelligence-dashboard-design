@@ -112,18 +112,20 @@ function PpbItemForm({
             <Input id={`${uid}-slug`} value={itemSlug} readOnly disabled className="font-mono" aria-invalid={Boolean(errors.itemSlug)} />
           </Field>
 
-          <Field id={`${uid}-category`} label="Category" error={errors.category}>
-            <Select value={category} onValueChange={(value) => value && setCategory(value as PpbCategory)}>
-              <SelectTrigger id={`${uid}-category`} aria-label="Category">
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {PPB_CATEGORIES.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </Field>
+          <div className="sm:col-span-2">
+            <Field id={`${uid}-category`} label="Category" error={errors.category}>
+              <Select value={category} onValueChange={(value) => value && setCategory(value as PpbCategory)}>
+                <SelectTrigger id={`${uid}-category`} className="w-full" aria-label="Category">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {PPB_CATEGORIES.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
@@ -162,10 +164,10 @@ function BooleanField({
         variant="outline"
         spacing={0}
         aria-labelledby={id}
-        className="w-fit"
+        className="grid w-full grid-cols-2"
       >
-        <ToggleGroupItem value="Y" className="min-w-16 data-pressed:bg-brand data-pressed:text-primary-foreground">Yes</ToggleGroupItem>
-        <ToggleGroupItem value="N" className="min-w-16 data-pressed:bg-brand data-pressed:text-primary-foreground">No</ToggleGroupItem>
+        <ToggleGroupItem value="Y" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">Yes</ToggleGroupItem>
+        <ToggleGroupItem value="N" className="min-w-0 data-pressed:bg-brand data-pressed:text-primary-foreground">No</ToggleGroupItem>
       </ToggleGroup>
       <p className="text-xs text-muted-foreground">{hint}</p>
     </div>
