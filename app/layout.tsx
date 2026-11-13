@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: 'PPB | Scenario simulation for PPB compliance',
   description:
     'See where PPB stands today, how the year will close, and simulate AI scenarios that show exactly what must change to comply.',
-  icons: { icon: '/icon.svg' },
+  icons: { icon: '/brand/ppb-logo.svg' },
 }
 
 export async function generateViewport(): Promise<Viewport> {

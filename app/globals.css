@@ -464,7 +464,26 @@ input[type='range'].lever:focus-visible {
 }
 .splash-mark {
   animation: splash-mark-breathe 1.8s ease-in-out infinite;
-}
+  }
+
+.ppb-logo-loading-bar {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: ppb-logo-loading 1.2s ease-in-out infinite;
+  }
+
+@keyframes ppb-logo-loading {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scaleY(0.78);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  }
+
 .splash-pulse {
   animation: splash-status-pulse 1.35s ease-in-out infinite;
 }

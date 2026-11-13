@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { PpbMark } from '@/components/brand/ppb-mark'
+import { PpbLoadingMark } from '@/components/brand/ppb-mark'
 import { cn } from '@/lib/utils'
 
 type BootPhase = 'splash' | 'leaving' | 'done'
@@ -57,7 +57,7 @@ function Splash({ leaving }: { leaving: boolean }) {
         <div className="splash-scan absolute inset-x-0 top-0 h-px bg-brand" aria-hidden="true" />
         <div className="flex items-center gap-3.5 px-5 pt-5 pb-4">
           <span className="splash-mark flex size-12 items-center justify-center rounded-xl border border-sidebar-border bg-sidebar-accent">
-            <PpbMark size={34} />
+            <PpbLoadingMark size={34} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="font-display text-[20px] leading-6 font-semibold tracking-tight text-white">
