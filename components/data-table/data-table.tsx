@@ -1071,7 +1071,7 @@ export function DataTable<T>(props: DataTableProps<T>) {
           )
         })}
         {menu.length > 0 && (
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger
               aria-label={labels.rowActions}
               className={cn(buttonVariants({ variant: 'ghost', size: 'icon-sm' }), 'text-muted-foreground data-[popup-open]:bg-muted')}
