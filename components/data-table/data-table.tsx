@@ -1096,76 +1096,91 @@ export function DataTable<T>(props: DataTableProps<T>) {
   const showEmpty = !loading && !showError && rows.length === 0
   const treeColumnId = layout.placed.find((placed) => !placed.pin)?.column.id ?? layout.placed[0]?.column.id
   const colSpanStyle: CSSProperties = { width: scrollState.viewport || undefined }
+  const selectionBarActive = selectedCount > 0 && bulkActions.length > 0
 
   return (
     <section className={cn('flex min-w-0 flex-col gap-3', className)} aria-busy={loading}>
-      <div className="min-h-9">
-        {selectedCount > 0 && bulkActions.length > 0 ? (
-        <BulkBar
-          count={live.size}
-          total={total}
-          allMatching={allMatching}
-          canSelectAllMatching={canSelectAllMatching}
-          actions={bulkActions}
-          getContext={() => buildContext(live, allMatching)}
-          labels={labels}
-          onClear={clearSelection}
-          onSelectAllMatching={selectAllMatching}
-        />
-      ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          {powerSearch && (
-            <PowerSearch
-              value={query.search}
-              onChange={changeSearch}
-              schemas={columns}
-              labels={labels}
-              className="w-full sm:max-w-md sm:flex-1"
-            />
+      <div className="relative h-9 overflow-hidden">
+        <div
+          aria-hidden={selectionBarActive}
+          className={cn(
+            'absolute inset-0 transition-[transform,opacity] duration-200 ease-out',
+            selectionBarActive ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
           )}
-          {toolbarStart}
-          <div className="ml-auto flex flex-wrap items-center gap-2">
-            {scrollControls && (
-              <ScrollControls
-                canScrollLeft={scrollState.left}
-                canScrollRight={scrollState.right}
-                jumpTargets={layout.placed.filter((p) => !p.pin).map((p) => ({ id: p.column.id, header: p.column.header }))}
+        >
+          <div className="flex h-9 flex-wrap items-center gap-2">
+            {powerSearch && (
+              <PowerSearch
+                value={query.search}
+                onChange={changeSearch}
+                schemas={columns}
                 labels={labels}
-                onScroll={scrollBy}
-                onJump={scrollToColumn}
+                className="w-full sm:max-w-md sm:flex-1"
               />
             )}
-            {columnsMenu && (
-              <ColumnsMenu
-                columns={orderedColumns.map((column) => ({
-                  id: column.id,
-                  header: column.header,
-                  visible: !hidden[column.id],
-                  hideable: column.hideable !== false && (hidden[column.id] || hideableCount > 1),
-                }))}
-                labels={labels}
-                onToggle={(id, visible) => setHidden((prev) => ({ ...prev, [id]: !visible }))}
-                onReset={() => {
-                  setHidden(defaultHidden)
-                  setPins({})
-                  setColumnOrder(columns.map((column) => column.id))
-                  setColumnWidths({})
-                }}
-              />
-            )}
-            {densityControl && <DensityMenu value={density} labels={labels} onChange={setDensity} />}
-            {exporter !== false && (
-              <ExportMenu
-                labels={labels}
-                busy={exporting}
-                canExportAll={canExportAll}
-                onExport={(kind) => void handleExport(kind)}
-              />
-            )}
-            {toolbarEnd}
+            {toolbarStart}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {scrollControls && (
+                <ScrollControls
+                  canScrollLeft={scrollState.left}
+                  canScrollRight={scrollState.right}
+                  jumpTargets={layout.placed.filter((p) => !p.pin).map((p) => ({ id: p.column.id, header: p.column.header }))}
+                  labels={labels}
+                  onScroll={scrollBy}
+                  onJump={scrollToColumn}
+                />
+              )}
+              {columnsMenu && (
+                <ColumnsMenu
+                  columns={orderedColumns.map((column) => ({
+                    id: column.id,
+                    header: column.header,
+                    visible: !hidden[column.id],
+                    hideable: column.hideable !== false && (hidden[column.id] || hideableCount > 1),
+                  }))}
+                  labels={labels}
+                  onToggle={(id, visible) => setHidden((prev) => ({ ...prev, [id]: !visible }))}
+                  onReset={() => {
+                    setHidden(defaultHidden)
+                    setPins({})
+                    setColumnOrder(columns.map((column) => column.id))
+                    setColumnWidths({})
+                  }}
+                />
+              )}
+              {densityControl && <DensityMenu value={density} labels={labels} onChange={setDensity} />}
+              {exporter !== false && (
+                <ExportMenu
+                  labels={labels}
+                  busy={exporting}
+                  canExportAll={canExportAll}
+                  onExport={(kind) => void handleExport(kind)}
+                />
+              )}
+              {toolbarEnd}
+            </div>
           </div>
         </div>
-        )}
+
+        <div
+          aria-hidden={!selectionBarActive}
+          className={cn(
+            'absolute inset-0 transition-[transform,opacity] duration-200 ease-out',
+            selectionBarActive ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none',
+          )}
+        >
+          <BulkBar
+            count={live.size}
+            total={total}
+            allMatching={allMatching}
+            canSelectAllMatching={canSelectAllMatching}
+            actions={bulkActions}
+            getContext={() => buildContext(live, allMatching)}
+            labels={labels}
+            onClear={clearSelection}
+            onSelectAllMatching={selectAllMatching}
+          />
+        </div>
       </div>
 
       <ActiveFilters chips={chips} labels={labels} onClearAll={clearAllFilters} />
