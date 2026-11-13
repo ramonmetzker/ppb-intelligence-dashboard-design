@@ -112,20 +112,18 @@ function PpbItemForm({
             <Input id={`${uid}-slug`} value={itemSlug} readOnly disabled className="font-mono" aria-invalid={Boolean(errors.itemSlug)} />
           </Field>
 
-          <div className="sm:col-span-2">
-            <Field id={`${uid}-category`} label="Category" error={errors.category}>
-              <Select value={category} onValueChange={(value) => value && setCategory(value as PpbCategory)}>
-                <SelectTrigger id={`${uid}-category`} className="w-full" aria-label="Category">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {PPB_CATEGORIES.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
+          <Field id={`${uid}-category`} label="Category" error={errors.category}>
+            <Select value={category} onValueChange={(value) => value && setCategory(value as PpbCategory)}>
+              <SelectTrigger id={`${uid}-category`} className="w-full" aria-label="Category">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {PPB_CATEGORIES.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </Field>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
