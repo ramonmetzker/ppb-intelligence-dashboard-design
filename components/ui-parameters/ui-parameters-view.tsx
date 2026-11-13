@@ -1,13 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { CheckCircle2, ChevronLeft, ChevronRight, CircleX, Pencil, Plus } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, CircleX, Pencil, Plus, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   DEFAULT_QUERY as DEFAULT_DATA_TABLE_QUERY,
+  type BulkAction,
   type DataTableColumn,
   type DataTableQuery,
   type RowAction,
@@ -100,7 +101,7 @@ function YearSelector({ year, onChange }: { year: UiParameterYear; onChange: (ye
 }
 
 export function UiParametersView() {
-  const { parameters, addParameter, updateParameter } = useUiParameters()
+  const { parameters, addParameter, updateParameter, removeParameters, updateParameters } = useUiParameters()
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_QUERY)
   const [year, setYear] = useState<UiParameterYear>(UI_PARAMETER_YEARS[1])
   const [editing, setEditing] = useState<UiParameter | null>(null)
@@ -120,6 +121,56 @@ export function UiParametersView() {
 
   const rowActions: RowAction<UiParameter>[] = [
     { id: 'edit', label: 'Edit', icon: <Pencil aria-hidden="true" />, inline: true, onSelect: openEdit },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      separatorBefore: true,
+      confirm: {
+        title: 'Delete UI parameter?',
+        description: 'This parameter will be removed from the current year.',
+      },
+      onSelect: (parameter) => removeParameters([parameter.id]),
+    },
+  ]
+
+  const bulkActions: BulkAction<UiParameter>[] = [
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      confirm: (context) => ({
+        title: `Delete ${context.count} UI parameters?`,
+        description: 'This action cannot be undone.',
+      }),
+      onSelect: ({ ids }) => removeParameters(ids),
+    },
+    {
+      id: 'display-yes',
+      label: 'Display: Yes',
+      icon: <CheckCircle2 aria-hidden="true" />,
+      onSelect: ({ ids }) => updateParameters(ids, { display: 'Y' }),
+    },
+    {
+      id: 'display-no',
+      label: 'Display: No',
+      icon: <CircleX aria-hidden="true" />,
+      onSelect: ({ ids }) => updateParameters(ids, { display: 'N' }),
+    },
+    {
+      id: 'collapse-yes',
+      label: 'Collapse: Yes',
+      icon: <CheckCircle2 aria-hidden="true" />,
+      onSelect: ({ ids }) => updateParameters(ids, { collapse: 'Y' }),
+    },
+    {
+      id: 'collapse-no',
+      label: 'Collapse: No',
+      icon: <CircleX aria-hidden="true" />,
+      onSelect: ({ ids }) => updateParameters(ids, { collapse: 'N' }),
+    },
   ]
 
   return (
@@ -143,6 +194,8 @@ export function UiParametersView() {
         query={query}
         onQueryChange={setQuery}
         toolbarStart={<YearSelector year={year} onChange={setYear} />}
+        selectable
+        bulkActions={bulkActions}
         rowActions={rowActions}
         onRowClick={openEdit}
         columnPinning={false}
