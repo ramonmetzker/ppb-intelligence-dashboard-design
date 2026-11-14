@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Bell, SidebarSimple } from '@phosphor-icons/react'
+import { Bell } from '@phosphor-icons/react'
 import { SidebarPlanSwitcher } from '@/components/app/plan-switcher'
 import { GbmSelector } from '@/components/shell/gbm-selector'
 import { ProductContextSelector } from '@/components/shell/product-context-selector'
 import { NotificationCenter } from '@/components/shell/notification-center'
 import { GlobalNavigationCommand } from '@/components/shell/global-navigation-command'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useShell } from '@/components/shell/shell-provider'
 import { useNotifications } from '@/components/shell/notification-provider'
 import { usePreferences } from '@/components/shell/preferences-provider'
@@ -22,7 +23,7 @@ export function TopBar() {
   const showProductSelector = !isProducts && !isRpaMonitor
   const hasContextSelectors = isOverview || isProducts || showProductSelector
   const { unreadCount, syncing, syncLabel } = useNotifications()
-  const { collapsed, toggleSidebar } = useShell()
+  const { collapsed } = useShell()
   const { t } = usePreferences()
 
   const copy = t.topBar
@@ -32,16 +33,12 @@ export function TopBar() {
     <div className="bg-sidebar text-sidebar-foreground">
       <header className="flex h-16 items-center justify-between gap-3 px-3 lg:px-4">
         <div className="flex shrink-0 items-center gap-1.5">
-          <button
-            type="button"
-            onClick={toggleSidebar}
+          <SidebarTrigger
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-expanded={!collapsed}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="flex size-8 items-center justify-center rounded-md text-sidebar-foreground/45 transition-colors hover:bg-sidebar-accent hover:text-white focus-visible:outline-2 focus-visible:outline-sidebar-ring"
-          >
-            <SidebarSimple size={17} aria-hidden="true" />
-          </button>
+            className="text-sidebar-foreground/45 hover:bg-sidebar-accent hover:text-white aria-expanded:bg-transparent aria-expanded:text-sidebar-foreground/45 focus-visible:outline-2 focus-visible:outline-sidebar-ring"
+          />
 
           <span aria-hidden="true" className="mx-1 h-5 w-px bg-sidebar-border" />
 

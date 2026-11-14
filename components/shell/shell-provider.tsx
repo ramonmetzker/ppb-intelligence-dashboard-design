@@ -1,28 +1,30 @@
 'use client'
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { SidebarProvider, useSidebar } from '@/components/ui/sidebar'
 
 type ShellContextValue = {
   collapsed: boolean
   toggleSidebar: () => void
 }
 
-const ShellContext = createContext<ShellContextValue | null>(null)
-
-export function ShellProvider({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false)
-
+export function ShellProvider({ children }: { children: React.ReactNode }) {
   return (
-    <ShellContext.Provider
-      value={{ collapsed, toggleSidebar: () => setCollapsed((current) => !current) }}
+    <SidebarProvider
+      defaultOpen
+      style={{
+        '--sidebar-width': '16rem',
+        '--sidebar-width-icon': '4.75rem',
+      } as React.CSSProperties}
     >
       {children}
-    </ShellContext.Provider>
+    </SidebarProvider>
   )
 }
 
-export function useShell() {
-  const context = useContext(ShellContext)
-  if (!context) throw new Error('useShell must be used within ShellProvider')
-  return context
+export function useShell(): ShellContextValue {
+  const { state, toggleSidebar } = useSidebar()
+  return {
+    collapsed: state === 'collapsed',
+    toggleSidebar,
+  }
 }

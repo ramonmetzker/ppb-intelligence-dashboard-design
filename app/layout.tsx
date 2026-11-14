@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { BootProvider } from '@/components/app/boot'
 import { THEMES, readPreferences } from '@/lib/preferences'
 import { RouteProgress } from '@/components/app/route-progress'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -42,9 +43,11 @@ export default async function RootLayout({
       className={`${geist.variable} ${spaceGrotesk.variable} bg-shell`}
     >
       <body className="antialiased">
-        <RouteProgress>
-          <BootProvider>{children}</BootProvider>
-        </RouteProgress>
+        <TooltipProvider>
+          <RouteProgress>
+            <BootProvider>{children}</BootProvider>
+          </RouteProgress>
+        </TooltipProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
