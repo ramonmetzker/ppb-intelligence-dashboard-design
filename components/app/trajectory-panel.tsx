@@ -307,7 +307,7 @@ export function TrajectoryPanel({
               strokeDasharray="5 4"
               dot={isBaseline ? markerAt(LAST_MONTH, MUTED, 8) : markerAt(LAST_MONTH, 'var(--card)', 6, MUTED)}
               activeDot={{ r: 3.5 }}
-              isAnimationActive
+              isAnimationActive={false}
               animationBegin={200}
               animationDuration={1000}
             />
@@ -318,7 +318,7 @@ export function TrajectoryPanel({
               strokeWidth={2.5}
               dot={markerAt(LAST_MONTH, BRAND, 8)}
               activeDot={{ r: 4 }}
-              isAnimationActive
+              isAnimationActive={false}
               animationBegin={500}
               animationDuration={900}
               hide={isBaseline}
@@ -330,7 +330,7 @@ export function TrajectoryPanel({
               strokeWidth={2.5}
               dot={markerAt(LAST_ACTUAL_MONTH, INK, 8)}
               activeDot={{ r: 4 }}
-              isAnimationActive
+              isAnimationActive={false}
               animationDuration={1100}
             />
             <Annotations sim={sim} isBaseline={isBaseline} scenarioName={scenarioName} />

@@ -203,7 +203,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
                 stackId="volume"
                 fill={item.color}
                 maxBarSize={34}
-                isAnimationActive
+                isAnimationActive={false}
                 animationDuration={900}
                 animationEasing="ease-out"
               />
@@ -217,7 +217,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               strokeDasharray="5 4"
               dot={false}
               connectNulls={false}
-              isAnimationActive
+              isAnimationActive={false}
               animationBegin={300}
               animationDuration={1000}
             />
@@ -229,7 +229,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               strokeWidth={2.25}
               dot={{ r: 2.5, fill: 'var(--card)', stroke: INK, strokeWidth: 1.5 }}
               activeDot={{ r: 4 }}
-              isAnimationActive
+              isAnimationActive={false}
               animationBegin={300}
               animationDuration={1100}
             />
