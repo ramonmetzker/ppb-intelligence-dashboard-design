@@ -39,7 +39,7 @@ export function AppSidebar() {
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   const renderItems = (group: AppNavGroup, compact = false) => (
-    <SidebarMenu className={compact ? 'gap-0.5' : 'gap-1'}>
+    <SidebarMenu className={cn(collapsed && 'items-center', compact ? 'gap-0.5' : 'gap-1')}>
       {group.items.map(({ label, href, icon: NavIcon }) => {
         const active = isActive(href)
         const isReferenceBom = href === '/raw-data/reference-bom'
@@ -106,9 +106,14 @@ export function AppSidebar() {
       aria-label={t.nav.primary}
       role="navigation"
       collapsible="icon"
-      className="border-sidebar-border"
+      className="!border-r-0"
     >
-      <SidebarHeader className={cn('h-16 shrink-0', collapsed ? 'p-2' : 'px-4 py-3')}>
+      <SidebarHeader
+        className={cn(
+          'h-16 shrink-0',
+          collapsed ? 'items-center p-2' : 'px-4 py-3',
+        )}
+      >
         <Link
           href="/"
           aria-label="PPB"
@@ -181,7 +186,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="shrink-0 p-3">
-        <SidebarMenu>
+        <SidebarMenu className={collapsed ? 'items-center' : undefined}>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"

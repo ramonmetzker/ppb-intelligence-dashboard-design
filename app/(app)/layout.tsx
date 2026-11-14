@@ -39,7 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                     <AppSidebar />
                     <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
                       <TopBar />
-                      <main className="min-w-0 flex-1 rounded-tl-2xl bg-shell p-3 shadow-[inset_1px_1px_0_var(--border)]">
+                      <main className="min-w-0 flex-1 rounded-tl-2xl bg-shell p-3">
                         {children}
                       </main>
                     </div>
