@@ -35,7 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <RpaProvider>
               <AgentProvider>
                 <ShellProvider>
-                  <div className="flex min-h-screen bg-sidebar">
+                  <div className="flex min-h-screen min-w-0 flex-1 bg-sidebar">
                     <AppSidebar />
                     <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
                       <TopBar />

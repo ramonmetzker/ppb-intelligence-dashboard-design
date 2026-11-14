@@ -13,7 +13,7 @@ export function ShellProvider({ children }: { children: React.ReactNode }) {
       defaultOpen
       style={{
         '--sidebar-width': '16rem',
-        '--sidebar-width-icon': '4.75rem',
+        '--sidebar-width-icon': '4rem',
       } as React.CSSProperties}
     >
       {children}
