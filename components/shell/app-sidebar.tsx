@@ -44,7 +44,7 @@ export function AppSidebar() {
               className={cn(
                 'relative flex items-center rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
                 compact ? 'h-8 text-[12px]' : 'h-10 text-[13px]',
-                collapsed ? 'w-10 justify-center px-0' : 'justify-center px-3',
+                collapsed ? 'w-10 justify-center px-0' : compact ? 'gap-2.5 px-2.5' : 'gap-3 px-3',
                 active
                   ? 'bg-sidebar-accent text-white'
                   : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-white',
@@ -56,18 +56,16 @@ export function AppSidebar() {
                   className="absolute inset-y-1.5 left-0 w-0.5 rounded-r-full bg-(--sidebar-highlight)"
                 />
               )}
-              <span className={cn('flex min-w-0 items-center', compact ? 'gap-2.5' : 'gap-3')}>
-                <NavIcon
-                  size={compact ? 17 : 19}
-                  weight={active ? 'fill' : 'regular'}
-                  className={cn(
-                    'shrink-0',
-                    active ? 'text-(--sidebar-highlight)' : 'text-sidebar-foreground/50',
-                  )}
-                  aria-hidden="true"
-                />
-                {!collapsed && <span className="truncate">{t.nav[label]}</span>}
-              </span>
+              <NavIcon
+                size={compact ? 17 : 19}
+                weight={active ? 'fill' : 'regular'}
+                className={cn(
+                  'shrink-0',
+                  active ? 'text-(--sidebar-highlight)' : 'text-sidebar-foreground/50',
+                )}
+                aria-hidden="true"
+              />
+              {!collapsed && <span className="truncate">{t.nav[label]}</span>}
               {count > 0 && (
                 <span
                   aria-label={countLabel}
@@ -75,9 +73,7 @@ export function AppSidebar() {
                   className={cn(
                     'tnum flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[11px] font-semibold text-primary-foreground',
                     isReferenceBom ? 'bg-warning' : 'bg-critical',
-                    collapsed
-                      ? 'absolute top-0.5 right-0.5'
-                      : 'absolute top-1/2 right-3 -translate-y-1/2',
+                    collapsed ? 'absolute top-0.5 right-0.5' : 'ml-auto',
                   )}
                 >
                   {count > 99 ? '99+' : count}
