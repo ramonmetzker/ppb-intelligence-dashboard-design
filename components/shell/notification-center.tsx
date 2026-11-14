@@ -17,6 +17,7 @@ import {
 } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import {
   useNotifications,
@@ -64,7 +65,7 @@ export function NotificationCenter({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { notifications, unreadCount, pendingAckCount, markAllRead, clearRead } =
+  const { notifications, unreadCount, pendingAckCount, markAllRead, clearRead, isLoading } =
     useNotifications()
   const { t, knoxAlerts } = usePreferences()
   const copy = t.notifications
@@ -99,7 +100,10 @@ export function NotificationCenter({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[min(660px,84vh)] flex-row gap-0 overflow-hidden p-0 sm:max-w-[920px]">
+      <DialogContent
+        aria-busy={isLoading}
+        className="flex h-[min(660px,84vh)] flex-row gap-0 overflow-hidden p-0 sm:max-w-[920px]"
+      >
         <nav
           aria-label={copy.filterLabel}
           className="hidden w-60 shrink-0 flex-col gap-4 overflow-y-auto border-r border-border bg-muted/40 p-3 sm:flex"
@@ -221,7 +225,17 @@ export function NotificationCenter({
             </div>
           </header>
 
-          {visible.length === 0 ? (
+          {isLoading ? (
+            <div role="status" aria-label="Loading notifications" className="flex min-h-0 flex-1 flex-col gap-4 p-5">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="flex flex-col gap-2">
+                  <Skeleton className="h-3 w-2/5" />
+                  <Skeleton className="h-3 w-4/5" />
+                  <Skeleton className="h-3 w-3/5" />
+                </div>
+              ))}
+            </div>
+          ) : visible.length === 0 ? (
             <EmptyState filter={filter} readFilter={readFilter} />
           ) : (
             <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">

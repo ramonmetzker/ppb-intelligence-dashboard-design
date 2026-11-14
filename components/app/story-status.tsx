@@ -15,6 +15,7 @@ import { CountUp } from '@/components/app/count-up'
 import { usePlan } from '@/components/app/plan-provider'
 import { StatusChip, statusText } from '@/components/app/status-chip'
 import { cn } from '@/lib/utils'
+import { StoryStatusSkeleton } from '@/components/app/overview-skeletons'
 
 const AXIS_MIN = 560
 const AXIS_MAX = 700
@@ -57,10 +58,11 @@ function useScrolledPast(ref: React.RefObject<HTMLElement | null>, offset: numbe
 }
 
 export function StoryStatus() {
-  const { sim, planName } = usePlan()
+  const { sim, planName, isLoading } = usePlan()
   const phase = useIntroPhase()
   const cardRef = useRef<HTMLElement>(null)
   const compact = useScrolledPast(cardRef, 8)
+  if (isLoading) return <StoryStatusSkeleton />
   const toGo = REQUIRED_SCORE - CURRENT_SCORE
   const forecastGap = BASE_FORECAST - REQUIRED_SCORE
   const unchanged = sim.changes.length === 0

@@ -4,10 +4,13 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
+import useSWR from 'swr'
 import {
   BASE_PLAN,
   DEFAULT_SUGGESTION,
@@ -21,6 +24,8 @@ import {
   type Simulation,
   type Suggestion,
 } from '@/lib/ppb-model'
+import { apiFetcher } from '@/lib/api/client'
+import type { ApiResponse, OverviewResponse, SimulationsResponse } from '@/lib/api/contracts'
 
 export type PlanOption = { suggestion: Suggestion; sim: Simulation }
 
@@ -36,6 +41,7 @@ type PlanState = {
   plans: PlanOption[]
   /** Ids of agent plans the user has not opened yet. */
   freshIds: string[]
+  isLoading: boolean
   setShare: (key: ItemKey, open: 0 | 1, value: number) => void
   applySuggestion: (id: string) => void
   addPlan: (suggestion: Suggestion) => void
@@ -51,8 +57,55 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const [origin, setOrigin] = useState<Suggestion>(DEFAULT_SUGGESTION)
   const [agentPlans, setAgentPlans] = useState<PlanOption[]>([])
   const [freshIds, setFreshIds] = useState<string[]>([])
+  const hydratedFromApi = useRef(false)
+  const { data: overviewResponse, isLoading: overviewLoading } = useSWR<
+    ApiResponse<OverviewResponse>
+  >('/api/v1/overview?simulationId=balanced&productSlug=mobile&year=2026', apiFetcher)
+  const { data: simulationsResponse, isLoading: simulationsLoading } = useSWR<
+    ApiResponse<SimulationsResponse>
+  >('/api/v1/simulations?selectedId=balanced', apiFetcher)
 
-  const plans = useMemo(() => [...agentPlans, ...SUGGESTION_RESULTS], [agentPlans])
+  const apiPlans = useMemo(
+    () =>
+      simulationsResponse?.data.items.map((item) => ({
+        suggestion: {
+          id: item.id,
+          name: item.name,
+          tag: item.tag,
+          blurb: item.blurb,
+          createdAt: item.createdAt,
+          source: item.source,
+          delta: item.delta,
+          plan: item.plan,
+        } satisfies Suggestion,
+        sim: item.result,
+      })) ?? [],
+    [simulationsResponse],
+  )
+  const plans = useMemo(
+    () => [...agentPlans, ...(apiPlans.length > 0 ? apiPlans : SUGGESTION_RESULTS)],
+    [agentPlans, apiPlans],
+  )
+  const apiSimulation = overviewResponse?.data.simulation
+
+  useEffect(() => {
+    if (!apiSimulation || hydratedFromApi.current) return
+    const suggestion: Suggestion = {
+      id: apiSimulation.id,
+      name: apiSimulation.name,
+      tag: apiSimulation.tag,
+      blurb: apiSimulation.blurb,
+      createdAt: apiSimulation.createdAt,
+      source: apiSimulation.source,
+      delta: apiSimulation.delta,
+      plan: apiSimulation.plan,
+    }
+    setOrigin(suggestion)
+    setPlan(clonePlan(suggestion.plan))
+    hydratedFromApi.current = true
+  }, [apiSimulation])
+
+  const isLoading = overviewLoading || simulationsLoading
   const sim = useMemo(() => simulate(plan), [plan])
   const active = useMemo(
     () =>
@@ -111,6 +164,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       origin,
       plans,
       freshIds,
+      isLoading,
       setShare,
       applySuggestion,
       addPlan,
@@ -125,6 +179,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       origin,
       plans,
       freshIds,
+      isLoading,
       setShare,
       applySuggestion,
       addPlan,

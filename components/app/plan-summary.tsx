@@ -12,9 +12,10 @@ import { usePlan } from '@/components/app/plan-provider'
 import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
 import { additionalParameters, isItemDisplayed } from '@/lib/ui-parameters/behavior'
 import { cn } from '@/lib/utils'
+import { PlanSummarySkeleton } from '@/components/app/overview-skeletons'
 
 export function PlanSummary() {
-  const { plan, sim } = usePlan()
+  const { plan, sim, isLoading } = usePlan()
   const { parameters } = useUiParameters()
   const [expanded, setExpanded] = useState(false)
   const visibleItems = useMemo(() => ITEMS.filter((item) => isItemDisplayed(item.name, parameters)), [parameters])
@@ -23,6 +24,7 @@ export function PlanSummary() {
     () => ITEMS.filter((item) => extraItemIds.has(item.masterItemId)),
     [extraItemIds],
   )
+  if (isLoading) return <PlanSummarySkeleton />
 
   return (
     <Panel

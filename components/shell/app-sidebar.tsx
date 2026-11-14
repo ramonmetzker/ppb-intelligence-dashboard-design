@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import useSWR from 'swr'
 import { usePathname } from 'next/navigation'
 import { CaretRight, CaretUpDown } from '@phosphor-icons/react'
 import { PpbLoadingMark, PpbMark } from '@/components/brand/ppb-mark'
@@ -26,6 +27,8 @@ import {
 import { NAV_GROUPS, type AppNavGroup } from '@/components/shell/navigation'
 import { countUnassignedSalesModels, SALES_ASSIGNMENT_ROWS } from '@/lib/reference-bom-data'
 import { cn } from '@/lib/utils'
+import { apiFetcher } from '@/lib/api/client'
+import type { ApiResponse, NavigationCounters } from '@/lib/api/contracts'
 
 export function AppSidebar() {
   const pathname = usePathname()
@@ -34,7 +37,13 @@ export function AppSidebar() {
   const { errorCount } = useRpas()
   const { t, user, setUserDialogOpen } = usePreferences()
   const [rawDataOpen, setRawDataOpen] = useState(false)
-  const referenceBomUnassignedCount = countUnassignedSalesModels(SALES_ASSIGNMENT_ROWS)
+  const { data: countersResponse } = useSWR<ApiResponse<NavigationCounters>>(
+    '/api/v1/navigation/counters',
+    apiFetcher,
+  )
+  const referenceBomUnassignedCount =
+    countersResponse?.data.referenceBomPending ?? countUnassignedSalesModels(SALES_ASSIGNMENT_ROWS)
+  const rpaErrorCount = countersResponse?.data.rpaErrors ?? errorCount
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
@@ -46,7 +55,7 @@ export function AppSidebar() {
         const count = isReferenceBom
           ? referenceBomUnassignedCount
           : href === '/rpa-monitor'
-            ? errorCount
+            ? rpaErrorCount
             : 0
         const countLabel = isReferenceBom
           ? `${count} ${count === 1 ? 'model' : 'models'} pending BOM assignment`

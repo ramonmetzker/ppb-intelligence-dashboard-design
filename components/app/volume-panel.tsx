@@ -32,6 +32,7 @@ import { Segmented } from '@/components/app/segmented'
 import { useUiParameters } from '@/components/ui-parameters/ui-parameters-provider'
 import { additionalParameters, isItemDisplayed } from '@/lib/ui-parameters/behavior'
 import { cn } from '@/lib/utils'
+import { VolumePanelSkeleton } from '@/components/app/overview-skeletons'
 
 const INK = 'var(--ink)'
 const BRAND = 'var(--brand)'
@@ -48,7 +49,7 @@ const MODE_OPTIONS = [
 ]
 
 export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'full' }) {
-  const { plan, planName } = usePlan()
+  const { plan, planName, isLoading } = usePlan()
   const { parameters } = useUiParameters()
   const [mode, setMode] = useState<VolumeMode>('monthly')
   const [lineMetric, setLineMetric] = useState<LineMetric>('share')
@@ -59,7 +60,6 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
     () => ITEMS.filter((item) => extraItemIds.has(item.masterItemId)),
     [extraItemIds],
   )
-
   const series = useMemo(() => buildSeries(plan, mode), [plan, mode])
   const base = baselineSeries(mode)
 
@@ -98,6 +98,8 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
     mode === 'monthly'
       ? 'Each month on its own. Points are what that month would score if it were the whole year.'
       : 'Each month absorbs the ones before it. Share and points use year-to-date volume, and December equals the year-end score.'
+
+  if (isLoading) return <VolumePanelSkeleton />
 
   return (
     <Panel

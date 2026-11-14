@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { GBMS, type Gbm, type Product } from '@/lib/products/data'
 
@@ -37,7 +38,7 @@ type ProductContextSelectorProps = {
 }
 
 export function ProductContextSelector({ showYear = true, defaultYear = '2026' }: ProductContextSelectorProps) {
-  const { products } = useProducts()
+  const { products, isLoading } = useProducts()
   const [open, setOpen] = useState(false)
   const [applied, setApplied] = useState<Context>({ product: 'mobile', year: defaultYear })
   const [draft, setDraft] = useState<Draft>({ ...applied, gbm: 'MX' })
@@ -58,6 +59,14 @@ export function ProductContextSelector({ showYear = true, defaultYear = '2026' }
   const appliedProduct = products.find((item) => item.product_slug === applied.product) ?? byGbm.MX[0] ?? products[0]
   const draftProducts = byGbm[draft.gbm]
   const hasChanges = draft.product !== applied.product || (showYear && draft.year !== applied.year)
+
+  if (isLoading) {
+    return (
+      <div role="status" aria-label="Loading products">
+        <Skeleton className="h-10 w-64 bg-sidebar-accent" />
+      </div>
+    )
+  }
 
   const handleOpenChange = (next: boolean) => {
     if (next) setDraft({ ...applied, gbm: appliedProduct?.gbm ?? 'MX' })

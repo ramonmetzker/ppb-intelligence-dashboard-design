@@ -10,12 +10,15 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import useSWR from 'swr'
 import { useRouter } from 'next/navigation'
 import {
   serializeAcknowledgements,
   type Acknowledgements,
   type NotificationType,
 } from '@/lib/notifications'
+import { apiFetcher } from '@/lib/api/client'
+import type { ApiResponse, NotificationsResponse } from '@/lib/api/contracts'
 
 export type AppNotification = {
   id: string
@@ -45,6 +48,7 @@ type NotificationsContext = {
   syncing: boolean
   syncLabel: string
   sync: () => void
+  isLoading: boolean
 }
 
 const SEED: AppNotification[] = [
@@ -121,6 +125,26 @@ const SEED: AppNotification[] = [
   },
 ]
 
+function fromApiNotification(notification: NotificationsResponse['items'][number]): AppNotification {
+  const date = new Date(notification.createdAt)
+  const time = Number.isNaN(date.getTime())
+    ? notification.createdAt
+    : date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+  return {
+    id: notification.id,
+    type: notification.type,
+    title: notification.title,
+    body: notification.body,
+    time,
+    read: notification.read,
+    requiresAck: notification.requiresAck,
+    acknowledgedAt: notification.acknowledgedAt ?? undefined,
+    href: notification.href ?? undefined,
+    hrefLabel: notification.hrefLabel ?? undefined,
+  }
+}
+
 const INITIAL_SYNC_LABEL = 'Nov 06, 08:42'
 const SYNC_DURATION_MS = 1600
 
@@ -152,6 +176,14 @@ export function NotificationProvider({
   const counter = useRef(0)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const acks = useRef<Acknowledgements>(initialAcknowledgements)
+  const hydratedFromApi = useRef(false)
+  const { data, isLoading } = useSWR<ApiResponse<NotificationsResponse>>('/api/v1/notifications', apiFetcher)
+
+  useEffect(() => {
+    if (!data || hydratedFromApi.current) return
+    setNotifications(withAcknowledgements(data.data.items.map(fromApiNotification), initialAcknowledgements))
+    hydratedFromApi.current = true
+  }, [data, initialAcknowledgements])
 
   useEffect(
     () => () => {
@@ -242,6 +274,7 @@ export function NotificationProvider({
       syncing,
       syncLabel,
       sync,
+      isLoading,
     }),
     [
       notifications,
@@ -256,6 +289,7 @@ export function NotificationProvider({
       syncing,
       syncLabel,
       sync,
+      isLoading,
     ],
   )
 
