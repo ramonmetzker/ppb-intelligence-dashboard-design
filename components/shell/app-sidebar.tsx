@@ -120,7 +120,7 @@ export function AppSidebar() {
       <nav
         aria-label={t.nav.pages}
         className={cn(
-          'scroll-dark flex-1 overflow-y-auto py-3',
+          'sidebar-scroll scroll-dark flex-1 overflow-y-auto py-3',
           collapsed ? 'px-0' : 'px-3',
         )}
       >
