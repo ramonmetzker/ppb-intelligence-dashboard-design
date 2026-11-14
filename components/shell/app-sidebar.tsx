@@ -26,7 +26,7 @@ export function AppSidebar() {
     href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   const renderItems = (group: AppNavGroup, compact = false) => (
-    <ul className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-1')}>
+    <ul className={cn('flex flex-col', compact ? 'gap-0.5' : 'gap-1', collapsed && 'items-center')}>
       {group.items.map(({ label, href, icon: NavIcon }) => {
         const active = isActive(href)
         const isReferenceBom = href === '/raw-data/reference-bom'
@@ -44,7 +44,7 @@ export function AppSidebar() {
               className={cn(
                 'relative flex items-center rounded-md font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring',
                 compact ? 'h-8 text-[12px]' : 'h-10 text-[13px]',
-                collapsed ? 'justify-center px-0' : compact ? 'gap-2.5 px-2.5' : 'gap-3 px-3',
+                collapsed ? 'w-10 justify-center px-0' : compact ? 'gap-2.5 px-2.5' : 'gap-3 px-3',
                 active
                   ? 'bg-sidebar-accent text-white'
                   : 'text-sidebar-foreground/70 hover:bg-white/5 hover:text-white',
@@ -99,7 +99,7 @@ export function AppSidebar() {
         <Link
           href="/"
           aria-label="PPB"
-          className={cn('flex min-w-0 flex-1 items-center', collapsed ? 'justify-center' : 'gap-3')}
+          className={cn('flex min-w-0 items-center', collapsed ? 'w-11 justify-center' : 'flex-1 gap-3')}
         >
           <span className="flex size-11 shrink-0 items-center justify-center text-sidebar-primary-foreground">
             {isNavigating ? <PpbLoadingMark size={44} /> : <PpbMark size={44} />}
@@ -121,7 +121,7 @@ export function AppSidebar() {
         aria-label={t.nav.pages}
         className={cn(
           'scroll-dark flex-1 overflow-y-auto py-3',
-          collapsed ? 'px-2.5' : 'px-3',
+          collapsed ? 'px-0' : 'px-3',
         )}
       >
         <div className="flex flex-col gap-4">
@@ -152,7 +152,7 @@ export function AppSidebar() {
             ) : (
               <div key={group.label}>
                 {collapsed ? (
-                  <div className="mx-2 mb-2 h-px bg-sidebar-border" aria-hidden="true" />
+                  <div className="mx-auto mb-2 h-px w-10 bg-sidebar-border" aria-hidden="true" />
                 ) : (
                   <p className="mb-1.5 px-2.5 text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase">
                     {t.nav[group.label]}
@@ -165,7 +165,7 @@ export function AppSidebar() {
         </div>
       </nav>
 
-      <div className="shrink-0 p-3">
+      <div className={cn('shrink-0 p-3', collapsed && 'flex justify-center')}>
         <button
           type="button"
           onClick={() => setUserDialogOpen(true)}
@@ -174,7 +174,7 @@ export function AppSidebar() {
           title={collapsed ? user.fullName : undefined}
           className={cn(
             'flex h-10 w-full items-center rounded-md text-left transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-ring',
-            collapsed ? 'justify-center px-0' : 'gap-2.5 px-2',
+            collapsed ? 'w-10 justify-center px-0' : 'gap-2.5 px-2',
           )}
         >
           <span
