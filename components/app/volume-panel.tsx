@@ -155,7 +155,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
         }. December total: ${fmt(series[11].total.points, 1)} points at ${fmtPercent(series[11].total.share)} local share.`}
         className="h-[250px] px-2 pt-2"
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" debounce={240}>
           <ComposedChart data={data} margin={{ top: 10, right: 6, bottom: 0, left: 0 }}>
             <CartesianGrid stroke={GRID} vertical={false} />
             <ReferenceArea

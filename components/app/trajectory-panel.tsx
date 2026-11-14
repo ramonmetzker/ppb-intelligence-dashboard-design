@@ -267,7 +267,7 @@ export function TrajectoryPanel({
         aria-label={`Line chart of accumulated PPB score. Actual reaches 573.74 in October. Baseline forecast ends at ${BASE_FORECAST}. ${scenarioName} ends at ${sim.yearEnd} against a target of ${REQUIRED_SCORE}.`}
         className="min-h-[320px] w-full flex-1"
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" debounce={240}>
           <LineChart data={sim.trajectory} margin={{ top: 8, right: 56, bottom: 4, left: 0 }}>
             <CartesianGrid stroke={GRID} vertical={false} />
             <ReferenceArea

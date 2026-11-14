@@ -82,7 +82,7 @@ export function ItemTrends() {
                 aria-label={`${item.name} monthly local share. October ${fmtPercent(row.shareNow)} accumulated. December plan ${fmtPercent(row.shareScenario)} accumulated.`}
                 className="h-[132px] px-2 pt-1"
               >
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" debounce={240}>
                   <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                     <CartesianGrid stroke={GRID} vertical={false} />
                     <ReferenceArea
