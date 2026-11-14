@@ -150,9 +150,9 @@ export function AppSidebar() {
                 </CollapsibleContent>
               </Collapsible>
             ) : (
-              <div key={group.label}>
+              <div key={group.label} className={cn(collapsed && 'flex flex-col items-center')}>
                 {collapsed ? (
-                  <div className="mx-auto mb-2 h-px w-10 bg-sidebar-border" aria-hidden="true" />
+                  <div className="mb-2 h-px w-10 bg-sidebar-border" aria-hidden="true" />
                 ) : (
                   <p className="mb-1.5 px-2.5 text-[10px] font-medium tracking-[0.12em] text-sidebar-foreground/40 uppercase">
                     {t.nav[group.label]}
