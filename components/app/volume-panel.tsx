@@ -197,7 +197,15 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
             />
             <YAxis yAxisId="points" orientation="right" domain={pointsDomain} hide />
             <Tooltip
-              content={<VolumeTooltip rows={series} baseRows={base} mode={mode} items={visibleItems} />}
+              content={
+                <VolumeTooltip
+                  rows={series}
+                  baseRows={base}
+                  mode={mode}
+                  items={visibleItems}
+                  visibleLines={visibleLines}
+                />
+              }
               cursor={{ fill: 'color-mix(in srgb, var(--brand) 5%, transparent)' }}
             />
             {visibleItems.map((item) => (
@@ -294,6 +302,7 @@ function Matrix({
 }) {
   const [expanded, setExpanded] = useState(false)
   const isShare = metric === 'sharePoints'
+  const totalItemPoints = ITEMS.reduce((total, item) => total + item.points, 0)
   const openStart = (i: number) => i === LAST_ACTUAL + 1
 
   return (
@@ -473,7 +482,9 @@ function Matrix({
             <th scope="row" className="px-4 py-1.5 text-left font-semibold">
               {isShare ? 'All items' : 'Total volume'}
             </th>
-            <td className="px-2 py-1.5 text-right text-muted-foreground">—</td>
+            <td className="num px-2 py-1.5 text-right font-semibold">
+              {isShare ? fmt(totalItemPoints, 0) : '—'}
+            </td>
             {series.map((row) => (
               <td
                 key={row.month}
@@ -542,9 +553,10 @@ type TipProps = {
   baseRows: SeriesRow[]
   mode: VolumeMode
   items: readonly ItemDef[]
+  visibleLines: Record<LineKey, boolean>
 }
 
-function VolumeTooltip({ active, label, rows, baseRows, mode, items }: TipProps) {
+function VolumeTooltip({ active, label, rows, baseRows, mode, items, visibleLines }: TipProps) {
   if (!active || !label) return null
   const row = rows.find((r) => r.month === label)
   if (!row) return null
@@ -577,24 +589,32 @@ function VolumeTooltip({ active, label, rows, baseRows, mode, items }: TipProps)
           </li>
         ))}
       </ul>
-      <div className="mt-1.5 flex flex-col gap-0.5 border-t border-border pt-1.5">
-        <p className="flex justify-between">
-          <span className="text-muted-foreground">Local share</span>
-          <span className="num font-semibold">{fmtPercent(row.total.share)}</span>
-        </p>
-        <p className="flex justify-between">
-          <span className="text-muted-foreground">Total points</span>
-          <span className="num font-semibold" style={{ color: BRAND }}>
-            {fmt(row.total.points, 1)}
-          </span>
-        </p>
-        {showBase && (
-          <p className="flex justify-between">
-            <span className="text-muted-foreground">SOP points</span>
-            <span className="num">{fmt(base.total.points, 1)}</span>
-          </p>
-        )}
-      </div>
+      {(visibleLines.share || visibleLines.points) && (
+        <div className="mt-1.5 flex flex-col gap-0.5 border-t border-border pt-1.5">
+          {visibleLines.share && (
+            <p className="flex justify-between">
+              <span className="text-muted-foreground">Local share</span>
+              <span className="num font-semibold" style={{ color: BRAND }}>
+                {fmtPercent(row.total.share)}
+              </span>
+            </p>
+          )}
+          {visibleLines.points && (
+            <p className="flex justify-between">
+              <span className="text-muted-foreground">Total points</span>
+              <span className="num font-semibold" style={{ color: INK }}>
+                {fmt(row.total.points, 1)}
+              </span>
+            </p>
+          )}
+          {visibleLines.points && showBase && (
+            <p className="flex justify-between">
+              <span className="text-muted-foreground">SOP points</span>
+              <span className="num">{fmt(base.total.points, 1)}</span>
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
