@@ -42,12 +42,18 @@ const ASSIGNMENT_OPTIONS: { id: AssignmentType; label: string }[] = [
   { id: 'fake', label: 'Fake BOM' },
 ]
 
+function clampPercentage(value: string, fallback: number) {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.min(100, Math.max(0, parsed))
+}
+
 export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props) {
   const [assignmentType, setAssignmentType] = useState<AssignmentType>('reference')
   const [referenceOpen, setReferenceOpen] = useState(false)
   const [referenceBom, setReferenceBom] = useState<ReferenceBomOption>(REFERENCE_BOM_OPTIONS[0])
-  const [localPercentages, setLocalPercentages] = useState<Record<string, number>>(() =>
-    Object.fromEntries(PPB_BOM_ITEMS.map((item) => [item.id, item.localDefault])),
+  const [localPercentages, setLocalPercentages] = useState<Record<string, string>>(() =>
+    Object.fromEntries(PPB_BOM_ITEMS.map((item) => [item.id, String(item.localDefault)])),
   )
 
   const previousAvailable = rows.length > 0 && rows.every((row) => Boolean(row.previousBom))
@@ -59,7 +65,7 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
     if (!open) return
     setAssignmentType(previousAvailable ? 'previous' : 'reference')
     setReferenceOpen(false)
-    setLocalPercentages(Object.fromEntries(PPB_BOM_ITEMS.map((item) => [item.id, item.localDefault])))
+    setLocalPercentages(Object.fromEntries(PPB_BOM_ITEMS.map((item) => [item.id, String(item.localDefault)])))
   }, [open, previousAvailable])
 
   const chooseAssignment = (type: AssignmentType) => {
@@ -68,7 +74,14 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
   }
 
   const updateLocalPercentage = (id: string, value: string) => {
-    setLocalPercentages((current) => ({ ...current, [id]: Number(value) }))
+    setLocalPercentages((current) => ({ ...current, [id]: value }))
+  }
+
+  const normalizeLocalPercentage = (id: string, fallback: number) => {
+    setLocalPercentages((current) => ({
+      ...current,
+      [id]: String(clampPercentage(current[id] ?? '', fallback)),
+    }))
   }
 
   return (
@@ -198,12 +211,13 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                 </div>
                 <div className="divide-y divide-border rounded-lg border border-border">
                   {PPB_BOM_ITEMS.map((item) => {
-                    const local = localPercentages[item.id] ?? item.localDefault
+                    const localValue = localPercentages[item.id] ?? String(item.localDefault)
+                    const local = clampPercentage(localValue, item.localDefault)
                     return (
                       <div key={item.id} className="grid grid-cols-[minmax(7rem,1fr)_4.5rem_9.5rem] items-center gap-2 px-3 py-2">
                         <p className="truncate text-[13px] font-medium">{item.name}</p>
                         <span className="tnum whitespace-nowrap text-right text-[11px] text-muted-foreground">{100 - local}%</span>
-                        <label className="flex min-w-0 items-center gap-2">
+                        <label className="flex min-w-0 items-center justify-end gap-2">
                           <span className="sr-only">{item.name} local percentage</span>
                           <input
                             type="range"
@@ -213,8 +227,23 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                             value={local}
                             onChange={(event) => updateLocalPercentage(item.id, event.target.value)}
                             className="h-1.5 w-20 shrink-0 cursor-pointer accent-primary"
+                            aria-label={`${item.name} local percentage slider`}
                           />
-                          <span className="tnum shrink-0 whitespace-nowrap text-right text-[11px] font-semibold text-primary">{local}%</span>
+                          <div className="relative w-16 shrink-0">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              inputMode="numeric"
+                              value={localValue}
+                              onChange={(event) => updateLocalPercentage(item.id, event.target.value)}
+                              onBlur={() => normalizeLocalPercentage(item.id, item.localDefault)}
+                              className="tnum h-7 w-full rounded-md border border-primary/30 bg-primary/5 px-2 pr-5 text-right text-[11px] font-semibold text-primary outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              aria-label={`${item.name} local percentage`}
+                            />
+                            <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[11px] font-semibold text-primary">%</span>
+                          </div>
                         </label>
                       </div>
                     )
