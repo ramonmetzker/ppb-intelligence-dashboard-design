@@ -44,6 +44,8 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   constraint: MaterialConstraint | null
+  productSlug: string
+  productName: string
   year: ConstraintYear
   constraints: readonly MaterialConstraint[]
   onSubmit: (values: MaterialConstraintFormValues) => void
@@ -51,13 +53,15 @@ type Props = {
 
 type Errors = Partial<Record<'partNumber' | 'volume' | 'date', string>>
 
-export function MaterialConstraintFormDialog({ open, onOpenChange, constraint, year, constraints, onSubmit }: Props) {
+export function MaterialConstraintFormDialog({ open, onOpenChange, constraint, productSlug, productName, year, constraints, onSubmit }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:!max-w-xl">
         <MaterialConstraintForm
-          key={`${constraint?.id ?? 'new'}-${open}-${year}`}
+          key={`${constraint?.id ?? 'new'}-${open}-${productSlug}-${year}`}
           constraint={constraint}
+          productSlug={productSlug}
+          productName={productName}
           year={year}
           constraints={constraints}
           onCancel={() => onOpenChange(false)}
@@ -73,11 +77,13 @@ export function MaterialConstraintFormDialog({ open, onOpenChange, constraint, y
 
 function MaterialConstraintForm({
   constraint,
+  productSlug,
+  productName,
   year,
   constraints,
   onCancel,
   onSubmit,
-}: Pick<Props, 'constraint' | 'year' | 'constraints' | 'onSubmit'> & { onCancel: () => void }) {
+}: Pick<Props, 'constraint' | 'productSlug' | 'productName' | 'year' | 'constraints' | 'onSubmit'> & { onCancel: () => void }) {
   const uid = useId()
   const [partNumber, setPartNumber] = useState(constraint?.partNumber ?? '')
   const [partNumberSearch, setPartNumberSearch] = useState('')
@@ -109,7 +115,7 @@ function MaterialConstraintForm({
     const parsedVolume = Number(volumeValue)
 
     if (!partNumber) next.partNumber = 'Select a part number.'
-    else if (constraints.some((current) => current.id !== constraint?.id && current.partNumber === partNumber && current.year === year)) {
+    else if (constraints.some((current) => current.id !== constraint?.id && current.productSlug === productSlug && current.partNumber === partNumber && current.year === year)) {
       next.partNumber = 'This part number already has a constraint for this year.'
     }
     if (volumeType !== 'No limit' && (!volumeValue || !Number.isFinite(parsedVolume) || parsedVolume <= 0)) {
@@ -141,7 +147,7 @@ function MaterialConstraintForm({
       <SheetHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
         <SheetTitle>{constraint ? 'Edit material constraint' : 'New material constraint'}</SheetTitle>
         <SheetDescription>
-          Set the purchasing boundary for one part number in {year}. Percentages are applied to that part number&apos;s annual volume.
+          Set the purchasing boundary for one part number in {productName} for {year}. Percentages are applied to that part number&apos;s annual volume.
         </SheetDescription>
       </SheetHeader>
 

@@ -38,15 +38,15 @@ type ProductContextSelectorProps = {
 }
 
 export function ProductContextSelector({ showYear = true, defaultYear = '2026' }: ProductContextSelectorProps) {
-  const { products, isLoading } = useProducts()
+  const { products, isLoading, selectedProductSlug, setSelectedProductSlug } = useProducts()
   const [open, setOpen] = useState(false)
-  const [applied, setApplied] = useState<Context>({ product: 'mobile', year: defaultYear })
+  const [applied, setApplied] = useState<Context>({ product: selectedProductSlug, year: defaultYear })
   const [draft, setDraft] = useState<Draft>({ ...applied, gbm: 'MX' })
 
   useEffect(() => {
-    setApplied((current) => (current.year === defaultYear ? current : { ...current, year: defaultYear }))
-    setDraft((current) => ({ ...current, year: defaultYear }))
-  }, [defaultYear])
+    setApplied((current) => ({ ...current, product: selectedProductSlug, year: defaultYear }))
+    setDraft((current) => ({ ...current, product: selectedProductSlug, year: defaultYear }))
+  }, [defaultYear, selectedProductSlug])
 
   const byGbm = useMemo(
     () =>
@@ -80,6 +80,7 @@ export function ProductContextSelector({ showYear = true, defaultYear = '2026' }
 
   const apply = () => {
     setApplied({ product: draft.product, year: draft.year })
+    setSelectedProductSlug(draft.product)
     setOpen(false)
   }
 

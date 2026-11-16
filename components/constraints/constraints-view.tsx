@@ -117,11 +117,20 @@ const COLUMNS: readonly DataTableColumn<MaterialConstraint>[] = [
 ]
 
 type TargetConstraintRow = TargetConstraint & {
+  productName: string
   annualScore: number
   effectiveTarget: number
 }
 
 const TARGET_COLUMNS: readonly DataTableColumn<TargetConstraintRow>[] = [
+  {
+    id: 'productName',
+    header: 'Product',
+    accessor: (row) => row.productName,
+    width: 180,
+    grow: true,
+    cell: ({ row }) => <span className="font-medium">{row.productName}</span>,
+  },
   {
     id: 'year',
     header: 'Year',
@@ -178,7 +187,8 @@ const DEFAULT_TARGET_QUERY: DataTableQuery = {
 }
 
 export function ConstraintsView() {
-  const { products, gbm } = useProducts()
+  const { products, selectedProductSlug } = useProducts()
+  const selectedProduct = products.find((product) => product.product_slug === selectedProductSlug) ?? products[0]
   const [tab, setTab] = useState<'material' | 'target'>('material')
   const [constraints, setConstraints] = useState<MaterialConstraint[]>([...MATERIAL_CONSTRAINT_SEED])
   const [targetConstraints, setTargetConstraints] = useState<TargetConstraint[]>([...TARGET_CONSTRAINT_SEED])
@@ -190,22 +200,25 @@ export function ConstraintsView() {
   const [formOpen, setFormOpen] = useState(false)
   const [targetFormOpen, setTargetFormOpen] = useState(false)
 
-  const visibleConstraints = useMemo(() => constraints.filter((constraint) => constraint.year === year), [constraints, year])
-  const annualScore = useMemo(
-    () => products
-      .filter((product) => product.gbm === gbm)
-      .reduce((total, product) => total + annualScoreFor(product.product_slug, year).annual_score, 0),
-    [gbm, products, year],
+  const visibleConstraints = useMemo(
+    () => constraints.filter((constraint) => constraint.productSlug === selectedProductSlug && constraint.year === year),
+    [constraints, selectedProductSlug, year],
   )
+  const annualScore = annualScoreFor(selectedProductSlug, year).annual_score
   const targetForYear = useMemo(
-    () => targetConstraints.find((constraint) => constraint.gbm === gbm && constraint.year === year) ?? null,
-    [gbm, targetConstraints, year],
+    () => targetConstraints.find((constraint) => constraint.productSlug === selectedProductSlug && constraint.year === year) ?? null,
+    [selectedProductSlug, targetConstraints, year],
   )
   const targetRows = useMemo<TargetConstraintRow[]>(
     () => targetForYear
-      ? [{ ...targetForYear, annualScore, effectiveTarget: effectiveTarget(annualScore, targetForYear.adjustmentPct) }]
+      ? [{
+          ...targetForYear,
+          productName: selectedProduct?.product_name ?? selectedProductSlug,
+          annualScore,
+          effectiveTarget: effectiveTarget(annualScore, targetForYear.adjustmentPct),
+        }]
       : [],
-    [annualScore, targetForYear],
+    [annualScore, selectedProduct, selectedProductSlug, targetForYear],
   )
 
   const openCreate = () => {
@@ -223,7 +236,7 @@ export function ConstraintsView() {
       setConstraints((current) => current.map((constraint) => constraint.id === editing.id ? { ...constraint, ...values } : constraint))
       return
     }
-    setConstraints((current) => [...current, { id: `material-constraint-${Date.now()}`, year, ...values }])
+    setConstraints((current) => [...current, { id: `material-constraint-${Date.now()}`, productSlug: selectedProductSlug, year, ...values }])
   }
 
   const removeConstraints = (ids: readonly string[]) => {
@@ -240,7 +253,7 @@ export function ConstraintsView() {
       setTargetConstraints((current) => current.map((constraint) => constraint.id === editingTarget.id ? { ...constraint, ...values } : constraint))
       return
     }
-    setTargetConstraints((current) => [...current, { id: `target-constraint-${gbm.toLowerCase()}-${year}`, gbm, year, ...values }])
+    setTargetConstraints((current) => [...current, { id: `target-constraint-${selectedProductSlug}-${year}`, productSlug: selectedProductSlug, year, ...values }])
   }
 
   const removeTargetConstraints = (ids: readonly string[]) => {
@@ -321,14 +334,14 @@ export function ConstraintsView() {
             columnPinning={false}
             densityControl
             pagination={false}
-            emptyState={<div className="flex flex-col items-center gap-1 px-6 py-12 text-center"><p className="font-medium text-foreground">No constraints for {year}</p><p className="text-sm text-muted-foreground">Create a material rule to limit this year&apos;s simulations.</p></div>}
+            emptyState={<div className="flex flex-col items-center gap-1 px-6 py-12 text-center"><p className="font-medium text-foreground">No constraints for {selectedProduct?.product_name ?? selectedProductSlug} in {year}</p><p className="text-sm text-muted-foreground">Create a material rule to limit this product&apos;s simulations.</p></div>}
           />
         </TabsContent>
         <TabsContent value="target">
           <DataTable<TargetConstraintRow>
-            key={`${gbm}-${year}`}
-            caption={`${gbm} target adjustment for ${year}`}
-            persistenceKey={`target-constraints.v1.${gbm}`}
+            key={`${selectedProductSlug}-${year}`}
+            caption={`${selectedProduct?.product_name ?? selectedProductSlug} target adjustment for ${year}`}
+            persistenceKey={`target-constraints.v2.${selectedProductSlug}`}
             columns={TARGET_COLUMNS}
             data={targetRows}
             getRowId={(row) => row.id}
@@ -340,7 +353,7 @@ export function ConstraintsView() {
             columnPinning={false}
             densityControl
             pagination={false}
-            emptyState={<div className="flex flex-col items-center gap-1 px-6 py-12 text-center"><p className="font-medium text-foreground">No target adjustment for {gbm} in {year}</p><p className="text-sm text-muted-foreground">Set a percentage adjustment to move the simulation target above or below the annual score baseline.</p></div>}
+            emptyState={<div className="flex flex-col items-center gap-1 px-6 py-12 text-center"><p className="font-medium text-foreground">No target adjustment for {selectedProduct?.product_name ?? selectedProductSlug} in {year}</p><p className="text-sm text-muted-foreground">Set a percentage adjustment to move the selected product&apos;s annual score baseline.</p></div>}
           />
         </TabsContent>
       </Tabs>
@@ -349,6 +362,8 @@ export function ConstraintsView() {
         open={formOpen}
         onOpenChange={setFormOpen}
         constraint={editing}
+        productSlug={selectedProductSlug}
+        productName={selectedProduct?.product_name ?? selectedProductSlug}
         year={year}
         constraints={constraints}
         onSubmit={saveConstraint}
@@ -357,7 +372,8 @@ export function ConstraintsView() {
         open={targetFormOpen}
         onOpenChange={setTargetFormOpen}
         constraint={editingTarget}
-        gbm={gbm}
+        productSlug={selectedProductSlug}
+        productName={selectedProduct?.product_name ?? selectedProductSlug}
         year={year}
         annualScore={annualScore}
         onSubmit={saveTargetConstraint}

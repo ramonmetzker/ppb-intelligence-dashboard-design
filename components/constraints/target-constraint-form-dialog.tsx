@@ -7,14 +7,15 @@ import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { ConstraintYear, TargetConstraint, TargetConstraintFormValues } from '@/lib/constraints/data'
-import type { Gbm, YesNo } from '@/lib/products/data'
+import type { YesNo } from '@/lib/products/data'
 import { effectiveTarget, targetAdjustmentLabel } from '@/lib/constraints/data'
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   constraint: TargetConstraint | null
-  gbm: Gbm
+  productSlug: string
+  productName: string
   year: ConstraintYear
   annualScore: number
   onSubmit: (values: TargetConstraintFormValues) => void
@@ -22,14 +23,15 @@ type Props = {
 
 type Errors = Partial<Record<'adjustment', string>>
 
-export function TargetConstraintFormDialog({ open, onOpenChange, constraint, gbm, year, annualScore, onSubmit }: Props) {
+export function TargetConstraintFormDialog({ open, onOpenChange, constraint, productSlug, productName, year, annualScore, onSubmit }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:!max-w-xl">
         <TargetConstraintForm
-          key={`${constraint?.id ?? 'new'}-${open}-${gbm}-${year}`}
+          key={`${constraint?.id ?? 'new'}-${open}-${productSlug}-${year}`}
           constraint={constraint}
-          gbm={gbm}
+          productSlug={productSlug}
+          productName={productName}
           year={year}
           annualScore={annualScore}
           onCancel={() => onOpenChange(false)}
@@ -45,7 +47,8 @@ export function TargetConstraintFormDialog({ open, onOpenChange, constraint, gbm
 
 function TargetConstraintForm({
   constraint,
-  gbm,
+  productSlug,
+  productName,
   year,
   annualScore,
   onCancel,
@@ -77,13 +80,13 @@ function TargetConstraintForm({
       <SheetHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
         <SheetTitle>{constraint ? 'Edit target adjustment' : 'New target adjustment'}</SheetTitle>
         <SheetDescription>
-          Adjust the GBM annual score target used by simulations for {year}. The original score remains unchanged in Products.
+          Adjust the product annual score target used by simulations for {year}. The original score remains unchanged in Products.
         </SheetDescription>
       </SheetHeader>
 
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
         <div className="grid gap-5 sm:grid-cols-2">
-          <ReadOnlyField label="GBM" value={gbm} />
+          <ReadOnlyField label="Product" value={`${productName} (${productSlug})`} />
           <ReadOnlyField label="Year" value={year} />
         </div>
 
@@ -91,7 +94,7 @@ function TargetConstraintForm({
           <div>
             <h3 id={`${uid}-target-title`} className="text-sm font-semibold text-foreground">Simulation target</h3>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Apply a percentage adjustment to the sum of the selected GBM&apos;s product annual scores.
+              Apply a percentage adjustment to the selected product&apos;s annual score.
             </p>
           </div>
 

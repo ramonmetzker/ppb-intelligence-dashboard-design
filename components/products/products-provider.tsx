@@ -14,6 +14,9 @@ type ProductsContextValue = {
   /** GBM chosen in the top bar on master data pages. */
   gbm: Gbm
   setGbm: (gbm: Gbm) => void
+  /** Product chosen in the top bar for product-scoped simulation pages. */
+  selectedProductSlug: string
+  setSelectedProductSlug: Dispatch<SetStateAction<string>>
   isLoading: boolean
 }
 
@@ -22,6 +25,7 @@ const ProductsContext = createContext<ProductsContextValue | null>(null)
 export function ProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(() => [...PRODUCT_SEED])
   const [gbm, setGbm] = useState<Gbm>('MX')
+  const [selectedProductSlug, setSelectedProductSlug] = useState('mobile')
   const hydratedFromApi = useRef(false)
   const { data, isLoading } = useSWR<ApiResponse<ProductsResponse>>('/api/v1/products', apiFetcher)
 
@@ -36,7 +40,10 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
     hydratedFromApi.current = true
   }, [data])
 
-  const value = useMemo(() => ({ products, setProducts, gbm, setGbm, isLoading }), [products, gbm, isLoading])
+  const value = useMemo(
+    () => ({ products, setProducts, gbm, setGbm, selectedProductSlug, setSelectedProductSlug, isLoading }),
+    [products, gbm, selectedProductSlug, isLoading],
+  )
 
   return <ProductsContext.Provider value={value}>{children}</ProductsContext.Provider>
 }

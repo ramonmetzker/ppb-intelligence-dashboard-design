@@ -1,6 +1,5 @@
 import type { YesNo } from '@/lib/ppb-items/data'
 import { MATERIAL_PRICE_ROWS } from '@/lib/material-price-data'
-import type { Gbm } from '@/lib/products/data'
 
 export const CONSTRAINT_YEARS = ['2027', '2026', '2025'] as const
 export type ConstraintYear = (typeof CONSTRAINT_YEARS)[number]
@@ -16,6 +15,7 @@ export type DateConstraintType = (typeof DATE_CONSTRAINT_TYPES)[number]
 
 export type MaterialConstraint = {
   id: string
+  productSlug: string
   partNumber: string
   year: ConstraintYear
   volumeType: VolumeConstraintType
@@ -27,30 +27,30 @@ export type MaterialConstraint = {
   active: YesNo
 }
 
-export type MaterialConstraintFormValues = Omit<MaterialConstraint, 'id' | 'year'>
+export type MaterialConstraintFormValues = Omit<MaterialConstraint, 'id' | 'productSlug' | 'year'>
 
 export type TargetConstraint = {
   id: string
-  gbm: Gbm
+  productSlug: string
   year: ConstraintYear
   adjustmentPct: number
   active: YesNo
 }
 
-export type TargetConstraintFormValues = Omit<TargetConstraint, 'id' | 'gbm' | 'year'>
+export type TargetConstraintFormValues = Omit<TargetConstraint, 'id' | 'productSlug' | 'year'>
 
 export const TARGET_CONSTRAINT_SEED: readonly TargetConstraint[] = [
-  { id: 'target-constraint-mx-2027', gbm: 'MX', year: '2027', adjustmentPct: 5, active: 'Y' },
-  { id: 'target-constraint-vd-2027', gbm: 'VD', year: '2027', adjustmentPct: 3, active: 'Y' },
+  { id: 'target-constraint-mobile-2027', productSlug: 'mobile', year: '2027', adjustmentPct: 5, active: 'Y' },
+  { id: 'target-constraint-tablet-2027', productSlug: 'tablet', year: '2027', adjustmentPct: 3, active: 'Y' },
 ]
 
 export const MATERIAL_CONSTRAINT_SEED: readonly MaterialConstraint[] = [
-  { id: 'constraint-1108-000750-2027', partNumber: '1108-000750', year: '2027', volumeType: 'Maximum', volumeValue: 75, volumeUnit: 'Percentage', dateType: 'No limit', dateFrom: null, dateTo: null, active: 'Y' },
-  { id: 'constraint-1108-001120-2027', partNumber: '1108-001120', year: '2027', volumeType: 'Maximum', volumeValue: 1200, volumeUnit: 'Units', dateType: 'Until date', dateFrom: '2027-06', dateTo: null, active: 'Y' },
-  { id: 'constraint-1108-002020-2027', partNumber: '1108-002020', year: '2027', volumeType: 'No limit', volumeValue: null, volumeUnit: 'Units', dateType: 'No limit', dateFrom: null, dateTo: null, active: 'Y' },
-  { id: 'constraint-1108-005010-2027', partNumber: '1108-005010', year: '2027', volumeType: 'Minimum', volumeValue: 20, volumeUnit: 'Percentage', dateType: 'From date', dateFrom: '2027-07', dateTo: null, active: 'Y' },
-  { id: 'constraint-1108-000750-2026', partNumber: '1108-000750', year: '2026', volumeType: 'Maximum', volumeValue: 4800, volumeUnit: 'Units', dateType: 'Between dates', dateFrom: '2026-02', dateTo: '2026-09', active: 'N' },
-  { id: 'constraint-1108-001120-2025', partNumber: '1108-001120', year: '2025', volumeType: 'Minimum', volumeValue: 15, volumeUnit: 'Percentage', dateType: 'No limit', dateFrom: null, dateTo: null, active: 'Y' },
+  { id: 'constraint-mobile-1108-000750-2027', productSlug: 'mobile', partNumber: '1108-000750', year: '2027', volumeType: 'Maximum', volumeValue: 75, volumeUnit: 'Percentage', dateType: 'No limit', dateFrom: null, dateTo: null, active: 'Y' },
+  { id: 'constraint-mobile-1108-001120-2027', productSlug: 'mobile', partNumber: '1108-001120', year: '2027', volumeType: 'Maximum', volumeValue: 1200, volumeUnit: 'Units', dateType: 'Until date', dateFrom: '2027-06', dateTo: null, active: 'Y' },
+  { id: 'constraint-mobile-1108-002020-2027', productSlug: 'mobile', partNumber: '1108-002020', year: '2027', volumeType: 'No limit', volumeValue: null, volumeUnit: 'Units', dateType: 'No limit', dateFrom: null, dateTo: null, active: 'Y' },
+  { id: 'constraint-tablet-1108-005010-2027', productSlug: 'tablet', partNumber: '1108-005010', year: '2027', volumeType: 'Minimum', volumeValue: 20, volumeUnit: 'Percentage', dateType: 'From date', dateFrom: '2027-07', dateTo: null, active: 'Y' },
+  { id: 'constraint-mobile-1108-000750-2026', productSlug: 'mobile', partNumber: '1108-000750', year: '2026', volumeType: 'Maximum', volumeValue: 4800, volumeUnit: 'Units', dateType: 'Between dates', dateFrom: '2026-02', dateTo: '2026-09', active: 'N' },
+  { id: 'constraint-mobile-1108-001120-2025', productSlug: 'mobile', partNumber: '1108-001120', year: '2025', volumeType: 'Minimum', volumeValue: 15, volumeUnit: 'Percentage', dateType: 'No limit', dateFrom: null, dateTo: null, active: 'Y' },
 ]
 
 export function formatMonth(value: string | null) {
