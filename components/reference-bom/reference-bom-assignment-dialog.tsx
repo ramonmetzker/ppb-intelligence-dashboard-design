@@ -231,18 +231,15 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                           />
                           <div className="relative w-16 shrink-0">
                             <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              step="1"
-                              inputMode="numeric"
+                              type="text"
+                              inputMode="decimal"
                               value={localValue}
                               onChange={(event) => updateLocalPercentage(item.id, event.target.value)}
                               onBlur={() => normalizeLocalPercentage(item.id, item.localDefault)}
-                              className="tnum h-7 w-full rounded-md border border-primary/30 bg-primary/5 px-2 pr-5 text-right text-[11px] font-semibold text-primary outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              className="tnum h-7 w-full rounded-[2px] border border-transparent bg-transparent px-0.5 pr-4 text-right text-[11px] font-semibold text-primary outline-none transition-colors hover:border-primary focus:border-primary focus:bg-primary/5"
                               aria-label={`${item.name} local percentage`}
                             />
-                            <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-[11px] font-semibold text-primary">%</span>
+                            <span className="pointer-events-none absolute inset-y-0 right-1.5 flex items-center text-[11px] font-semibold text-primary">%</span>
                           </div>
                         </label>
                       </div>
