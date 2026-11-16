@@ -9,6 +9,8 @@ import { PageHeader } from '@/components/app/page-header'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { REFERENCE_BOM_ROWS, SALES_ASSIGNMENT_ROWS, type BomCoverage, type ReferenceBomRow } from '@/lib/reference-bom-data'
+import { SALES_DEMAND_YEARS, type SalesDemandYear } from '@/lib/sales-demand/data'
+import { YearSelector } from '@/components/sales-demand/sales-demand-view'
 import { ReferenceBomAssignmentDialog } from './reference-bom-assignment-dialog'
 import { SalesAssignmentsTable } from './sales-assignments-table'
 
@@ -49,8 +51,17 @@ const COLUMNS: readonly DataTableColumn<ReferenceBomRow>[] = [
   },
 ]
 
+// Default rule: Oct-Dec starts in the next calendar year; Jan-Sep starts in the current year.
+const DEFAULT_SALES_ASSIGNMENT_YEAR: SalesDemandYear = (() => {
+  const now = new Date()
+  const targetYear = now.getFullYear() + (now.getMonth() >= 9 ? 1 : 0)
+  const candidate = String(targetYear) as SalesDemandYear
+  return SALES_DEMAND_YEARS.includes(candidate) ? candidate : SALES_DEMAND_YEARS[0]
+})()
+
 export function ReferenceBomView() {
   const [activeTab, setActiveTab] = useState('sop')
+  const [salesAssignmentYear, setSalesAssignmentYear] = useState<SalesDemandYear>(DEFAULT_SALES_ASSIGNMENT_YEAR)
   const [assignmentRows, setAssignmentRows] = useState<ReferenceBomRow[]>([])
 
   const openAssignment = (rows: ReferenceBomRow[]) => {
@@ -122,7 +133,7 @@ export function ReferenceBomView() {
         </TabsContent>
 
         <TabsContent value="sales">
-          <SalesAssignmentsTable />
+          <SalesAssignmentsTable year={salesAssignmentYear} onYearChange={setSalesAssignmentYear} />
         </TabsContent>
       </Tabs>
 

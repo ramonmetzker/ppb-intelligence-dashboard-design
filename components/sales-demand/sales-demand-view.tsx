@@ -107,7 +107,7 @@ function splitDemandRow(row: SalesDemand, children: readonly SalesAssignmentRow[
   })
 }
 
-function YearSelector({ year, onChange }: { year: SalesDemandYear; onChange: (year: SalesDemandYear) => void }) {
+export function YearSelector({ year, onChange }: { year: SalesDemandYear; onChange: (year: SalesDemandYear) => void }) {
   const yearOptions = [...SALES_DEMAND_YEARS].map(Number).sort((a, b) => a - b)
   const numericYear = Number(year)
   const yearIndex = yearOptions.indexOf(numericYear)

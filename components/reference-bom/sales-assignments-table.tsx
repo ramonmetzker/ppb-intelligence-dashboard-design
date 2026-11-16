@@ -20,6 +20,8 @@ import {
   type SalesAssignmentRow,
 } from '@/lib/reference-bom-data'
 import { useSalesDemand, type SalesSplitDraft } from '@/components/sales-demand/sales-demand-provider'
+import { YearSelector } from '@/components/sales-demand/sales-demand-view'
+import type { SalesDemandYear } from '@/lib/sales-demand/data'
 import { PopConfirm } from '@/components/pop-confirm'
 import { ReferenceBomAssignmentDialog } from './reference-bom-assignment-dialog'
 
@@ -218,7 +220,7 @@ function SalesSplitDialog({ row, open, onOpenChange, onSave, onRemove }: { row: 
   )
 }
 
-export function SalesAssignmentsTable() {
+export function SalesAssignmentsTable({ year, onYearChange }: { year: SalesDemandYear; onYearChange: (year: SalesDemandYear) => void }) {
   const { salesRows, saveSplit, removeSplit } = useSalesDemand()
   const [assignmentRows, setAssignmentRows] = useState<ReferenceBomRow[]>([])
   const [splitRow, setSplitRow] = useState<SalesAssignmentRow | null>(null)
@@ -260,8 +262,9 @@ export function SalesAssignmentsTable() {
   return (
     <>
       <DataTable<SalesAssignmentRow>
-        caption="Sales BOM assignments"
+        caption={`Sales BOM assignments for ${year}`}
         persistenceKey="reference-bom.sales"
+        toolbarStart={<YearSelector year={year} onChange={onYearChange} />}
         columns={SALES_COLUMNS}
         data={salesRows}
         getRowId={(row) => row.id}
