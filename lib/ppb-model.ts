@@ -41,6 +41,8 @@ export type ItemDef = {
   name: string
   detail: string
   color: string
+  /** Points assigned to the item in the mock PPB score table. */
+  points: number
   /** Accumulated points at the October close. */
   current: number
   /** Accumulated points the AI forecast reaches in December. */
@@ -61,6 +63,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Memory',
     detail: 'GH82 and GH96 modules',
     color: 'var(--chart-1)',
+    points: 30,
     current: 41.55,
     forecast: 60.95,
     jan: 0.1,
@@ -74,6 +77,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Battery',
     detail: 'EB-BS938 cells',
     color: 'var(--chart-2)',
+    points: 20,
     current: 142.3,
     forecast: 156.5,
     jan: 0.22,
@@ -87,6 +91,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Adapter',
     detail: 'Wall charger units',
     color: 'var(--chart-3)',
+    points: 15,
     current: 71.8,
     forecast: 76.7,
     jan: 0.4,
@@ -100,6 +105,7 @@ export const ITEMS: ItemDef[] = [
     name: 'PBA Assy',
     detail: 'Populated board assemblies',
     color: 'var(--chart-4)',
+    points: 25,
     current: 198.45,
     forecast: 213.05,
     jan: 0.46,
@@ -113,6 +119,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Main',
     detail: 'GH82-MB boards on local SMT',
     color: 'var(--chart-5)',
+    points: 25,
     current: 119.64,
     forecast: 134.0,
     jan: 0.26,
@@ -126,6 +133,7 @@ export const ITEMS: ItemDef[] = [
     name: 'Insp. Process',
     detail: 'Inspection and process compliance',
     color: 'var(--chart-4)',
+    points: 10,
     current: 5.25,
     forecast: 8,
     jan: 0.2,
@@ -139,6 +147,7 @@ export const ITEMS: ItemDef[] = [
     name: 'RFID',
     detail: 'RFID traceability tags',
     color: 'var(--chart-5)',
+    points: 5,
     current: 3.25,
     forecast: 5,
     jan: 0.1,

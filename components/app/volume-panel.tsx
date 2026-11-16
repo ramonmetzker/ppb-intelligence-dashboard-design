@@ -36,11 +36,10 @@ import { VolumePanelSkeleton } from '@/components/app/overview-skeletons'
 
 const INK = 'var(--ink)'
 const BRAND = 'var(--brand)'
-const MUTED = '#8c8e95'
 const GRID = 'var(--grid)'
 const AXIS = 'var(--muted-foreground)'
 
-type LineMetric = 'share' | 'points'
+type LineKey = 'share' | 'points'
 type MatrixMetric = 'sharePoints' | 'volume'
 
 const MODE_OPTIONS = [
@@ -49,10 +48,10 @@ const MODE_OPTIONS = [
 ]
 
 export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'full' }) {
-  const { plan, planName, isLoading } = usePlan()
+  const { plan, isLoading } = usePlan()
   const { parameters } = useUiParameters()
   const [mode, setMode] = useState<VolumeMode>('monthly')
-  const [lineMetric, setLineMetric] = useState<LineMetric>('share')
+  const [visibleLines, setVisibleLines] = useState<Record<LineKey, boolean>>({ share: true, points: true })
   const [matrixMetric, setMatrixMetric] = useState<MatrixMetric>('sharePoints')
   const visibleItems = useMemo(() => ITEMS.filter((item) => isItemDisplayed(item.name, parameters)), [parameters])
   const extraItemIds = useMemo(() => new Set(additionalParameters(parameters).map((parameter) => parameter.itemId)), [parameters])
@@ -65,39 +64,38 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
 
   const data = useMemo(
     () =>
-      series.map((row, i) => {
+      series.map((row) => {
         const entry: Record<string, number | string | boolean | undefined> = {
           month: row.month,
           projected: row.projected,
           totalVolume: row.total.volume,
           share: row.total.share,
           points: row.total.points,
-          baseShare: i >= LAST_ACTUAL ? base[i].total.share : undefined,
-          basePoints: i >= LAST_ACTUAL ? base[i].total.points : undefined,
         }
         visibleItems.forEach((item) => {
           entry[`vol_${item.key}`] = row.cells[item.key].volume
         })
         return entry
       }),
-    [series, base, visibleItems],
+    [series, visibleItems],
   )
 
-  const rightDomain = useMemo<[number, number]>(() => {
-    if (lineMetric === 'share') return [0, 0.8]
-    const values = data.flatMap((d) => [d.points as number, d.basePoints as number | undefined])
-    const nums = values.filter((v): v is number => typeof v === 'number')
-    return [Math.floor((Math.min(...nums) - 40) / 50) * 50, Math.ceil((Math.max(...nums) + 40) / 50) * 50]
-  }, [data, lineMetric])
-
-  const lineKey = lineMetric === 'share' ? 'share' : 'points'
-  const baseKey = lineMetric === 'share' ? 'baseShare' : 'basePoints'
-  const rightFormat = (v: number) => (lineMetric === 'share' ? `${Math.round(v * 100)}%` : `${v}`)
+  const pointsDomain = useMemo<[number, number]>(() => {
+    const points = data
+      .map((entry) => entry.points)
+      .filter((value): value is number => typeof value === 'number')
+    if (points.length === 0) return [0, 100]
+    return [0, Math.ceil((Math.max(...points) + 40) / 50) * 50]
+  }, [data])
 
   const modeNote =
     mode === 'monthly'
       ? 'Each month on its own. Points are what that month would score if it were the whole year.'
       : 'Each month absorbs the ones before it. Share and points use year-to-date volume, and December equals the year-end score.'
+
+  const toggleLine = (line: LineKey) => {
+    setVisibleLines((current) => ({ ...current, [line]: !current[line] }))
+  }
 
   if (isLoading) return <VolumePanelSkeleton />
 
@@ -123,38 +121,42 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               {item.name}
             </li>
           ))}
-          <li className="flex items-center gap-1.5">
-            <svg width="16" height="4" aria-hidden="true">
-              <line x1="0" x2="16" y1="2" y2="2" stroke={INK} strokeWidth="2" />
-            </svg>
-            {planName}
-          </li>
-          <li className="flex items-center gap-1.5">
-            <svg width="16" height="4" aria-hidden="true">
-              <line x1="0" x2="16" y1="2" y2="2" stroke={MUTED} strokeWidth="2" strokeDasharray="4 2.5" />
-            </svg>
-            SOP
-          </li>
         </ul>
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-muted-foreground">Line shows</span>
-          <Segmented
-            label="Line metric"
-            value={lineMetric}
-            options={[
-              { value: 'share', label: 'Local share' },
-              { value: 'points', label: 'Total points' },
-            ]}
-            onChange={setLineMetric}
-          />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px]">
+          <button
+            type="button"
+            aria-pressed={visibleLines.share}
+            onClick={() => toggleLine('share')}
+            className={cn(
+              'flex items-center gap-1.5 text-muted-foreground transition-opacity focus-visible:outline-2 focus-visible:outline-ring',
+              !visibleLines.share && 'opacity-40',
+            )}
+          >
+            <svg width="16" height="4" aria-hidden="true">
+              <line x1="0" x2="16" y1="2" y2="2" stroke={BRAND} strokeWidth="2.5" />
+            </svg>
+            Local share
+          </button>
+          <button
+            type="button"
+            aria-pressed={visibleLines.points}
+            onClick={() => toggleLine('points')}
+            className={cn(
+              'flex items-center gap-1.5 text-muted-foreground transition-opacity focus-visible:outline-2 focus-visible:outline-ring',
+              !visibleLines.points && 'opacity-40',
+            )}
+          >
+            <svg width="16" height="4" aria-hidden="true">
+              <line x1="0" x2="16" y1="2" y2="2" stroke={INK} strokeWidth="2.5" />
+            </svg>
+            Monthly points
+          </button>
         </div>
       </div>
 
       <div
         role="img"
-        aria-label={`Stacked bars of ${mode} production volume by PPB item with a line for total ${
-          lineMetric === 'share' ? 'local share' : 'points'
-        }. December total: ${fmt(series[11].total.points, 1)} points at ${fmtPercent(series[11].total.share)} local share.`}
+        aria-label={`Stacked bars of ${mode} production volume by PPB item with togglable lines for local share and monthly points. December total: ${fmt(series[11].total.points, 1)} points at ${fmtPercent(series[11].total.share)} local share.`}
         className="h-[250px] px-2 pt-2"
       >
         <ResponsiveContainer width="100%" height="100%" debounce={240}>
@@ -184,15 +186,16 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
               tick={{ fill: AXIS, fontSize: 11, fontFamily: 'var(--font-space-grotesk)' }}
             />
             <YAxis
-              yAxisId="right"
+              yAxisId="share"
               orientation="right"
-              domain={rightDomain}
+              domain={[0, 0.8]}
               tickLine={false}
               axisLine={false}
               width={40}
-              tickFormatter={rightFormat}
+              tickFormatter={(value: number) => fmtPercent(value, 0)}
               tick={{ fill: AXIS, fontSize: 11, fontFamily: 'var(--font-space-grotesk)' }}
             />
+            <YAxis yAxisId="points" orientation="right" domain={pointsDomain} hide />
             <Tooltip
               content={<VolumeTooltip rows={series} baseRows={base} mode={mode} items={visibleItems} />}
               cursor={{ fill: 'color-mix(in srgb, var(--brand) 5%, transparent)' }}
@@ -210,31 +213,34 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
                 animationEasing="ease-out"
               />
             ))}
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey={baseKey}
-              stroke={MUTED}
-              strokeWidth={1.75}
-              strokeDasharray="5 4"
-              dot={false}
-              connectNulls={false}
-              isAnimationActive={false}
-              animationBegin={300}
-              animationDuration={1000}
-            />
-            <Line
-              yAxisId="right"
-              type="monotone"
-              dataKey={lineKey}
-              stroke={INK}
-              strokeWidth={2.25}
-              dot={{ r: 2.5, fill: 'var(--card)', stroke: INK, strokeWidth: 1.5 }}
-              activeDot={{ r: 4 }}
-              isAnimationActive={false}
-              animationBegin={300}
-              animationDuration={1100}
-            />
+            {visibleLines.share && (
+              <Line
+                yAxisId="share"
+                type="monotone"
+                dataKey="share"
+                stroke={BRAND}
+                strokeWidth={2.25}
+                dot={{ r: 2.5, fill: 'var(--card)', stroke: BRAND, strokeWidth: 1.5 }}
+                activeDot={{ r: 4 }}
+                isAnimationActive={false}
+                animationBegin={300}
+                animationDuration={1100}
+              />
+            )}
+            {visibleLines.points && (
+              <Line
+                yAxisId="points"
+                type="monotone"
+                dataKey="points"
+                stroke={INK}
+                strokeWidth={2.25}
+                dot={{ r: 2.5, fill: 'var(--card)', stroke: INK, strokeWidth: 1.5 }}
+                activeDot={{ r: 4 }}
+                isAnimationActive={false}
+                animationBegin={300}
+                animationDuration={1100}
+              />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -292,7 +298,7 @@ function Matrix({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[920px] border-collapse text-[12px]">
+      <table className="w-full min-w-[980px] border-collapse text-[12px]">
         <caption className="sr-only">
           {isShare
             ? 'Local share and points by PPB item and month'
@@ -305,6 +311,12 @@ function Matrix({
               className="w-[150px] px-4 py-1.5 text-left text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase"
             >
               {isShare ? 'Share over points' : 'Volume'}
+            </th>
+            <th
+              scope="col"
+              className="w-[64px] px-2 py-1.5 text-right text-[10px] font-medium tracking-[0.08em] text-muted-foreground uppercase"
+            >
+              Points
             </th>
             {series.map((row) => (
               <th
@@ -339,6 +351,7 @@ function Matrix({
                   {item.name}
                 </span>
               </th>
+              <td className="num px-2 py-1.5 text-right text-[12.5px] font-medium">{fmt(item.points, 0)}</td>
               {series.map((row) => {
                 const cell = row.cells[item.key]
                 const changed =
@@ -383,7 +396,7 @@ function Matrix({
           {extraItems.length > 0 && (
             <>
               <tr className="border-b border-border/70">
-                <th scope="row" colSpan={series.length + 1} className="px-4 py-1.5 text-left">
+                <th scope="row" colSpan={series.length + 2} className="px-4 py-1.5 text-left">
                   <button
                     type="button"
                     aria-expanded={expanded}
@@ -415,6 +428,7 @@ function Matrix({
                       {item.name}
                     </span>
                   </th>
+                  <td className="num px-2 py-1.5 text-right text-[12.5px] font-medium">{fmt(item.points, 0)}</td>
                   {series.map((row) => {
                     const cell = row.cells[item.key]
                     const changed =
@@ -459,6 +473,7 @@ function Matrix({
             <th scope="row" className="px-4 py-1.5 text-left font-semibold">
               {isShare ? 'All items' : 'Total volume'}
             </th>
+            <td className="px-2 py-1.5 text-right text-muted-foreground">—</td>
             {series.map((row) => (
               <td
                 key={row.month}
@@ -498,6 +513,7 @@ function Matrix({
               <th scope="row" className="px-4 py-1.5 text-left text-[11.5px] font-medium text-muted-foreground">
                 Total volume
               </th>
+              <td className="px-2 py-1.5 text-right text-muted-foreground">—</td>
               {series.map((row) => (
                 <td
                   key={row.month}
