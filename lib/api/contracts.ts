@@ -106,6 +106,18 @@ export type ProductsResponse = {
   years: string[]
 }
 
+export type MaterialPartNumberResource = {
+  partNumber: string
+  description: string
+  spec: string
+}
+
+export type MaterialPartNumbersResponse = {
+  items: MaterialPartNumberResource[]
+  total: number
+  hasMore: boolean
+}
+
 export type ProductResource = {
   product_slug: string
   product_name: string

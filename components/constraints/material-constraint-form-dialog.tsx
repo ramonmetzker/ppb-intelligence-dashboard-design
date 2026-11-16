@@ -1,16 +1,20 @@
 'use client'
 
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useState, type FormEvent } from 'react'
+import useSWR from 'swr'
+import { Check, ChevronDown, LoaderCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -20,8 +24,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { apiFetcher } from '@/lib/api/client'
+import type { ApiResponse, MaterialPartNumbersResponse } from '@/lib/api/contracts'
 import { type YesNo } from '@/lib/ppb-items/data'
-import { MATERIAL_PRICE_ROWS } from '@/lib/material-price-data'
 import {
   CONSTRAINT_YEARS,
   DATE_CONSTRAINT_TYPES,
@@ -48,8 +53,8 @@ type Errors = Partial<Record<'partNumber' | 'volume' | 'date', string>>
 
 export function MaterialConstraintFormDialog({ open, onOpenChange, constraint, year, constraints, onSubmit }: Props) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:!max-w-xl">
         <MaterialConstraintForm
           key={`${constraint?.id ?? 'new'}-${open}-${year}`}
           constraint={constraint}
@@ -61,8 +66,8 @@ export function MaterialConstraintFormDialog({ open, onOpenChange, constraint, y
             onOpenChange(false)
           }}
         />
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -74,9 +79,22 @@ function MaterialConstraintForm({
   onSubmit,
 }: Pick<Props, 'constraint' | 'year' | 'constraints' | 'onSubmit'> & { onCancel: () => void }) {
   const uid = useId()
-  const materialOptions = Array.from(new Map(MATERIAL_PRICE_ROWS.map((row) => [row.partNumber, row])).values())
-  const [partNumber, setPartNumber] = useState(constraint?.partNumber ?? materialOptions[0]?.partNumber ?? '')
+  const [partNumber, setPartNumber] = useState(constraint?.partNumber ?? '')
+  const [partNumberSearch, setPartNumberSearch] = useState('')
+  const [debouncedPartNumberSearch, setDebouncedPartNumberSearch] = useState('')
+  const [partNumberOpen, setPartNumberOpen] = useState(false)
   const [volumeType, setVolumeType] = useState<VolumeConstraintType>(constraint?.volumeType ?? 'Maximum')
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setDebouncedPartNumberSearch(partNumberSearch.trim()), 1000)
+    return () => window.clearTimeout(timeout)
+  }, [partNumberSearch])
+
+  const partNumberKey = `/api/v1/material-part-numbers?q=${encodeURIComponent(debouncedPartNumberSearch)}&selected=${encodeURIComponent(partNumber)}&limit=8`
+  const { data: partNumberResponse, isLoading: partNumberLoading, isValidating: partNumberValidating } = useSWR<ApiResponse<MaterialPartNumbersResponse>>(partNumberKey, apiFetcher)
+  const partNumberOptions = partNumberResponse?.data.items ?? []
+  const selectedPartNumber = partNumberOptions.find((option) => option.partNumber === partNumber)
+
   const [volumeValue, setVolumeValue] = useState(constraint?.volumeValue == null ? '' : String(constraint.volumeValue))
   const [volumeUnit, setVolumeUnit] = useState<VolumeUnit>(constraint?.volumeUnit ?? 'Percentage')
   const [dateType, setDateType] = useState<DateConstraintType>(constraint?.dateType ?? 'No limit')
@@ -90,7 +108,8 @@ function MaterialConstraintForm({
     const next: Errors = {}
     const parsedVolume = Number(volumeValue)
 
-    if (constraints.some((current) => current.id !== constraint?.id && current.partNumber === partNumber && current.year === year)) {
+    if (!partNumber) next.partNumber = 'Select a part number.'
+    else if (constraints.some((current) => current.id !== constraint?.id && current.partNumber === partNumber && current.year === year)) {
       next.partNumber = 'This part number already has a constraint for this year.'
     }
     if (volumeType !== 'No limit' && (!volumeValue || !Number.isFinite(parsedVolume) || parsedVolume <= 0)) {
@@ -118,28 +137,79 @@ function MaterialConstraintForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-      <DialogHeader>
-        <DialogTitle>{constraint ? 'Edit material constraint' : 'New material constraint'}</DialogTitle>
-        <DialogDescription>
+    <form onSubmit={handleSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
+      <SheetHeader className="shrink-0 border-b border-border px-6 py-5 pr-14">
+        <SheetTitle>{constraint ? 'Edit material constraint' : 'New material constraint'}</SheetTitle>
+        <SheetDescription>
           Set the purchasing boundary for one part number in {year}. Percentages are applied to that part number&apos;s annual volume.
-        </DialogDescription>
-      </DialogHeader>
+        </SheetDescription>
+      </SheetHeader>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field id={`${uid}-part-number`} label="Part Number" error={errors.partNumber}>
-          <Select value={partNumber} onValueChange={(value) => value && setPartNumber(value)}>
-            <SelectTrigger id={`${uid}-part-number`} aria-label="Part Number"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectGroup>{materialOptions.map((option) => <SelectItem key={option.partNumber} value={option.partNumber}><span className="font-mono">{option.partNumber}</span> · {option.description} · {option.spec}</SelectItem>)}</SelectGroup></SelectContent>
-          </Select>
-        </Field>
-        <Field id={`${uid}-year`} label="Year">
-          <Select value={year} disabled>
-            <SelectTrigger id={`${uid}-year`} aria-label="Year"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectGroup>{CONSTRAINT_YEARS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectGroup></SelectContent>
-          </Select>
-        </Field>
-      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-6 py-6">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Field id={`${uid}-part-number`} label="Part Number" error={errors.partNumber}>
+              <Popover open={partNumberOpen} onOpenChange={setPartNumberOpen}>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={partNumberOpen}
+                      aria-invalid={Boolean(errors.partNumber)}
+                      className="h-auto min-h-8 w-full justify-between px-2.5 py-1.5 text-left font-normal"
+                    />
+                  }
+                >
+                  <span className="min-w-0 truncate">
+                    {selectedPartNumber ? (
+                      <><span className="font-mono">{selectedPartNumber.partNumber}</span><span className="ml-2 text-muted-foreground">{selectedPartNumber.description} · {selectedPartNumber.spec}</span></>
+                    ) : partNumber ? <span className="font-mono">{partNumber}</span> : <span className="text-muted-foreground">Select a part number</span>}
+                  </span>
+                  <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-(--anchor-width) min-w-0 p-0">
+                  <Command shouldFilter={false}>
+                    <CommandInput value={partNumberSearch} onValueChange={setPartNumberSearch} placeholder="Search part numbers..." />
+                    <CommandList className="mt-1 border-t border-border/60 pt-1">
+                      {partNumberLoading || partNumberValidating ? <div className="flex items-center gap-2 px-3 py-3 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />Searching part numbers...</div> : null}
+                      <CommandEmpty>{debouncedPartNumberSearch ? 'No part numbers found.' : 'No part numbers available.'}</CommandEmpty>
+                      <CommandGroup>
+                        {partNumberOptions.map((option) => (
+                          <CommandItem
+                            key={option.partNumber}
+                            value={option.partNumber}
+                            data-checked={partNumber === option.partNumber}
+                            onSelect={() => {
+                              setPartNumber(option.partNumber)
+                              setPartNumberSearch('')
+                              setPartNumberOpen(false)
+                            }}
+                            className="items-start gap-2 px-3 py-2"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="block font-mono text-xs font-medium">{option.partNumber}</span>
+                              <span className="block truncate text-xs text-muted-foreground">{option.description} · {option.spec}</span>
+                            </span>
+                            {partNumber === option.partNumber ? <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" /> : null}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                      {partNumberResponse?.data.hasMore ? <p className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground">Showing the first results. Type a more specific search to find more.</p> : null}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </Field>
+          </div>
+
+          <Field id={`${uid}-year`} label="Year">
+            <Select value={year} disabled>
+              <SelectTrigger id={`${uid}-year`} aria-label="Year"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectGroup>{CONSTRAINT_YEARS.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectGroup></SelectContent>
+            </Select>
+          </Field>
+        </div>
 
       <section className="flex flex-col gap-3 rounded-xl border border-border bg-muted/20 p-4" aria-labelledby={`${uid}-volume-title`}>
         <div>
@@ -195,18 +265,19 @@ function MaterialConstraintForm({
         {errors.date ? <p role="alert" className="text-xs text-critical">{errors.date}</p> : null}
       </section>
 
-      <div className="flex flex-col gap-1.5">
-        <span id={`${uid}-active`} className="text-xs font-medium text-foreground">Active</span>
-        <ToggleGroup value={[active]} onValueChange={(values) => values[values.length - 1] && setActive(values[values.length - 1] as YesNo)} variant="outline" spacing={0} aria-labelledby={`${uid}-active`} className="w-fit">
-          <ToggleGroupItem value="Y" className="min-w-20 data-pressed:bg-brand data-pressed:text-primary-foreground">Active</ToggleGroupItem>
-          <ToggleGroupItem value="N" className="min-w-20 data-pressed:bg-brand data-pressed:text-primary-foreground">Inactive</ToggleGroupItem>
-        </ToggleGroup>
+        <div className="flex flex-col gap-1.5">
+          <span id={`${uid}-active`} className="text-xs font-medium text-foreground">Active</span>
+          <ToggleGroup value={[active]} onValueChange={(values) => values[values.length - 1] && setActive(values[values.length - 1] as YesNo)} variant="outline" spacing={0} aria-labelledby={`${uid}-active`} className="w-fit">
+            <ToggleGroupItem value="Y" className="min-w-20 data-pressed:bg-brand data-pressed:text-primary-foreground">Active</ToggleGroupItem>
+            <ToggleGroupItem value="N" className="min-w-20 data-pressed:bg-brand data-pressed:text-primary-foreground">Inactive</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </div>
 
-      <DialogFooter>
+      <SheetFooter className="shrink-0 border-t border-border bg-muted/30 px-6 py-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button type="submit">{constraint ? 'Save changes' : 'Create constraint'}</Button>
-      </DialogFooter>
+      </SheetFooter>
     </form>
   )
 }
