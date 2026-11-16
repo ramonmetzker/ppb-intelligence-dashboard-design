@@ -162,8 +162,8 @@ export function SalesDemandView() {
   const { salesRows } = useSalesDemand()
   const columns = useMemo(() => createColumns(year), [year])
   const assignmentsByModel = useMemo(
-    () => new Map(salesRows.map((assignment) => [assignment.originalModel, assignment])),
-    [salesRows],
+    () => new Map(salesRows.filter((assignment) => assignment.year === year).map((assignment) => [assignment.originalModel, assignment])),
+    [salesRows, year],
   )
   const visibleRows = useMemo(
     () => demandRows

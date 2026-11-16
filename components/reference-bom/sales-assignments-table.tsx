@@ -35,6 +35,13 @@ const SALES_COLUMNS: readonly DataTableColumn<SalesAssignmentRow>[] = [
     width: 165,
   },
   {
+    id: 'period',
+    header: 'Year / Month',
+    accessor: (row) => `${row.year} / ${row.month}`,
+    width: 140,
+    cell: ({ row }) => <span className="tnum whitespace-nowrap text-[12px] text-muted-foreground">{row.year} / {row.month}</span>,
+  },
+  {
     id: 'newModel',
     header: 'New Model',
     accessor: 'newModel',
@@ -224,6 +231,7 @@ export function SalesAssignmentsTable({ year, onYearChange }: { year: SalesDeman
   const { salesRows, saveSplit, removeSplit } = useSalesDemand()
   const [assignmentRows, setAssignmentRows] = useState<ReferenceBomRow[]>([])
   const [splitRow, setSplitRow] = useState<SalesAssignmentRow | null>(null)
+  const visibleRows = useMemo(() => salesRows.filter((row) => row.year === year), [salesRows, year])
 
   const rowActions = useMemo(
     () => (row: SalesAssignmentRow): readonly RowAction<SalesAssignmentRow>[] => {
@@ -266,7 +274,7 @@ export function SalesAssignmentsTable({ year, onYearChange }: { year: SalesDeman
         persistenceKey="reference-bom.sales"
         toolbarStart={<YearSelector year={year} onChange={onYearChange} />}
         columns={SALES_COLUMNS}
-        data={salesRows}
+        data={visibleRows}
         getRowId={(row) => row.id}
         getRowChildren={getSalesChildren}
         defaultExpanded

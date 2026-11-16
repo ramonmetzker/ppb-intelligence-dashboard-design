@@ -39,6 +39,8 @@ export function SalesDemandProvider({ children }: { children: ReactNode }) {
         referenceBom: 'Unassigned',
         division: draft.division,
         totalVolume: Math.round(row.totalVolume * draft.division / 100),
+        year: row.year,
+        month: row.month,
       }))
 
       return {

@@ -1,3 +1,5 @@
+import { SALES_DEMAND_YEARS, type SalesDemandYear } from '@/lib/sales-demand/data'
+
 export type BomCoverage = 'Reference' | 'Previous' | 'Fake'
 
 export type ReferenceBomRow = {
@@ -60,6 +62,8 @@ export type SalesAssignmentRow = {
   referenceBom: string
   division: number
   totalVolume: number
+  year: SalesDemandYear
+  month: string
   parentId?: string
   children?: SalesAssignmentRow[]
 }
@@ -71,7 +75,7 @@ export function countUnassignedSalesModels(rows: readonly SalesAssignmentRow[]):
   }, 0)
 }
 
-export const SALES_ASSIGNMENT_ROWS: SalesAssignmentRow[] = [
+const SALES_ASSIGNMENT_TEMPLATES = [
   {
     id: 'sales-sm-s098',
     originalModel: 'SM-S098',
@@ -80,10 +84,32 @@ export const SALES_ASSIGNMENT_ROWS: SalesAssignmentRow[] = [
     division: 100,
     totalVolume: 1970,
     children: [
-      { id: 'sales-sm-s098-128', parentId: 'sales-sm-s098', originalModel: 'SM-S098', newModel: 'SM-S098 128GB', referenceBom: 'Unassigned', division: 50, totalVolume: 985 },
-      { id: 'sales-sm-s098-256', parentId: 'sales-sm-s098', originalModel: 'SM-S098', newModel: 'SM-S098 256GB', referenceBom: 'Unassigned', division: 50, totalVolume: 985 },
+      { id: 'sales-sm-s098-128', originalModel: 'SM-S098', newModel: 'SM-S098 128GB', referenceBom: 'Unassigned', division: 50, totalVolume: 985 },
+      { id: 'sales-sm-s098-256', originalModel: 'SM-S098', newModel: 'SM-S098 256GB', referenceBom: 'Unassigned', division: 50, totalVolume: 985 },
     ],
   },
   { id: 'sales-sm-s144', originalModel: 'SM-S144', newModel: 'SM-S144', referenceBom: 'Unassigned', division: 100, totalVolume: 3040 },
   { id: 'sales-sm-a059', originalModel: 'SM-A059', newModel: 'SM-A059', referenceBom: 'Unassigned', division: 100, totalVolume: 7190 },
-]
+] as const
+
+function createSalesAssignmentRows(year: SalesDemandYear): SalesAssignmentRow[] {
+  return SALES_ASSIGNMENT_TEMPLATES.map((template): SalesAssignmentRow => {
+    const id = `${template.id}-${year}`
+
+    if ('children' in template) {
+      const children = template.children.map((child): SalesAssignmentRow => ({
+        ...child,
+        id: `${child.id}-${year}`,
+        parentId: id,
+        year,
+        month: 'Jan–Dec',
+      }))
+
+      return { ...template, id, year, month: 'Jan–Dec', children }
+    }
+
+    return { ...template, id, year, month: 'Jan–Dec' }
+  })
+}
+
+export const SALES_ASSIGNMENT_ROWS: SalesAssignmentRow[] = SALES_DEMAND_YEARS.flatMap(createSalesAssignmentRows)

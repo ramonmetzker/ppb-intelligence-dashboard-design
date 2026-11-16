@@ -109,7 +109,7 @@ export function ReferenceBomView() {
           </TabsTrigger>
           <TabsTrigger value="sales" className="!h-9 flex-none gap-2 px-3">
             Sales Assignments
-            <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{SALES_ASSIGNMENT_ROWS.length}</Badge>
+            <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{SALES_ASSIGNMENT_ROWS.filter((row) => row.year === salesAssignmentYear).length}</Badge>
           </TabsTrigger>
         </TabsList>
 
