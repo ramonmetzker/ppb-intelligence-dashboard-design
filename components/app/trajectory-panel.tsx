@@ -51,7 +51,7 @@ function ChartTooltip({
   if (!active || !payload?.length) return null
   const rows = [
     { key: 'actual', label: 'Actual' },
-    { key: 'forecast', label: 'Forecast' },
+    { key: 'forecast', label: 'SOP' },
     { key: 'scenario', label: scenarioName },
   ]
     .map((r) => ({ ...r, value: payload.find((p) => p.dataKey === r.key)?.value }))
@@ -251,12 +251,12 @@ export function TrajectoryPanel({
     <Panel
       id="trajectory"
       title="Annual PPB trajectory"
-      description="Accumulated score. Actual through October, then the AI forecast against your plan."
+      description="Accumulated score. Actual through October, then the SOP baseline against your plan."
       className="h-full"
       action={
         <ul className="flex items-center gap-4 text-[11.5px] text-muted-foreground">
           <Legend color={INK} label="Actual" />
-          <Legend color={MUTED} label="Forecast" dashed />
+          <Legend color={MUTED} label="SOP" dashed />
           <Legend color={BRAND} label="Simulation" />
         </ul>
       }
@@ -264,7 +264,7 @@ export function TrajectoryPanel({
     >
       <div
         role="img"
-        aria-label={`Line chart of accumulated PPB score. Actual reaches 573.74 in October. Baseline forecast ends at ${BASE_FORECAST}. ${scenarioName} ends at ${sim.yearEnd} against a target of ${REQUIRED_SCORE}.`}
+        aria-label={`Line chart of accumulated PPB score. Actual reaches 573.74 in October. SOP baseline ends at ${BASE_FORECAST}. ${scenarioName} ends at ${sim.yearEnd} against a target of ${REQUIRED_SCORE}.`}
         className="min-h-[320px] w-full flex-1"
       >
         <ResponsiveContainer width="100%" height="100%" debounce={240}>

@@ -33,7 +33,7 @@ export function PlanEditor() {
           className="flex h-6 items-center gap-1 rounded-md border border-input px-2 text-[11.5px] font-medium transition-colors hover:bg-secondary disabled:pointer-events-none disabled:opacity-40"
         >
           <ArrowCounterClockwise size={12} aria-hidden="true" />
-          Reset to forecast
+          Reset to SOP
         </button>
       }
       bodyClassName="p-0"
@@ -121,13 +121,13 @@ export function PlanEditor() {
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border bg-secondary/50 px-4 py-2 text-[11px] text-muted-foreground">
         <span className="flex items-center gap-1.5">
           <span aria-hidden="true" className="h-3 w-px bg-foreground" />
-          AI forecast
+          AI SOP
         </span>
         <span className="flex items-center gap-1.5">
           <span aria-hidden="true" className="h-3 w-px bg-warning" />
           Supplier ceiling
         </span>
-        <span>Points are the change in the year-end score versus the forecast.</span>
+        <span>Points are the change in the year-end score versus the SOP.</span>
       </div>
     </Panel>
   )
@@ -196,7 +196,7 @@ function ShareCell({
                 : 'text-critical',
           )}
         >
-          {Math.abs(delta) < 0.05 ? 'forecast' : `${fmtSigned(delta, 1)} pp`}
+          {Math.abs(delta) < 0.05 ? 'SOP' : `${fmtSigned(delta, 1)} pp`}
         </span>
         {over && <span className="text-[11px] font-medium text-warning">Above ceiling</span>}
       </div>

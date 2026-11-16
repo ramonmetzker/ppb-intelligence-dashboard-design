@@ -133,7 +133,7 @@ export function VolumePanel({ layout = 'overview' }: { layout?: 'overview' | 'fu
             <svg width="16" height="4" aria-hidden="true">
               <line x1="0" x2="16" y1="2" y2="2" stroke={MUTED} strokeWidth="2" strokeDasharray="4 2.5" />
             </svg>
-            Forecast
+            SOP
           </li>
         </ul>
         <div className="flex items-center gap-2">
@@ -574,7 +574,7 @@ function VolumeTooltip({ active, label, rows, baseRows, mode, items }: TipProps)
         </p>
         {showBase && (
           <p className="flex justify-between">
-            <span className="text-muted-foreground">Forecast points</span>
+            <span className="text-muted-foreground">SOP points</span>
             <span className="num">{fmt(base.total.points, 1)}</span>
           </p>
         )}

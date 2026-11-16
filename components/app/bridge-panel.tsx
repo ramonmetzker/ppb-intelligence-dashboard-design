@@ -15,14 +15,14 @@ const at = (v: number) => Math.min(100, Math.max(0, ((v - MIN) / (MAX - MIN)) * 
 export function BridgePanel({ sim }: { sim: Simulation }) {
   return (
     <Panel
-      title="Path from forecast to plan"
+      title="Path from SOP to plan"
       description="Points each item adds to or removes from the year-end score."
       className="h-full"
       bodyClassName="p-3"
     >
       <div
         role="img"
-        aria-label={`Bridge from forecast 641.2 to plan ${sim.yearEnd}: ${sim.steps
+        aria-label={`Bridge from SOP 641.2 to plan ${sim.yearEnd}: ${sim.steps
           .filter((s) => s.kind !== 'total')
           .map((s) => `${s.label} ${fmtSigned(s.end - s.start)}`)
           .join(', ') || 'no changes'}.`}

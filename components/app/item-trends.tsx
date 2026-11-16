@@ -35,7 +35,7 @@ export function ItemTrends() {
             Local share trend by item
           </h2>
           <p className="text-[12px] text-muted-foreground">
-            Monthly local share. Dashed grey is the forecast, blue is your plan.
+            Monthly local share. Dashed grey is the SOP, blue is your plan.
           </p>
         </div>
       </div>
@@ -72,7 +72,7 @@ export function ItemTrends() {
                           : 'text-critical',
                     )}
                   >
-                    {Math.abs(row.delta) < 0.005 ? 'on forecast' : `${fmtSigned(row.delta)} pts`}
+                    {Math.abs(row.delta) < 0.005 ? 'on SOP' : `${fmtSigned(row.delta)} pts`}
                   </p>
                 </div>
               </div>
@@ -139,7 +139,7 @@ export function ItemTrends() {
 
               <dl className="grid grid-cols-3 divide-x divide-border border-t border-border">
                 <Stat label="Share to Oct" value={fmtPercent(row.shareNow)} />
-                <Stat label="Dec forecast" value={fmtPercent(row.shareForecast)} muted />
+                <Stat label="Dec SOP" value={fmtPercent(row.shareForecast)} muted />
                 <Stat label="Dec plan" value={fmtPercent(row.shareScenario)} strong />
               </dl>
             </li>

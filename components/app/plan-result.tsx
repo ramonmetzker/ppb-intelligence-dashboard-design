@@ -41,13 +41,13 @@ export function PlanResult() {
       </div>
 
       <dl className="grid grid-cols-3 divide-x divide-border border-y border-border">
-        <Stat label="Vs forecast" value={`${fmtSigned(sim.gain)} pts`} />
+        <Stat label="Vs SOP" value={`${fmtSigned(sim.gain)} pts`} />
         <Stat label="Est. spend" value={sim.cost > 0 ? fmtCost(sim.cost) : 'None'} />
         <Stat label="Confidence" value={`${sim.confidence}%`} />
       </dl>
 
       <div>
-        <p className="eyebrow mb-1.5">Open months, forecast to plan</p>
+        <p className="eyebrow mb-1.5">Open months, SOP to plan</p>
         <table className="w-full text-[12px]">
           <thead>
             <tr className="text-left text-[10.5px] text-muted-foreground">

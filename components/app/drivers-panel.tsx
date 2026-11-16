@@ -15,7 +15,7 @@ export function DriversPanel({ sim }: { sim: Simulation }) {
         <ul className="flex items-center gap-3 text-[11px] text-muted-foreground">
           <li className="flex items-center gap-1.5">
             <span aria-hidden="true" className="size-2 rounded-[1px] bg-border" />
-            Forecast
+            SOP
           </li>
           <li className="flex items-center gap-1.5">
             <span aria-hidden="true" className="size-2 rounded-[1px] bg-warning" />

@@ -175,7 +175,7 @@ function IdleState() {
 
         <dl className="grid grid-cols-3 divide-x divide-border rounded-md border border-border bg-card">
           {[
-            { label: 'Forecast', value: fmt(BASELINE.yearEnd), sub: 'year-end today' },
+            { label: 'SOP', value: fmt(BASELINE.yearEnd), sub: 'year-end today' },
             { label: 'Target', value: TARGET_SCORE.toFixed(2), sub: `${REQUIRED_SCORE} required + buffer` },
             { label: 'To close', value: fmtSigned(gap), sub: 'points to find' },
           ].map((m) => (
@@ -269,7 +269,7 @@ function ScoreRuler({ run }: { run: RunState }) {
       {/* forecast */}
       <div className="absolute top-5 h-3.5 w-px bg-muted-foreground" style={{ left: at(BASELINE.yearEnd) }}>
         <span className="num absolute top-4 -left-8 w-16 text-center text-[10.5px] leading-3 text-muted-foreground">
-          Forecast {fmt(BASELINE.yearEnd, 1)}
+          SOP {fmt(BASELINE.yearEnd, 1)}
         </span>
       </div>
       {/* required */}

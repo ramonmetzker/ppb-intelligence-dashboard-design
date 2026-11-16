@@ -82,7 +82,7 @@ export function PlanSummary() {
                           : 'text-muted-foreground/70',
                       )}
                     >
-                      {changed ? `${fmtSigned(delta, 1)} pp` : 'forecast'}
+                      {changed ? `${fmtSigned(delta, 1)} pp` : 'SOP'}
                     </span>
                   </span>
                 )
@@ -149,7 +149,7 @@ export function PlanSummary() {
                           <CountUp value={plan[item.key][open]} decimals={1} suffix="%" duration={800} />
                         </span>
                         <span className={cn('block text-[10.5px] leading-3 transition-colors', changed ? delta > 0 ? 'text-success' : 'text-critical' : 'text-muted-foreground/70')}>
-                          {changed ? `${fmtSigned(delta, 1)} pp` : 'forecast'}
+                          {changed ? `${fmtSigned(delta, 1)} pp` : 'SOP'}
                         </span>
                       </span>
                     )
@@ -166,8 +166,8 @@ export function PlanSummary() {
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-border px-4 py-2.5">
         <p className="text-[11.5px] text-muted-foreground">
           {sim.changes.length === 0
-            ? 'Matches the forecast.'
-            : `${sim.changes.length} ${sim.changes.length === 1 ? 'change' : 'changes'} from the forecast.`}
+            ? 'Matches the SOP.'
+            : `${sim.changes.length} ${sim.changes.length === 1 ? 'change' : 'changes'} from the SOP.`}
         </p>
         <Link
           href="/simulation"

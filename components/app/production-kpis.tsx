@@ -25,7 +25,7 @@ export function ProductionKpis() {
     {
       label: 'Year-end local share',
       value: fmtPercent(dec.share),
-      note: `Forecast ${fmtPercent(baseDec.share)}. ${planName}`,
+      note: `SOP ${fmtPercent(baseDec.share)}. ${planName}`,
     },
   ]
 

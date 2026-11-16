@@ -29,7 +29,7 @@ export function ItemsScoreboard() {
     <Panel
       id="scoreboard"
       title="Points by PPB item"
-      description={`Accumulated points per item at the October close, in the forecast and in ${planName}.`}
+      description={`Accumulated points per item at the October close, in the SOP and in ${planName}.`}
       bodyClassName="overflow-x-auto p-0"
     >
       <table className="w-full min-w-[820px] border-collapse text-[12.5px]">
@@ -49,7 +49,7 @@ export function ItemsScoreboard() {
               Share to Oct
             </th>
             <th scope="col" className="px-3 py-2 text-right">
-              Dec forecast
+              Dec SOP
             </th>
             <th scope="col" className="px-3 py-2 text-right">
               Dec plan
@@ -58,13 +58,13 @@ export function ItemsScoreboard() {
               Pts now
             </th>
             <th scope="col" className="px-3 py-2 text-right">
-              Pts forecast
+              Pts SOP
             </th>
             <th scope="col" className="px-3 py-2 text-right">
               Pts plan
             </th>
             <th scope="col" className="px-4 py-2 text-right">
-              Vs forecast
+              Vs SOP
             </th>
           </tr>
         </thead>

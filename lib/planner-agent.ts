@@ -500,7 +500,7 @@ export function runAgent(directives: Directive[]): AgentRun {
     round: 0,
     title: 'Analyzing the current scenario',
     lines: [
-      `Forecast closes at ${BASELINE.yearEnd.toFixed(2)}, ${Math.abs(gapNow).toFixed(2)} pts ${gapNow < 0 ? 'short of' : 'above'} the ${REQUIRED_SCORE} requirement`,
+      `SOP closes at ${BASELINE.yearEnd.toFixed(2)}, ${Math.abs(gapNow).toFixed(2)} pts ${gapNow < 0 ? 'short of' : 'above'} the ${REQUIRED_SCORE} requirement`,
       `Target ${TARGET_SCORE.toFixed(2)}: the requirement plus a ${SAFETY_BUFFER.toFixed(1)} pt safety buffer`,
       `Scope: local share for Nov and Dec on ${ITEMS.length} items, ${vars} decision variables, moving up or down`,
       'Objective: reach the target at the lowest spend',

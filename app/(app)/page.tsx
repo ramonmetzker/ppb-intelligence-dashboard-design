@@ -13,7 +13,7 @@ export default function OverviewPage() {
     <>
       <PageHeader
         title="Overview"
-        description="Current PPB score, forecast, and simulation status for the selected plan."
+        description="Current PPB score, SOP, and simulation status for the selected plan."
       />
       <div className="flex flex-col gap-3">
         <StoryStatus />

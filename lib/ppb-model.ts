@@ -405,7 +405,7 @@ export const SUGGESTIONS: Suggestion[] = [
   suggestion(
     {
       id: 'forecast',
-      name: 'Follow the forecast',
+      name: 'Follow the SOP',
       tag: 'Baseline',
       blurb: 'No intervention. Suppliers deliver the share the AI already expects.',
     },
@@ -712,7 +712,7 @@ export function simulate(plan: Plan): Simulation {
     .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
   let running = BASE_FORECAST
   const steps: WaterfallStep[] = [
-    { label: 'Forecast', start: 0, end: BASE_FORECAST, kind: 'total' },
+    { label: 'SOP', start: 0, end: BASE_FORECAST, kind: 'total' },
     ...moving.map((r): WaterfallStep => {
       const start = running
       running = round2(running + r.delta)
