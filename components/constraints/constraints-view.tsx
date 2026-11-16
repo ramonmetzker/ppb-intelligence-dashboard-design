@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { CheckCircle2, CircleX, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useProducts } from '@/components/products/products-provider'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
 import { Badge } from '@/components/ui/badge'
@@ -11,14 +12,21 @@ import type { BulkAction, DataTableColumn, DataTableQuery, RowAction } from '@/l
 import {
   CONSTRAINT_YEARS,
   MATERIAL_CONSTRAINT_SEED,
+  TARGET_CONSTRAINT_SEED,
   dateConstraintLabel,
+  effectiveTarget,
   materialConstraintLabel,
+  targetAdjustmentLabel,
   type ConstraintYear,
   type MaterialConstraint,
   type MaterialConstraintFormValues,
+  type TargetConstraint,
+  type TargetConstraintFormValues,
 } from '@/lib/constraints/data'
 import { MATERIAL_PRICE_ROWS } from '@/lib/material-price-data'
+import { annualScoreFor } from '@/lib/products/data'
 import { MaterialConstraintFormDialog } from './material-constraint-form-dialog'
+import { TargetConstraintFormDialog } from './target-constraint-form-dialog'
 
 const DEFAULT_QUERY: DataTableQuery = {
   page: 1,
@@ -108,14 +116,97 @@ const COLUMNS: readonly DataTableColumn<MaterialConstraint>[] = [
   },
 ]
 
+type TargetConstraintRow = TargetConstraint & {
+  annualScore: number
+  effectiveTarget: number
+}
+
+const TARGET_COLUMNS: readonly DataTableColumn<TargetConstraintRow>[] = [
+  {
+    id: 'year',
+    header: 'Year',
+    accessor: (row) => row.year,
+    kind: 'number',
+    width: 120,
+    align: 'center',
+    cell: ({ row }) => <span className="tnum font-medium">{row.year}</span>,
+  },
+  {
+    id: 'annualScore',
+    header: 'Annual Score',
+    accessor: (row) => row.annualScore,
+    kind: 'number',
+    width: 190,
+    align: 'right',
+    cell: ({ row }) => <span className="tnum font-medium">{row.annualScore.toLocaleString('en-US')}</span>,
+  },
+  {
+    id: 'adjustmentPct',
+    header: 'Adjustment',
+    accessor: (row) => row.adjustmentPct,
+    kind: 'number',
+    width: 180,
+    align: 'right',
+    cell: ({ row }) => <Badge variant="secondary" className="font-mono text-[10px]">{targetAdjustmentLabel(row.adjustmentPct)}</Badge>,
+  },
+  {
+    id: 'effectiveTarget',
+    header: 'Effective Target',
+    accessor: (row) => row.effectiveTarget,
+    kind: 'number',
+    width: 210,
+    align: 'right',
+    cell: ({ row }) => <span className="tnum font-semibold">{row.effectiveTarget.toLocaleString('en-US', { maximumFractionDigits: 1 })}</span>,
+  },
+  {
+    id: 'active',
+    header: 'Active',
+    accessor: (row) => row.active === 'Y',
+    kind: 'boolean',
+    width: 150,
+    align: 'center',
+    cell: ({ row }) => <ActiveBadge value={row.active} />,
+  },
+]
+
+const DEFAULT_TARGET_QUERY: DataTableQuery = {
+  page: 1,
+  pageSize: 10,
+  sort: [{ id: 'year', direction: 'desc' }],
+  filters: [],
+  search: '',
+}
+
 export function ConstraintsView() {
+  const { products, gbm } = useProducts()
+  const [tab, setTab] = useState<'material' | 'target'>('material')
   const [constraints, setConstraints] = useState<MaterialConstraint[]>([...MATERIAL_CONSTRAINT_SEED])
+  const [targetConstraints, setTargetConstraints] = useState<TargetConstraint[]>([...TARGET_CONSTRAINT_SEED])
   const [year, setYear] = useState<ConstraintYear>(CONSTRAINT_YEARS[0])
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_QUERY)
+  const [targetQuery, setTargetQuery] = useState<DataTableQuery>(DEFAULT_TARGET_QUERY)
   const [editing, setEditing] = useState<MaterialConstraint | null>(null)
+  const [editingTarget, setEditingTarget] = useState<TargetConstraint | null>(null)
   const [formOpen, setFormOpen] = useState(false)
+  const [targetFormOpen, setTargetFormOpen] = useState(false)
 
   const visibleConstraints = useMemo(() => constraints.filter((constraint) => constraint.year === year), [constraints, year])
+  const annualScore = useMemo(
+    () => products
+      .filter((product) => product.gbm === gbm)
+      .reduce((total, product) => total + annualScoreFor(product.product_slug, year).annual_score, 0),
+    [gbm, products, year],
+  )
+  const targetForYear = useMemo(
+    () => targetConstraints.find((constraint) => constraint.gbm === gbm && constraint.year === year) ?? null,
+    [gbm, targetConstraints, year],
+  )
+  const targetRows = useMemo<TargetConstraintRow[]>(
+    () => targetForYear
+      ? [{ ...targetForYear, annualScore, effectiveTarget: effectiveTarget(annualScore, targetForYear.adjustmentPct) }]
+      : [],
+    [annualScore, targetForYear],
+  )
 
   const openCreate = () => {
     setEditing(null)
@@ -137,6 +228,23 @@ export function ConstraintsView() {
 
   const removeConstraints = (ids: readonly string[]) => {
     setConstraints((current) => current.filter((constraint) => !ids.includes(constraint.id)))
+  }
+
+  const openTargetEditor = () => {
+    setEditingTarget(targetForYear)
+    setTargetFormOpen(true)
+  }
+
+  const saveTargetConstraint = (values: TargetConstraintFormValues) => {
+    if (editingTarget) {
+      setTargetConstraints((current) => current.map((constraint) => constraint.id === editingTarget.id ? { ...constraint, ...values } : constraint))
+      return
+    }
+    setTargetConstraints((current) => [...current, { id: `target-constraint-${gbm.toLowerCase()}-${year}`, gbm, year, ...values }])
+  }
+
+  const removeTargetConstraints = (ids: readonly string[]) => {
+    setTargetConstraints((current) => current.filter((constraint) => !ids.includes(constraint.id)))
   }
 
   const rowActions: RowAction<MaterialConstraint>[] = [
@@ -161,16 +269,40 @@ export function ConstraintsView() {
     onSelect: ({ ids }) => removeConstraints(ids),
   }]
 
+  const targetRowActions: RowAction<TargetConstraintRow>[] = [
+    { id: 'edit', label: 'Edit', icon: <Pencil aria-hidden="true" />, inline: true, onSelect: () => openTargetEditor() },
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash2 aria-hidden="true" />,
+      tone: 'destructive',
+      separatorBefore: true,
+      confirm: { title: 'Delete target adjustment?', description: 'The simulation will use the original annual score again.' },
+      onSelect: (constraint) => removeTargetConstraints([constraint.id]),
+    },
+  ]
+
   return (
     <>
       <PageHeader title="Constraints" description="Define the purchasing limits that simulations must respect.">
-        <Button size="lg" onClick={openCreate}><Plus aria-hidden="true" data-icon="inline-start" />New constraint</Button>
+        <Button size="lg" onClick={tab === 'material' ? openCreate : openTargetEditor}>
+          <Plus aria-hidden="true" data-icon="inline-start" />
+          {tab === 'material' ? 'New constraint' : targetForYear ? 'Edit target' : 'Set target adjustment'}
+        </Button>
       </PageHeader>
 
-      <Tabs defaultValue="material" className="gap-3">
+      <Tabs
+        value={tab}
+        onValueChange={(value) => value && setTab(value as 'material' | 'target')}
+        className="gap-3"
+      >
         <TabsList variant="line">
-          <TabsTrigger value="material">Part Number <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{visibleConstraints.length}</Badge></TabsTrigger>
-          <TabsTrigger value="future" disabled>Other constraints</TabsTrigger>
+          <TabsTrigger value="material">
+            Part Number <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{visibleConstraints.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="target">
+            Target adjustment <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{targetRows.length}</Badge>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="material">
           <DataTable<MaterialConstraint>
@@ -192,7 +324,25 @@ export function ConstraintsView() {
             emptyState={<div className="flex flex-col items-center gap-1 px-6 py-12 text-center"><p className="font-medium text-foreground">No constraints for {year}</p><p className="text-sm text-muted-foreground">Create a material rule to limit this year&apos;s simulations.</p></div>}
           />
         </TabsContent>
-        <TabsContent value="future" />
+        <TabsContent value="target">
+          <DataTable<TargetConstraintRow>
+            key={`${gbm}-${year}`}
+            caption={`${gbm} target adjustment for ${year}`}
+            persistenceKey={`target-constraints.v1.${gbm}`}
+            columns={TARGET_COLUMNS}
+            data={targetRows}
+            getRowId={(row) => row.id}
+            query={targetQuery}
+            onQueryChange={setTargetQuery}
+            toolbarStart={<YearSelector year={year} onChange={setYear} />}
+            rowActions={targetRowActions}
+            onRowClick={openTargetEditor}
+            columnPinning={false}
+            densityControl
+            pagination={false}
+            emptyState={<div className="flex flex-col items-center gap-1 px-6 py-12 text-center"><p className="font-medium text-foreground">No target adjustment for {gbm} in {year}</p><p className="text-sm text-muted-foreground">Set a percentage adjustment to move the simulation target above or below the annual score baseline.</p></div>}
+          />
+        </TabsContent>
       </Tabs>
 
       <MaterialConstraintFormDialog
@@ -202,6 +352,15 @@ export function ConstraintsView() {
         year={year}
         constraints={constraints}
         onSubmit={saveConstraint}
+      />
+      <TargetConstraintFormDialog
+        open={targetFormOpen}
+        onOpenChange={setTargetFormOpen}
+        constraint={editingTarget}
+        gbm={gbm}
+        year={year}
+        annualScore={annualScore}
+        onSubmit={saveTargetConstraint}
       />
     </>
   )

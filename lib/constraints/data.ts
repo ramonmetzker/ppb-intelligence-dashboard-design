@@ -1,5 +1,6 @@
 import type { YesNo } from '@/lib/ppb-items/data'
 import { MATERIAL_PRICE_ROWS } from '@/lib/material-price-data'
+import type { Gbm } from '@/lib/products/data'
 
 export const CONSTRAINT_YEARS = ['2027', '2026', '2025'] as const
 export type ConstraintYear = (typeof CONSTRAINT_YEARS)[number]
@@ -27,6 +28,21 @@ export type MaterialConstraint = {
 }
 
 export type MaterialConstraintFormValues = Omit<MaterialConstraint, 'id' | 'year'>
+
+export type TargetConstraint = {
+  id: string
+  gbm: Gbm
+  year: ConstraintYear
+  adjustmentPct: number
+  active: YesNo
+}
+
+export type TargetConstraintFormValues = Omit<TargetConstraint, 'id' | 'gbm' | 'year'>
+
+export const TARGET_CONSTRAINT_SEED: readonly TargetConstraint[] = [
+  { id: 'target-constraint-mx-2027', gbm: 'MX', year: '2027', adjustmentPct: 5, active: 'Y' },
+  { id: 'target-constraint-vd-2027', gbm: 'VD', year: '2027', adjustmentPct: 3, active: 'Y' },
+]
 
 export const MATERIAL_CONSTRAINT_SEED: readonly MaterialConstraint[] = [
   { id: 'constraint-1108-000750-2027', partNumber: '1108-000750', year: '2027', volumeType: 'Maximum', volumeValue: 75, volumeUnit: 'Percentage', dateType: 'No limit', dateFrom: null, dateTo: null, active: 'Y' },
@@ -58,4 +74,12 @@ export function dateConstraintLabel(constraint: MaterialConstraint) {
     case 'Between dates': return `${formatMonth(constraint.dateFrom)} – ${formatMonth(constraint.dateTo)}`
     default: return 'No limit'
   }
+}
+
+export function targetAdjustmentLabel(adjustmentPct: number) {
+  return `${adjustmentPct > 0 ? '+' : ''}${adjustmentPct}%`
+}
+
+export function effectiveTarget(annualScore: number, adjustmentPct: number) {
+  return Math.round(annualScore * (1 + adjustmentPct / 100) * 10) / 10
 }

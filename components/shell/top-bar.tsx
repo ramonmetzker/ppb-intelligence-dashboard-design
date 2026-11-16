@@ -19,9 +19,10 @@ export function TopBar() {
   const pathname = usePathname()
   const isOverview = pathname === '/'
   const isProducts = pathname.startsWith('/products')
+  const isConstraints = pathname.startsWith('/simulation/constraints')
   const isRpaMonitor = pathname.startsWith('/rpa-monitor')
-  const showProductSelector = !isProducts && !isRpaMonitor
-  const hasContextSelectors = isOverview || isProducts || showProductSelector
+  const showProductSelector = !isProducts && !isConstraints && !isRpaMonitor
+  const hasContextSelectors = isOverview || isProducts || isConstraints || showProductSelector
   const { unreadCount, syncing, syncLabel } = useNotifications()
   const { collapsed } = useShell()
   const { t } = usePreferences()
@@ -81,7 +82,7 @@ export function TopBar() {
 
         {hasContextSelectors && (
           <div className="scroll-dark flex min-w-0 items-center justify-end gap-4 overflow-x-auto">
-            {isProducts ? (
+            {isProducts || isConstraints ? (
               <GbmSelector />
             ) : (
               <>
