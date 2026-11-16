@@ -44,13 +44,20 @@ export function AppSidebar() {
   const referenceBomUnassignedCount =
     countersResponse?.data.referenceBomPending ?? countUnassignedSalesModels(SALES_ASSIGNMENT_ROWS)
   const rpaErrorCount = countersResponse?.data.rpaErrors ?? errorCount
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname.startsWith(href)
+  const isActive = (href: string, siblingItems: AppNavGroup['items'] = []) => {
+    if (href === '/') return pathname === '/'
+    if (pathname === href) return true
+    if (!pathname.startsWith(`${href}/`)) return false
+
+    return !siblingItems.some(
+      (item) => item.href !== href && (pathname === item.href || pathname.startsWith(`${item.href}/`)),
+    )
+  }
 
   const renderItems = (group: AppNavGroup, compact = false) => (
     <SidebarMenu className={cn(collapsed && 'items-center', compact ? 'gap-0.5' : 'gap-1')}>
       {group.items.map(({ label, href, icon: NavIcon }) => {
-        const active = isActive(href)
+        const active = isActive(href, group.items)
         const isReferenceBom = href === '/raw-data/reference-bom'
         const count = isReferenceBom
           ? referenceBomUnassignedCount
@@ -151,7 +158,7 @@ export function AppSidebar() {
         <div className="flex flex-col gap-4">
           {NAV_GROUPS.map((group) => {
             const isCollapsible = group.label === 'rawData'
-            const groupHasActiveItem = group.items.some(({ href }) => isActive(href))
+            const groupHasActiveItem = group.items.some(({ href }) => isActive(href, group.items))
             const groupOpen = collapsed || !isCollapsible || rawDataOpen || groupHasActiveItem
 
             if (isCollapsible && !collapsed) {

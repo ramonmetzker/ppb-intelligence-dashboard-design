@@ -175,7 +175,7 @@ export function ConstraintsView() {
         <TabsContent value="material">
           <DataTable<MaterialConstraint>
             caption="Material constraints"
-            persistenceKey="material-constraints"
+            persistenceKey="material-constraints-v2"
             columns={COLUMNS}
             data={visibleConstraints}
             getRowId={(row) => row.id}
