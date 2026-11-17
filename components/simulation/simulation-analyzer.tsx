@@ -257,15 +257,20 @@ function DetailRow({ label, value, tone = 'default' }: { label: string; value: s
   )
 }
 
-function MonthlyDeltaTable({ scenario }: { scenario: SimulationScenario }) {
+function MonthlyDeltaTable({ scenarios }: { scenarios: SimulationScenario[] }) {
   const [expanded, setExpanded] = useState(false)
-  const visibleChanges = expanded ? scenario.monthlyChanges : scenario.monthlyChanges.slice(0, 4)
-  const hasMoreRows = scenario.monthlyChanges.length > 4
+  const primaryScenario = scenarios[0]
+  const visibleChanges = expanded ? primaryScenario.monthlyChanges : primaryScenario.monthlyChanges.slice(0, 4)
+  const hasMoreRows = primaryScenario.monthlyChanges.length > 4
+
+  function getChange(scenario: SimulationScenario, month: string, pn: string) {
+    return scenario.monthlyChanges.find((item) => item.month === month && item.pn === pn)
+  }
 
   return (
     <Panel
       title="Simulated months"
-      description="Line-item impact within the selected simulation window."
+      description="Line-item impact across the selected simulations. Secondary values show the delta versus the predominant simulation."
       action={hasMoreRows ? (
         <Button
           type="button"
@@ -275,36 +280,59 @@ function MonthlyDeltaTable({ scenario }: { scenario: SimulationScenario }) {
           aria-expanded={expanded}
           onClick={() => setExpanded((current) => !current)}
         >
-          {expanded ? 'Collapse table' : `Full table (${scenario.monthlyChanges.length})`}
+          {expanded ? 'Collapse table' : `Full table (${primaryScenario.monthlyChanges.length})`}
           <CaretDown size={13} className={cn('transition-transform', expanded && 'rotate-180')} />
         </Button>
       ) : null}
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-left text-[12px]">
+        <table className="w-full min-w-[760px] text-left text-[12px]">
+          <caption className="sr-only">Line-item comparison between the selected simulations</caption>
           <thead>
             <tr className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
               <th scope="col" className="pb-2 font-medium">Month</th>
               <th scope="col" className="pb-2 font-medium">Item</th>
               <th scope="col" className="pb-2 font-medium">PN</th>
               <th scope="col" className="pb-2 text-right font-medium">SOP</th>
-              <th scope="col" className="pb-2 text-right font-medium">Simulation</th>
-              <th scope="col" className="pb-2 text-right font-medium">Saving</th>
+              {scenarios.map((scenario, index) => (
+                <th key={scenario.id} scope="col" className="pb-2 text-right font-medium">
+                  <span className="block">{scenario.shortName}</span>
+                  <span className={cn('mt-0.5 block text-[9px] normal-case tracking-normal', index === 0 ? 'text-brand' : 'text-muted-foreground')}>{index === 0 ? 'Predominant' : 'Δ vs predominant'}</span>
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {visibleChanges.map((change) => (
-              <tr key={`${scenario.id}-${change.month}-${change.pn}`} className="border-t border-border/70">
-                <th scope="row" className="py-2.5 text-left font-medium">{change.month}</th>
-                <td className="py-2.5 text-muted-foreground">{change.item}</td>
-                <td className="num py-2.5 text-muted-foreground">{change.pn}</td>
-                <td className="num py-2.5 text-right">{formatCurrency(change.baseline)}</td>
-                <td className="num py-2.5 text-right">{formatCurrency(change.scenario)}</td>
-                <td className={cn('num py-2.5 text-right font-semibold', change.delta < 0 ? 'text-success' : change.delta > 0 ? 'text-warning' : 'text-muted-foreground')}>
-                  {change.delta < 0 ? formatCurrency(Math.abs(change.delta)) : change.delta > 0 ? `+${formatCurrency(change.delta)}` : '—'}
-                </td>
-              </tr>
-            ))}
+            {visibleChanges.map((change) => {
+              const primaryValue = getChange(primaryScenario, change.month, change.pn)?.scenario ?? null
+
+              return (
+                <tr key={`${primaryScenario.id}-${change.month}-${change.pn}`} className="border-t border-border/70">
+                  <th scope="row" className="py-2.5 text-left font-medium">{change.month}</th>
+                  <td className="py-2.5 text-muted-foreground">{change.item}</td>
+                  <td className="num py-2.5 text-muted-foreground">{change.pn}</td>
+                  <td className="num py-2.5 text-right">{formatCurrency(change.baseline)}</td>
+                  {scenarios.map((scenario, index) => {
+                    const scenarioChange = getChange(scenario, change.month, change.pn)
+                    const value = scenarioChange?.scenario ?? null
+                    const comparison = value === null || primaryValue === null ? null : value - primaryValue
+
+                    return (
+                      <td key={scenario.id} className="py-2.5 text-right">
+                        <span className={cn('num block', index === 0 ? 'font-semibold text-foreground' : 'text-muted-foreground')}>{formatCurrency(value)}</span>
+                        {index > 0 && comparison !== null ? (
+                          <span className={cn('num mt-0.5 block text-[10px] font-semibold', comparison < 0 ? 'text-success' : comparison > 0 ? 'text-warning' : 'text-muted-foreground')}>
+                            {formatSigned(comparison, ' vs pred.')}
+                          </span>
+                        ) : index === 0 ? (
+                          <span className="mt-0.5 block text-[10px] text-muted-foreground">vs SOP {formatCurrency(scenarioChange?.delta ?? null)}</span>
+                        ) : null}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -379,14 +407,14 @@ export function SimulationAnalyzer() {
             <ScoreResult scenarios={selectedScenarios.length > 0 ? selectedScenarios : [primaryScenario]} />
             <CostImpact scenario={primaryScenario} />
           </div>
-          <MonthlyDeltaTable scenario={primaryScenario} />
+          <MonthlyDeltaTable scenarios={selectedScenarios.length > 0 ? selectedScenarios : [primaryScenario]} />
           <DecisionNotes scenario={primaryScenario} />
           <PendingInputs scenario={primaryScenario} />
         </main>
 
-        <aside className="flex min-w-0 flex-col gap-3">
+        <aside className="flex min-w-0 flex-col gap-3 xl:self-stretch">
           <ScenarioSelector selectedIds={selectedScenarioIds} onToggle={toggleScenario} />
-          <div className="xl:sticky xl:top-3">
+          <div className="h-fit xl:sticky xl:top-3 xl:self-start">
             <MockAnalysisChat scenario={primaryScenario} />
           </div>
         </aside>
