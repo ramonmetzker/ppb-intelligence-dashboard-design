@@ -46,7 +46,7 @@ export function MockAnalysisChat({ scenario }: AnalysisChatProps) {
   }
 
   return (
-    <section className="flex h-[560px] min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm xl:h-[calc(100vh-96px)] xl:max-h-[720px]">
+    <section className="flex h-[520px] min-h-0 flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm xl:h-[min(560px,calc(100vh-120px))]">
       <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-7 shrink-0 items-center justify-center rounded-[4px] bg-ink text-brand-soft"><Sparkle size={14} weight="fill" /></span>
