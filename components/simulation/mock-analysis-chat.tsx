@@ -67,14 +67,14 @@ export function MockAnalysisChat({ scenario }: AnalysisChatProps) {
                       <MessageContent className={cn('max-w-[88%]', message.role === 'user' && 'max-w-[82%]')}>
                         <MessageGroup>
                           <Bubble align={message.role === 'user' ? 'end' : 'start'} variant={message.role === 'user' ? 'default' : 'muted'}>
-                            <BubbleContent className="rounded-[4px] px-3 py-2 text-[12px] leading-[18px]">{message.content}</BubbleContent>
+                            <BubbleContent className="wrap-normal rounded-[4px] px-3 py-2 text-[12px] leading-[18px]">{message.content}</BubbleContent>
                           </Bubble>
                         </MessageGroup>
                       </MessageContent>
                     </Message>
                   </MessageScrollerItem>
                 ))}
-                {thinking ? <MessageScrollerItem><Message><MessageAvatar className="size-6 bg-brand-soft text-brand"><CircleNotch className="animate-spin" size={13} /></MessageAvatar><MessageContent><Bubble variant="muted"><BubbleContent className="rounded-[4px] px-3 py-2 text-[12px] leading-[18px] text-muted-foreground">Reviewing run...</BubbleContent></Bubble></MessageContent></Message></MessageScrollerItem> : null}
+                {thinking ? <MessageScrollerItem><Message><MessageAvatar className="size-6 bg-brand-soft text-brand"><CircleNotch className="animate-spin" size={13} /></MessageAvatar><MessageContent><Bubble variant="muted"><BubbleContent className="wrap-normal rounded-[4px] px-3 py-2 text-[12px] leading-[18px] text-muted-foreground">Reviewing run...</BubbleContent></Bubble></MessageContent></Message></MessageScrollerItem> : null}
               </MessageScrollerContent>
             </MessageScrollerViewport>
           </MessageScroller>
