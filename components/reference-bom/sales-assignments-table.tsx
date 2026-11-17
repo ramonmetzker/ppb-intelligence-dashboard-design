@@ -104,7 +104,7 @@ function toAssignmentRow(row: SalesAssignmentRow): ReferenceBomRow {
     id: row.id,
     plant: 'P81M',
     model: row.newModel,
-    month: 'Sales Demand',
+    month: `${row.year}-${row.month}`,
     volume: row.totalVolume,
     coverage: row.referenceBom === 'Fake BOM' ? 'Fake' : 'Reference',
     source: row.referenceBom,

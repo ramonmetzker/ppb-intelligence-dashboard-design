@@ -48,6 +48,15 @@ function clampPercentage(value: string, fallback: number) {
   return Math.min(100, Math.max(0, parsed))
 }
 
+function getInitialReferenceBom(rows: ReferenceBomRow[]) {
+  const firstRow = rows[0]
+  return (
+    REFERENCE_BOM_OPTIONS.find((option) => option.model === firstRow?.model && option.month === firstRow?.month) ??
+    REFERENCE_BOM_OPTIONS.find((option) => option.month === firstRow?.month) ??
+    REFERENCE_BOM_OPTIONS[0]
+  )
+}
+
 export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props) {
   const [assignmentType, setAssignmentType] = useState<AssignmentType>('reference')
   const [referenceOpen, setReferenceOpen] = useState(false)
@@ -65,8 +74,9 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
     if (!open) return
     setAssignmentType(previousAvailable ? 'previous' : 'reference')
     setReferenceOpen(false)
+    setReferenceBom(getInitialReferenceBom(rows))
     setLocalPercentages(Object.fromEntries(PPB_BOM_ITEMS.map((item) => [item.id, String(item.localDefault)])))
-  }, [open, previousAvailable])
+  }, [open, previousAvailable, rows])
 
   const chooseAssignment = (type: AssignmentType) => {
     if (type === 'previous' && !previousAvailable) return
@@ -157,27 +167,35 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
             {assignmentType === 'reference' && (
               <div className="p-3">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <p className="text-[13px] font-medium">Reference BOM</p>
+                  <p className="text-[13px] font-medium">Reference BOM by model and month</p>
                   <Badge variant="secondary">Reference</Badge>
                 </div>
                 <Popover open={referenceOpen} onOpenChange={setReferenceOpen}>
                   <PopoverTrigger
                     render={
-                      <Button variant="outline" className="h-9 w-full justify-between px-3 text-left font-normal" aria-label="Select reference model" />
+                      <Button
+                        variant="outline"
+                        className="h-11 w-full justify-between px-3 text-left font-normal"
+                        aria-label={`Select reference model and month. Current selection: ${referenceBom.model}, ${referenceBom.sku}, ${referenceBom.month}`}
+                      />
                     }
                   >
-                    <span className="truncate text-[13px] font-medium">{referenceBom.model}</span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-[13px] font-medium">{referenceBom.model}</span>
+                      <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{referenceBom.sku}</span>
+                      <Badge variant="outline" className="shrink-0 font-mono text-[10px]">{referenceBom.month}</Badge>
+                    </span>
                     <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   </PopoverTrigger>
                   <PopoverContent align="start" className="w-(--anchor-width) min-w-0 max-w-[calc(100vw-3rem)] p-0">
                     <Command>
-                      <CommandInput placeholder="Search models..." />
+                      <CommandInput placeholder="Search models, BOMs, or months..." />
                       <CommandList className="mt-1 border-t border-border/60 pt-1">
                         <CommandEmpty>No reference BOMs found.</CommandEmpty>
                         {REFERENCE_BOM_OPTIONS.map((option) => (
                           <CommandItem
                             key={option.id}
-                            value={option.model}
+                            value={`${option.model} ${option.sku} ${option.month}`}
                             data-checked={referenceBom.id === option.id}
                             onSelect={() => {
                               setReferenceBom(option)
@@ -188,7 +206,11 @@ export function ReferenceBomAssignmentDialog({ open, onOpenChange, rows }: Props
                             <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                               <Search className="size-3.5" aria-hidden="true" />
                             </span>
-                            <span className="truncate text-[13px] font-medium">{option.model}</span>
+                            <span className="flex min-w-0 flex-1 items-center gap-2">
+                              <span className="truncate text-[13px] font-medium">{option.model}</span>
+                              <span className="truncate font-mono text-[10px] text-muted-foreground">{option.sku}</span>
+                            </span>
+                            <Badge variant="outline" className="shrink-0 font-mono text-[10px]">{option.month}</Badge>
                           </CommandItem>
                         ))}
                       </CommandList>

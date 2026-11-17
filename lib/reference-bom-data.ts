@@ -17,6 +17,7 @@ export type ReferenceBomOption = {
   id: string
   sku: string
   model: string
+  month: string
   description: string
 }
 
@@ -39,11 +40,13 @@ export const REFERENCE_BOM_ROWS: ReferenceBomRow[] = [
 ]
 
 export const REFERENCE_BOM_OPTIONS: ReferenceBomOption[] = [
-  { id: 'bom-001', sku: 'BOM-ZB-420-R1', model: 'ZB-420', description: 'ZB-420 · 4G connected notebook' },
-  { id: 'bom-002', sku: 'BOM-NX-200-R2', model: 'NX-200', description: 'NX-200 · 5G consumer notebook' },
-  { id: 'bom-003', sku: 'BOM-GT-500-R4', model: 'GT-500', description: 'GT-500 · Performance notebook' },
-  { id: 'bom-004', sku: 'BOM-ZB-410-R3', model: 'ZB-410', description: 'ZB-410 · Previous generation' },
-  { id: 'bom-005', sku: 'BOM-NX-180-R1', model: 'NX-180', description: 'NX-180 · Entry notebook' },
+  { id: 'bom-001', sku: 'BOM-ZB-420-R1', model: 'ZB-420', month: '2026-11', description: 'ZB-420 · 4G connected notebook' },
+  { id: 'bom-002', sku: 'BOM-NX-200-R2', model: 'NX-200', month: '2026-12', description: 'NX-200 · 5G consumer notebook' },
+  { id: 'bom-003', sku: 'BOM-GT-500-R4', model: 'GT-500', month: '2027-01', description: 'GT-500 · Performance notebook' },
+  { id: 'bom-004', sku: 'BOM-ZB-410-R3', model: 'ZB-410', month: '2026-11', description: 'ZB-410 · Previous generation' },
+  { id: 'bom-005', sku: 'BOM-NX-180-R1', model: 'NX-180', month: '2026-12', description: 'NX-180 · Entry notebook' },
+  { id: 'bom-006', sku: 'BOM-ZB-420-R2', model: 'ZB-420', month: '2027-02', description: 'ZB-420 · 4G connected notebook' },
+  { id: 'bom-007', sku: 'BOM-NX-200-R3', model: 'NX-200', month: '2027-02', description: 'NX-200 · 5G consumer notebook' },
 ]
 
 export const PPB_BOM_ITEMS: PpbBomItem[] = [
