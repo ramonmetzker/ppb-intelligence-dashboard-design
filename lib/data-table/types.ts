@@ -49,6 +49,8 @@ export interface ColumnSchema<T> {
   /** Key of the row, or a function. Defaults to `row[id]`. */
   accessor?: keyof T | ((row: T) => unknown)
   kind?: FilterKind
+  /** Input granularity used by date filters. */
+  dateGranularity?: 'day' | 'month'
   options?: readonly SelectOption[]
   /** Set to false to exclude the column from filters and `field:value` powersearch tokens. */
   filterable?: boolean

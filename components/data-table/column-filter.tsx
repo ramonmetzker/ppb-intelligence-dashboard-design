@@ -45,7 +45,11 @@ export function ColumnFilterEditor<T>({ schema, filter, labels, onApply }: Props
   const canApply = isFilterActive(draft)
   const apply = () => onApply(canApply ? draft : null)
 
-  const inputType = kind === 'number' ? 'number' : kind === 'date' ? 'date' : 'text'
+  const inputType = kind === 'number'
+    ? 'number'
+    : kind === 'date'
+      ? schema.dateGranularity === 'month' ? 'month' : 'date'
+      : 'text'
   const rangeValue = Array.isArray(value) ? value : ['', '']
 
   return (

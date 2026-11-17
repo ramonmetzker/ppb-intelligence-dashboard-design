@@ -29,7 +29,7 @@ const COLUMNS: readonly DataTableColumn<ReferenceBomRow>[] = [
     cell: ({ row }) => <Badge variant="outline" className="h-5 border-border px-1.5 font-mono text-[10px] font-semibold tracking-wide">{row.plant}</Badge>,
   },
   { id: 'model', header: 'Model', accessor: 'model', width: 150, grow: true },
-  { id: 'month', header: 'Month', accessor: 'month', width: 120 },
+  { id: 'month', header: 'Month', accessor: 'month', kind: 'date', dateGranularity: 'month', width: 120 },
   { id: 'volume', header: 'Volume', accessor: 'volume', kind: 'number', width: 115, align: 'right' },
   {
     id: 'coverage',
@@ -61,8 +61,13 @@ const DEFAULT_SALES_ASSIGNMENT_YEAR: SalesDemandYear = (() => {
 
 export function ReferenceBomView() {
   const [activeTab, setActiveTab] = useState('sop')
+  const [sopAssignmentYear, setSopAssignmentYear] = useState<SalesDemandYear>(DEFAULT_SALES_ASSIGNMENT_YEAR)
   const [salesAssignmentYear, setSalesAssignmentYear] = useState<SalesDemandYear>(DEFAULT_SALES_ASSIGNMENT_YEAR)
   const [assignmentRows, setAssignmentRows] = useState<ReferenceBomRow[]>([])
+  const visibleSopRows = useMemo(
+    () => REFERENCE_BOM_ROWS.filter((row) => row.month.startsWith(`${sopAssignmentYear}-`)),
+    [sopAssignmentYear],
+  )
 
   const openAssignment = (rows: ReferenceBomRow[]) => {
     if (rows.length === 0) return
@@ -105,7 +110,7 @@ export function ReferenceBomView() {
         <TabsList variant="line" className="h-10 min-h-10 w-full justify-start gap-2 rounded-none border-b border-border p-0">
           <TabsTrigger value="sop" className="!h-9 flex-none gap-2 px-3">
             SOP Assignments
-            <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{REFERENCE_BOM_ROWS.length}</Badge>
+            <Badge variant="secondary" className="h-5 min-w-5 justify-center px-1.5 text-[10px]">{visibleSopRows.length}</Badge>
           </TabsTrigger>
           <TabsTrigger value="sales" className="!h-9 flex-none gap-2 px-3">
             Sales Assignments
@@ -117,8 +122,9 @@ export function ReferenceBomView() {
           <DataTable<ReferenceBomRow>
             caption="SOP BOM assignments"
             persistenceKey="reference-bom.sop"
+            toolbarStart={<YearSelector year={sopAssignmentYear} onChange={setSopAssignmentYear} />}
             columns={COLUMNS}
-            data={REFERENCE_BOM_ROWS}
+            data={visibleSopRows}
             getRowId={(row) => row.id}
             selectable
             bulkActions={bulkActions}

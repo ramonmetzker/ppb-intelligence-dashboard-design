@@ -36,10 +36,12 @@ const SALES_COLUMNS: readonly DataTableColumn<SalesAssignmentRow>[] = [
   },
   {
     id: 'period',
-    header: 'Year / Month',
-    accessor: (row) => `${row.year} / ${row.month}`,
-    width: 140,
-    cell: ({ row }) => <span className="tnum whitespace-nowrap text-[12px] text-muted-foreground">{row.year} / {row.month}</span>,
+    header: 'Year/Month',
+    accessor: (row) => `${row.year}-${row.month}`,
+    kind: 'date',
+    dateGranularity: 'month',
+    width: 125,
+    cell: ({ row }) => <span className="tnum whitespace-nowrap text-[12px] text-muted-foreground">{row.year}-{row.month}</span>,
   },
   {
     id: 'newModel',

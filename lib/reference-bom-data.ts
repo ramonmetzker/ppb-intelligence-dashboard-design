@@ -28,14 +28,14 @@ export type PpbBomItem = {
 }
 
 export const REFERENCE_BOM_ROWS: ReferenceBomRow[] = [
-  { id: 'sop-001', plant: 'P81M', model: 'ZB-420', month: 'Nov 2026', volume: 1840, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
-  { id: 'sop-002', plant: 'P81M', model: 'ZB-430', month: 'Nov 2026', volume: 1260, coverage: 'Previous', source: 'BOM-ZB-410-R3', previousBom: 'BOM-ZB-410-R3' },
-  { id: 'sop-003', plant: 'P81J', model: 'NX-200', month: 'Dec 2026', volume: 980, coverage: 'Fake', source: 'Fake BOM' },
-  { id: 'sop-004', plant: 'P81M', model: 'NX-210', month: 'Dec 2026', volume: 740, coverage: 'Reference', source: 'BOM-NX-200-R2' },
-  { id: 'sop-005', plant: 'P81J', model: 'GT-510', month: 'Jan 2027', volume: 520, coverage: 'Previous', source: 'BOM-GT-500-R4', previousBom: 'BOM-GT-500-R4' },
-  { id: 'sop-006', plant: 'P81M', model: 'GT-520', month: 'Jan 2027', volume: 410, coverage: 'Fake', source: 'Fake BOM' },
-  { id: 'sop-007', plant: 'P81J', model: 'ZB-450', month: 'Feb 2027', volume: 680, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
-  { id: 'sop-008', plant: 'P81M', model: 'NX-220', month: 'Feb 2027', volume: 320, coverage: 'Fake', source: 'Fake BOM' },
+  { id: 'sop-001', plant: 'P81M', model: 'ZB-420', month: '2026-11', volume: 1840, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
+  { id: 'sop-002', plant: 'P81M', model: 'ZB-430', month: '2026-11', volume: 1260, coverage: 'Previous', source: 'BOM-ZB-410-R3', previousBom: 'BOM-ZB-410-R3' },
+  { id: 'sop-003', plant: 'P81J', model: 'NX-200', month: '2026-12', volume: 980, coverage: 'Fake', source: 'Fake BOM' },
+  { id: 'sop-004', plant: 'P81M', model: 'NX-210', month: '2026-12', volume: 740, coverage: 'Reference', source: 'BOM-NX-200-R2' },
+  { id: 'sop-005', plant: 'P81J', model: 'GT-510', month: '2027-01', volume: 520, coverage: 'Previous', source: 'BOM-GT-500-R4', previousBom: 'BOM-GT-500-R4' },
+  { id: 'sop-006', plant: 'P81M', model: 'GT-520', month: '2027-01', volume: 410, coverage: 'Fake', source: 'Fake BOM' },
+  { id: 'sop-007', plant: 'P81J', model: 'ZB-450', month: '2027-02', volume: 680, coverage: 'Reference', source: 'BOM-ZB-420-R1' },
+  { id: 'sop-008', plant: 'P81M', model: 'NX-220', month: '2027-02', volume: 320, coverage: 'Fake', source: 'Fake BOM' },
 ]
 
 export const REFERENCE_BOM_OPTIONS: ReferenceBomOption[] = [
@@ -92,6 +92,8 @@ const SALES_ASSIGNMENT_TEMPLATES = [
   { id: 'sales-sm-a059', originalModel: 'SM-A059', newModel: 'SM-A059', referenceBom: 'Unassigned', division: 100, totalVolume: 7190 },
 ] as const
 
+const SALES_ASSIGNMENT_MONTH = '01'
+
 function createSalesAssignmentRows(year: SalesDemandYear): SalesAssignmentRow[] {
   return SALES_ASSIGNMENT_TEMPLATES.map((template): SalesAssignmentRow => {
     const id = `${template.id}-${year}`
@@ -102,13 +104,13 @@ function createSalesAssignmentRows(year: SalesDemandYear): SalesAssignmentRow[] 
         id: `${child.id}-${year}`,
         parentId: id,
         year,
-        month: 'Jan–Dec',
+        month: SALES_ASSIGNMENT_MONTH,
       }))
 
-      return { ...template, id, year, month: 'Jan–Dec', children }
+      return { ...template, id, year, month: SALES_ASSIGNMENT_MONTH, children }
     }
 
-    return { ...template, id, year, month: 'Jan–Dec' }
+    return { ...template, id, year, month: SALES_ASSIGNMENT_MONTH }
   })
 }
 
