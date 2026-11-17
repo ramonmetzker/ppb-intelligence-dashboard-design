@@ -40,13 +40,13 @@ export function MockAnalysisChat({ scenario }: AnalysisChatProps) {
     setInput('')
     setThinking(true)
     window.setTimeout(() => {
-      setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', content: getMockAnalysisReply(trimmed, [scenario.name], scenario.unknownOriginLines) }])
+      setMessages((current) => [...current, { id: nextId.current++, role: 'assistant', content: getMockAnalysisReply(trimmed, scenario) }])
       setThinking(false)
     }, 500)
   }
 
   return (
-    <section className="flex min-h-[420px] flex-col rounded-lg border border-border bg-card">
+    <section className="flex min-h-[360px] flex-col rounded-lg border border-border bg-card">
       <header className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
           <span className="flex size-7 items-center justify-center rounded-[2px] bg-brand text-primary-foreground"><ChatCircleDots size={15} weight="fill" /></span>

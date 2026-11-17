@@ -2,18 +2,25 @@
 
 import { useState } from 'react'
 import {
-  ArrowRight,
+  CaretDown,
   CaretRight,
   Check,
   DownloadSimple,
   Info,
   LockKey,
-  Warning,
 } from '@phosphor-icons/react'
 
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/app/page-header'
 import { Panel } from '@/components/app/panel'
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 import {
   reportFacts,
@@ -39,12 +46,12 @@ function formatCurrency(value: number | null) {
   return value === null ? '—' : usd.format(value)
 }
 
-function formatCompactCurrency(value: number | null) {
-  return value === null ? '—' : `$${(value / 1_000_000).toFixed(2)}M`
-}
-
 function formatNumber(value: number) {
   return decimal.format(value)
+}
+
+function formatSigned(value: number, suffix = '') {
+  return `${value > 0 ? '+' : ''}${formatNumber(value)}${suffix}`
 }
 
 function toneClasses(tone: MetricTone) {
@@ -56,6 +63,7 @@ function toneClasses(tone: MetricTone) {
 function ScenarioStatus({ scenario }: { scenario: SimulationScenario }) {
   const isWarning = scenario.status === 'Atenção'
   const isRecommended = scenario.status === 'Recomendado'
+
   return (
     <span
       className={cn(
@@ -69,122 +77,180 @@ function ScenarioStatus({ scenario }: { scenario: SimulationScenario }) {
   )
 }
 
-function ScenarioCard({
-  scenario,
-  selected,
-  onSelect,
+function ScenarioSelector({
+  selectedIds,
+  onToggle,
 }: {
-  scenario: SimulationScenario
-  selected: boolean
-  onSelect: () => void
+  selectedIds: string[]
+  onToggle: (id: string) => void
 }) {
+  const [open, setOpen] = useState(false)
+  const selectedScenarios = selectedIds.map((id) => simulationScenarios.find((item) => item.id === id)).filter((item): item is SimulationScenario => Boolean(item))
+  const primaryScenario = selectedScenarios[0] ?? simulationScenarios[1]
+
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onSelect}
-      className={cn(
-        'flex min-w-0 flex-col border border-border bg-card p-3 text-left transition-colors hover:border-brand/50',
-        selected && 'border-brand bg-brand-soft/35',
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold text-foreground">{scenario.name}</p>
-          <ScenarioStatus scenario={scenario} />
-        </div>
-        <span
-          className={cn(
-            'flex size-5 shrink-0 items-center justify-center rounded-[2px] border',
-            selected ? 'border-brand bg-brand text-primary-foreground' : 'border-border text-transparent',
-          )}
-        >
-          <Check size={12} weight="bold" />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            aria-label={`Simulations selected: ${selectedScenarios.map((item) => item.name).join(', ')}`}
+            className="h-12 w-full justify-between gap-3 px-3 text-left"
+          />
+        }
+      >
+        <span className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-[2px] bg-brand text-primary-foreground">
+            <LockKey size={14} />
+          </span>
+          <span className="flex min-w-0 flex-col items-start gap-0.5">
+            <span className="eyebrow">Simulations · {selectedScenarios.length}/3</span>
+            <span className="truncate text-[12px] font-semibold">{primaryScenario.name}{selectedScenarios.length > 1 ? ` + ${selectedScenarios.length - 1}` : ''}</span>
+          </span>
         </span>
-      </div>
-      <div className="mt-3 grid grid-cols-3 divide-x divide-border border-t border-border pt-3">
-        <Metric label="Score" value={formatNumber(scenario.score)} />
-        <Metric label="Known cost" value={formatCompactCurrency(scenario.knownCost)} />
-        <Metric label="Coverage" value={`${formatNumber(scenario.priceCoverage)}%`} />
-      </div>
-    </button>
-  )
-}
+        <CaretDown size={15} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+      </PopoverTrigger>
 
-function Metric({ label, value, tone = 'default' }: { label: string; value: string; tone?: MetricTone }) {
-  return (
-    <div className="min-w-0 px-2 first:pl-0 last:pr-0">
-      <p className="eyebrow truncate">{label}</p>
-      <p className={cn('num mt-1 truncate text-[14px] font-semibold', toneClasses(tone))}>{value}</p>
-    </div>
-  )
-}
+      <PopoverContent align="end" sideOffset={8} className="w-[min(360px,calc(100vw-24px))] gap-0 p-0">
+        <PopoverHeader className="px-3 py-3">
+          <PopoverTitle>Choose simulations</PopoverTitle>
+          <PopoverDescription>Select up to three. The first selected is predominant.</PopoverDescription>
+        </PopoverHeader>
+        <div className="flex flex-col gap-1 border-t border-border p-2">
+          {simulationScenarios.map((scenario) => {
+            const selectedIndex = selectedIds.indexOf(scenario.id)
+            const selected = selectedIndex !== -1
+            const maxReached = selectedIds.length >= 3 && !selected
+            const delta = scenario.score - reportFacts.sopScore
+            const savings = scenario.knownCostDelta === null ? null : Math.abs(scenario.knownCostDelta)
 
-function InlineMetric({ label, value, detail, tone = 'default' }: { label: string; value: string; detail?: string; tone?: MetricTone }) {
-  return (
-    <div className="border-l border-border pl-3 first:border-l-0 first:pl-0">
-      <p className="eyebrow">{label}</p>
-      <p className={cn('num mt-1 text-[22px] leading-6 font-semibold', toneClasses(tone))}>{value}</p>
-      {detail ? <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p> : null}
-    </div>
-  )
-}
-
-function ScorePosition({ scenario }: { scenario: SimulationScenario }) {
-  const min = 660
-  const max = 680
-  const position = Math.min(100, Math.max(0, ((scenario.score - min) / (max - min)) * 100))
-  const targetPosition = ((reportFacts.requestedScore - min) / (max - min)) * 100
-
-  return (
-    <Panel title="Score position" description="Scenario vs. target and calculated ceiling.">
-      <div className="grid gap-5 md:grid-cols-[1fr_180px] md:items-center">
-        <div>
-          <div className="relative h-16">
-            <div className="absolute inset-x-0 top-7 h-px bg-border" />
-            <div className="absolute top-7 left-0 h-[3px] bg-brand" style={{ width: `${position}%` }} />
-            <div className="absolute top-5 h-5 w-px bg-foreground" style={{ left: `${targetPosition}%` }} />
-            <span className="absolute top-1 -translate-x-1/2 text-[10px] font-medium text-muted-foreground" style={{ left: `${targetPosition}%` }}>
-              Target {formatNumber(reportFacts.requestedScore)}
-            </span>
-            <span className="absolute top-[22px] size-3 -translate-x-1/2 rounded-[2px] bg-brand ring-2 ring-brand/20" style={{ left: `${position}%` }} aria-hidden="true" />
-            <div className="absolute inset-x-0 bottom-0 flex justify-between text-[10px] text-muted-foreground"><span>{min}</span><span>670</span><span>{max}</span></div>
-          </div>
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground"><span className="size-2 rounded-[1px] bg-brand" /> Scenario <span className="ml-3 size-2 bg-foreground" /> Target</div>
+            return (
+              <button
+                key={scenario.id}
+                type="button"
+                aria-pressed={selected}
+                aria-disabled={maxReached}
+                disabled={maxReached}
+                onClick={() => onToggle(scenario.id)}
+                className={cn('flex items-center gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-45', selected && 'bg-brand-soft/35')}
+              >
+                <span className={cn('flex size-5 shrink-0 items-center justify-center rounded-[2px] border', selected ? 'border-brand bg-brand text-primary-foreground' : 'border-border text-transparent')}>
+                  <Check size={11} weight="bold" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="truncate text-[12px] font-semibold">{scenario.name}</span>
+                    <span className={cn('num shrink-0 font-semibold', selectedIndex === 0 ? 'text-[13px]' : 'text-[11px] text-muted-foreground')}>{formatNumber(scenario.score)}</span>
+                  </span>
+                  <span className="mt-1 flex items-center justify-between gap-3 text-[10px] text-muted-foreground">
+                    <span>{selectedIndex === 0 ? 'Predominant · ' : ''}{scenario.simulatedMonths.join(' · ')} · <ScenarioStatus scenario={scenario} /></span>
+                    <span className={cn('num font-semibold', savings ? 'text-success' : delta >= 0 ? 'text-success' : 'text-muted-foreground')}>
+                      {savings === null ? formatSigned(delta, ' pts') : `${formatCurrency(savings)} saved`}
+                    </span>
+                  </span>
+                </span>
+              </button>
+            )
+          })}
         </div>
-        <div className="border-t border-border pt-3 md:border-t-0 md:border-l md:pl-5 md:pt-0">
-          <p className="eyebrow">Gap to target</p>
-          <p className={cn('num mt-1 text-[28px] leading-8 font-semibold', scenario.score >= reportFacts.requestedScore ? 'text-success' : 'text-warning')}>
-            {formatNumber(scenario.score - reportFacts.requestedScore)}
+        <div className="border-t border-border px-3 py-2 text-[10px] text-muted-foreground">{selectedIds.length} of 3 simulations selected</div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function scorePosition(value: number) {
+  return Math.min(100, Math.max(0, ((value - 660) / 20) * 100))
+}
+
+function ScoreRail({ label, score, predominant = false, sop = false }: { label: string; score: number; predominant?: boolean; sop?: boolean }) {
+  return (
+    <div className={cn('space-y-1', !predominant && !sop && 'opacity-75')}>
+      <div className="flex items-center justify-between gap-3">
+        <span className={cn('truncate', predominant ? 'text-[11px] font-semibold text-foreground' : 'text-[10px] text-muted-foreground')}>{label}</span>
+        <span className={cn('num shrink-0 font-semibold', predominant ? 'text-[14px] text-foreground' : sop ? 'text-[11px] text-foreground' : 'text-[11px] text-muted-foreground')}>{formatNumber(score)}</span>
+      </div>
+      <div className="relative h-3" aria-hidden="true">
+        <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border" />
+        <div className={cn('absolute left-0 top-1/2 -translate-y-1/2', predominant ? 'h-[3px] bg-brand' : sop ? 'h-[2px] bg-foreground/70' : 'h-[2px] bg-brand/55')} style={{ width: `${scorePosition(score)}%` }} />
+        <span className="absolute top-0 h-3 w-px bg-warning/80" style={{ left: `${scorePosition(reportFacts.requestedScore)}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function ScoreResult({ scenarios }: { scenarios: SimulationScenario[] }) {
+  const primaryScenario = scenarios[0]
+  const scoreDelta = primaryScenario.score - reportFacts.sopScore
+  const targetGap = primaryScenario.score - reportFacts.requestedScore
+  const months = Array.from(new Set(scenarios.flatMap((scenario) => scenario.simulatedMonths))).join(' · ')
+
+  return (
+    <Panel title="Simulation result" description={`${primaryScenario.name}${scenarios.length > 1 ? ` + ${scenarios.length - 1} comparison` : ''} · ${months}`}>
+      <div className="grid gap-5 lg:grid-cols-[1fr_190px] lg:items-center">
+        <div>
+          <p className="eyebrow">Predominant score achieved</p>
+          <div className="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
+            <p className="num text-[44px] leading-10 font-semibold">{formatNumber(primaryScenario.score)}</p>
+            <span className={cn('num pb-1 text-[14px] font-semibold', scoreDelta >= 0 ? 'text-success' : 'text-warning')}>
+              {formatSigned(scoreDelta, ' vs SOP')}
+            </span>
+          </div>
+          <p className="mt-2 text-[12px] text-muted-foreground">SOP / current plan without simulation: <span className="num font-semibold text-foreground">{formatNumber(reportFacts.sopScore)}</span></p>
+
+          <div className="mt-7 space-y-3" role="group" aria-label={`Selected simulation scores compared with SOP. Target ${formatNumber(reportFacts.requestedScore)}.`}>
+            {scenarios.map((scenario, index) => (
+              <ScoreRail key={scenario.id} label={index === 0 ? `Simulation · ${scenario.shortName}` : `Also selected · ${scenario.shortName}`} score={scenario.score} predominant={index === 0} />
+            ))}
+            <div className="border-t border-border pt-3">
+              <ScoreRail label="SOP / current plan" score={reportFacts.sopScore} sop />
+            </div>
+            <div className="flex justify-between text-[10px] text-muted-foreground"><span>660</span><span>670</span><span>680</span></div>
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10.5px] text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-[1px] bg-brand" /> Simulation</span>
+            <span className="flex items-center gap-1.5"><span className="size-2 rounded-[1px] bg-foreground" /> SOP</span>
+            <span className="flex items-center gap-1.5"><span className="h-3 w-px bg-warning" /> Target {formatNumber(reportFacts.requestedScore)}</span>
+          </div>
+        </div>
+
+        <div className="border-t border-border pt-4 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+          <p className="eyebrow">Target gap</p>
+          <p className={cn('num mt-1 text-[30px] leading-8 font-semibold', targetGap >= 0 ? 'text-success' : 'text-warning')}>
+            {formatSigned(targetGap, ' pts')}
           </p>
-          <p className="mt-1 text-[11px] leading-4 text-muted-foreground">Calculated ceiling {formatNumber(reportFacts.maxCalculableScore)}</p>
+          <p className="mt-1 text-[11px] leading-4 text-muted-foreground">Target {formatNumber(reportFacts.requestedScore)}</p>
+          <p className="mt-4 border-t border-border pt-3 text-[11px] leading-4 text-muted-foreground">The first selected simulation is the predominant result.</p>
         </div>
       </div>
     </Panel>
   )
 }
 
-function RunDetails({ scenario }: { scenario: SimulationScenario }) {
+function CostImpact({ scenario }: { scenario: SimulationScenario }) {
+  const savings = scenario.knownCostDelta === null ? null : Math.abs(scenario.knownCostDelta)
+
   return (
-    <Panel title="Run details" description="Inputs used by the selected scenario.">
-      <dl className="divide-y divide-border">
-        <DetailRow label="Period" value={reportFacts.scope} />
-        <DetailRow label="Priced lines" value={`${scenario.pricedLines} / ${scenario.totalLines}`} />
-        <DetailRow label="Origin pending" value={String(scenario.unknownOriginLines)} tone="warning" />
-        <DetailRow label="Known cost" value={formatCurrency(scenario.knownCost)} />
-        <DetailRow label="Confidence" value={scenario.type === 'previous' ? 'Low' : reportFacts.confidence} />
-      </dl>
-      <div className="mt-4 flex items-start gap-2 border-t border-border pt-3 text-[11px] leading-4 text-muted-foreground">
-        <Info className="mt-0.5 shrink-0 text-brand" size={14} />
-        <span>{scenario.unknownOriginLines} lines remain outside the score until origin and price are confirmed.</span>
+    <Panel title="Cost impact" description="Known cost compared with the SOP / current plan.">
+      <div className="border-b border-border pb-4">
+        <p className="eyebrow">Potential saving vs SOP</p>
+        <p className={cn('num mt-1 text-[32px] leading-9 font-semibold', savings ? 'text-success' : 'text-muted-foreground')}>
+          {savings === null ? '—' : formatCurrency(savings)}
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{savings === null ? 'Cost not reconstructed for this run' : 'Known reduction from the simulated sourcing mix'}</p>
       </div>
+      <dl className="divide-y divide-border">
+        <DetailRow label="SOP / current plan" value={formatCurrency(reportFacts.sopKnownCost)} />
+        <DetailRow label="Simulation known cost" value={formatCurrency(scenario.knownCost)} />
+        <DetailRow label="Simulated months" value={scenario.simulatedMonths.join(' · ')} />
+      </dl>
     </Panel>
   )
 }
 
 function DetailRow({ label, value, tone = 'default' }: { label: string; value: string; tone?: MetricTone }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2 first:pt-0 last:pb-0">
+    <div className="flex items-center justify-between gap-4 py-2 first:pt-3 last:pb-0">
       <dt className="text-[12px] text-muted-foreground">{label}</dt>
       <dd className={cn('num text-right text-[12px] font-semibold', toneClasses(tone))}>{value}</dd>
     </div>
@@ -192,26 +258,42 @@ function DetailRow({ label, value, tone = 'default' }: { label: string; value: s
 }
 
 function MonthlyDeltaTable({ scenario }: { scenario: SimulationScenario }) {
+  const [expanded, setExpanded] = useState(false)
+  const visibleChanges = expanded ? scenario.monthlyChanges : scenario.monthlyChanges.slice(0, 4)
+  const hasMoreRows = scenario.monthlyChanges.length > 4
+
   return (
     <Panel
-      title="Monthly cost deltas"
-      description="Known line-item changes from baseline."
-      action={<Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-[11px]">Full table <ArrowRight size={13} /></Button>}
+      title="Simulated months"
+      description="Line-item impact within the selected simulation window."
+      action={hasMoreRows ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 px-2 text-[11px]"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          {expanded ? 'Collapse table' : `Full table (${scenario.monthlyChanges.length})`}
+          <CaretDown size={13} className={cn('transition-transform', expanded && 'rotate-180')} />
+        </Button>
+      ) : null}
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px] text-left text-[12px]">
+        <table className="w-full min-w-[560px] text-left text-[12px]">
           <thead>
             <tr className="text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
               <th scope="col" className="pb-2 font-medium">Month</th>
               <th scope="col" className="pb-2 font-medium">Item</th>
               <th scope="col" className="pb-2 font-medium">PN</th>
-              <th scope="col" className="pb-2 text-right font-medium">Baseline</th>
-              <th scope="col" className="pb-2 text-right font-medium">Scenario</th>
-              <th scope="col" className="pb-2 text-right font-medium">Delta</th>
+              <th scope="col" className="pb-2 text-right font-medium">SOP</th>
+              <th scope="col" className="pb-2 text-right font-medium">Simulation</th>
+              <th scope="col" className="pb-2 text-right font-medium">Saving</th>
             </tr>
           </thead>
           <tbody>
-            {scenario.monthlyChanges.map((change) => (
+            {visibleChanges.map((change) => (
               <tr key={`${scenario.id}-${change.month}-${change.pn}`} className="border-t border-border/70">
                 <th scope="row" className="py-2.5 text-left font-medium">{change.month}</th>
                 <td className="py-2.5 text-muted-foreground">{change.item}</td>
@@ -219,7 +301,7 @@ function MonthlyDeltaTable({ scenario }: { scenario: SimulationScenario }) {
                 <td className="num py-2.5 text-right">{formatCurrency(change.baseline)}</td>
                 <td className="num py-2.5 text-right">{formatCurrency(change.scenario)}</td>
                 <td className={cn('num py-2.5 text-right font-semibold', change.delta < 0 ? 'text-success' : change.delta > 0 ? 'text-warning' : 'text-muted-foreground')}>
-                  {change.delta > 0 ? '+' : ''}{formatCurrency(change.delta)}
+                  {change.delta < 0 ? formatCurrency(Math.abs(change.delta)) : change.delta > 0 ? `+${formatCurrency(change.delta)}` : '—'}
                 </td>
               </tr>
             ))}
@@ -230,89 +312,84 @@ function MonthlyDeltaTable({ scenario }: { scenario: SimulationScenario }) {
   )
 }
 
-export function SimulationAnalyzer() {
-  const [selectedScenarioId, setSelectedScenarioId] = useState('recommended')
-  const [selectedIds, setSelectedIds] = useState(['baseline', 'recommended'])
-  const scenario = simulationScenarios.find((item) => item.id === selectedScenarioId) ?? simulationScenarios[1]
-  const knownSavings = scenario.knownCostDelta === null ? null : Math.abs(scenario.knownCostDelta)
+function PendingInputs({ scenario }: { scenario: SimulationScenario }) {
+  return (
+    <Panel title="Data completeness" description="Validation items kept separate from the simulation result.">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <PendingMetric label="Origin pending" value={String(scenario.unknownOriginLines)} detail="Lines outside score" />
+        <PendingMetric label="Priced lines" value={`${scenario.pricedLines} / ${scenario.totalLines}`} detail="Price coverage" />
+        <PendingMetric label="Confidence" value={scenario.type === 'previous' ? 'Low' : reportFacts.confidence} detail="Current run" />
+      </div>
+      <div className="mt-4 flex items-start gap-2 border-t border-border pt-3 text-[11px] leading-4 text-muted-foreground">
+        <Info className="mt-0.5 shrink-0 text-brand" size={14} />
+        <span>Pending inputs do not change the selected score until origin and price are confirmed.</span>
+      </div>
+    </Panel>
+  )
+}
 
-  function toggleContext(id: string) {
-    setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
+function PendingMetric({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return (
+    <div className="border-l-2 border-warning/50 pl-3">
+      <p className="eyebrow">{label}</p>
+      <p className="num mt-1 text-[20px] font-semibold text-warning">{value}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{detail}</p>
+    </div>
+  )
+}
+
+function DecisionNotes({ scenario }: { scenario: SimulationScenario }) {
+  return (
+    <Panel title="Decision notes" description="Technical readout for the selected simulation.">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {scenario.keyChanges.map((note) => (
+          <div key={note} className="flex gap-2 border-l-2 border-brand/40 pl-3 text-[12px] leading-5 text-muted-foreground">
+            <CaretRight className="mt-1 shrink-0 text-brand" size={13} />
+            <span>{note}</span>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  )
+}
+
+export function SimulationAnalyzer() {
+  const [selectedScenarioIds, setSelectedScenarioIds] = useState(['recommended'])
+  const selectedScenarios = selectedScenarioIds.map((id) => simulationScenarios.find((item) => item.id === id)).filter((item): item is SimulationScenario => Boolean(item))
+  const primaryScenario = selectedScenarios[0] ?? simulationScenarios[1]
+
+  function toggleScenario(id: string) {
+    setSelectedScenarioIds((current) => {
+      if (current.includes(id)) {
+        return current.length === 1 ? current : current.filter((item) => item !== id)
+      }
+      return current.length >= 3 ? current : [...current, id]
+    })
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <PageHeader
-        title="Simulation analysis"
-        description="Compare sourcing scenarios against the PPB score target."
-      >
+      <PageHeader title="Simulation analysis" description="Compare selected simulation months with the SOP / current plan.">
         <Button variant="outline" className="gap-2"><DownloadSimple size={15} /> Export</Button>
       </PageHeader>
 
-      <Panel
-        title="Scenario comparison"
-        description="Select a run to inspect its score, cost and coverage."
-        action={<span className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><LockKey size={13} /> PPB / MX 2026</span>}
-      >
-        <div className="grid gap-2 xl:grid-cols-3">
-          {simulationScenarios.map((item) => (
-            <ScenarioCard key={item.id} scenario={item} selected={item.id === scenario.id} onSelect={() => setSelectedScenarioId(item.id)} />
-          ))}
-        </div>
-      </Panel>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Panel title="Score" bodyClassName="p-3">
-          <InlineMetric label="Selected run" value={formatNumber(scenario.score)} detail={`Target ${formatNumber(reportFacts.requestedScore)}`} />
-        </Panel>
-        <Panel title="Known cost" bodyClassName="p-3">
-          <InlineMetric label="Scenario" value={formatCurrency(scenario.knownCost)} detail={knownSavings === null ? 'Not reconstructed' : `${formatCurrency(knownSavings)} vs baseline`} tone={knownSavings ? 'positive' : 'default'} />
-        </Panel>
-        <Panel title="Price coverage" bodyClassName="p-3">
-          <InlineMetric label="Priced lines" value={`${formatNumber(scenario.priceCoverage)}%`} detail={`${scenario.pricedLines} of ${scenario.totalLines}`} />
-        </Panel>
-        <Panel title="Open inputs" bodyClassName="p-3">
-          <InlineMetric label="Origin pending" value={String(scenario.unknownOriginLines)} detail="Requires validation" tone="warning" />
-        </Panel>
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.75fr)]">
-        <ScorePosition scenario={scenario} />
-        <RunDetails scenario={scenario} />
-      </div>
-
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
-        <MonthlyDeltaTable scenario={scenario} />
-        <Panel title="Analysis context" description="Scenarios available to the analyst.">
-          <div className="space-y-2">
-            {simulationScenarios.map((item) => {
-              const checked = selectedIds.includes(item.id)
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => toggleContext(item.id)}
-                  className={cn('flex w-full items-center justify-between gap-3 border border-border px-3 py-2.5 text-left transition-colors hover:border-brand/50', checked && 'border-brand/35 bg-brand-soft/35')}
-                >
-                  <span className="flex min-w-0 items-center gap-2"><span className={cn('flex size-4 items-center justify-center rounded-[2px] border', checked ? 'border-brand bg-brand text-primary-foreground' : 'border-border text-transparent')}><Check size={10} weight="bold" /></span><span className="truncate text-[12px] font-medium">{item.name}</span></span>
-                  <span className="num text-[12px] text-muted-foreground">{formatNumber(item.score)}</span>
-                </button>
-              )
-            })}
+      <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,3fr)_minmax(270px,1fr)]">
+        <main className="flex min-w-0 flex-col gap-3">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+            <ScoreResult scenarios={selectedScenarios.length > 0 ? selectedScenarios : [primaryScenario]} />
+            <CostImpact scenario={primaryScenario} />
           </div>
-          <div className="mt-4 border-t border-border pt-3 text-[11px] leading-4 text-muted-foreground"><Warning className="mr-1 inline-block text-warning" size={13} /> Keep the same coverage scope when comparing scores.</div>
-        </Panel>
-      </div>
+          <MonthlyDeltaTable scenario={primaryScenario} />
+          <DecisionNotes scenario={primaryScenario} />
+          <PendingInputs scenario={primaryScenario} />
+        </main>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.72fr)]">
-        <Panel title="Decision notes" description="Technical readout for the selected scenario.">
-          <div className="grid gap-2 sm:grid-cols-3">
-            {scenario.keyChanges.map((note) => (
-              <div key={note} className="flex gap-2 border-l-2 border-brand/40 pl-3 text-[12px] leading-5 text-muted-foreground"><CaretRight className="mt-1 shrink-0 text-brand" size={13} /><span>{note}</span></div>
-            ))}
+        <aside className="flex min-w-0 flex-col gap-3">
+          <ScenarioSelector selectedIds={selectedScenarioIds} onToggle={toggleScenario} />
+          <div className="xl:sticky xl:top-3">
+            <MockAnalysisChat scenario={primaryScenario} />
           </div>
-        </Panel>
-        <MockAnalysisChat scenario={scenario} />
+        </aside>
       </div>
     </div>
   )

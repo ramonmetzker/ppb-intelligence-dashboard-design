@@ -10,6 +10,7 @@ export type SimulationScenario = {
   createdAt: string
   score: number
   scoreDelta: number
+  simulatedMonths: string[]
   knownCost: number | null
   knownCostDelta: number | null
   priceCoverage: number
@@ -39,6 +40,7 @@ export const simulationScenarios: SimulationScenario[] = [
     createdAt: "Executada agora",
     score: 674.42,
     scoreDelta: 0,
+    simulatedMonths: ["Nov/26", "Dec/26"],
     knownCost: 15229485.18,
     knownCostDelta: 0,
     priceCoverage: 62.5,
@@ -52,10 +54,14 @@ export const simulationScenarios: SimulationScenario[] = [
       "18 linhas sem origem identificada",
     ],
     monthlyChanges: [
-      { month: "Jan/26", item: "Painel lateral", pn: "PN-901", baseline: 128.4, scenario: 128.4, delta: 0 },
-      { month: "Fev/26", item: "Conjunto cabo", pn: "PN-654", baseline: 92.15, scenario: 92.15, delta: 0 },
-      { month: "Mar/26", item: "Suporte fixação", pn: "PN-440", baseline: 65.7, scenario: 65.7, delta: 0 },
-      { month: "Abr/26", item: "Módulo de controle", pn: "PN-218", baseline: 310.2, scenario: 310.2, delta: 0 },
+      { month: "Nov/26", item: "Painel lateral", pn: "PN-901", baseline: 128.4, scenario: 128.4, delta: 0 },
+      { month: "Nov/26", item: "Conjunto cabo", pn: "PN-654", baseline: 92.15, scenario: 92.15, delta: 0 },
+      { month: "Dec/26", item: "Suporte fixação", pn: "PN-440", baseline: 65.7, scenario: 65.7, delta: 0 },
+      { month: "Dec/26", item: "Módulo de controle", pn: "PN-218", baseline: 310.2, scenario: 310.2, delta: 0 },
+      { month: "Nov/26", item: "Carcaça motor", pn: "PN-777", baseline: 184.6, scenario: 184.6, delta: 0 },
+      { month: "Nov/26", item: "Blindagem térmica", pn: "PN-381", baseline: 146.8, scenario: 146.8, delta: 0 },
+      { month: "Dec/26", item: "Conector principal", pn: "PN-532", baseline: 74.3, scenario: 74.3, delta: 0 },
+      { month: "Dec/26", item: "Suporte traseiro", pn: "PN-744", baseline: 118.9, scenario: 118.9, delta: 0 },
     ],
   },
   {
@@ -68,6 +74,7 @@ export const simulationScenarios: SimulationScenario[] = [
     createdAt: "Executada agora",
     score: 674.73,
     scoreDelta: 0.31,
+    simulatedMonths: ["Nov/26", "Dec/26"],
     knownCost: 15176320.44,
     knownCostDelta: -53164.74,
     priceCoverage: 62.5,
@@ -76,15 +83,19 @@ export const simulationScenarios: SimulationScenario[] = [
     unknownOriginLines: 18,
     costNote: "Economia conhecida",
     keyChanges: [
-      "Concentra compras locais em abr/26",
+      "Concentra compras locais em Dec/26",
       "Reduz custo conhecido em US$ 53.164,74",
       "Preserva 30 linhas com preço validado",
     ],
     monthlyChanges: [
-      { month: "Jan/26", item: "Painel lateral", pn: "PN-901", baseline: 128.4, scenario: 128.4, delta: 0 },
-      { month: "Fev/26", item: "Conjunto cabo", pn: "PN-654", baseline: 92.15, scenario: 92.15, delta: 0 },
-      { month: "Mar/26", item: "Suporte fixação", pn: "PN-440", baseline: 65.7, scenario: 61.1, delta: -4.6 },
-      { month: "Abr/26", item: "Módulo de controle", pn: "PN-218", baseline: 310.2, scenario: 274.8, delta: -35.4 },
+      { month: "Nov/26", item: "Painel lateral", pn: "PN-901", baseline: 128.4, scenario: 128.4, delta: 0 },
+      { month: "Nov/26", item: "Conjunto cabo", pn: "PN-654", baseline: 92.15, scenario: 92.15, delta: 0 },
+      { month: "Dec/26", item: "Suporte fixação", pn: "PN-440", baseline: 65.7, scenario: 61.1, delta: -4.6 },
+      { month: "Dec/26", item: "Módulo de controle", pn: "PN-218", baseline: 310.2, scenario: 274.8, delta: -35.4 },
+      { month: "Nov/26", item: "Carcaça motor", pn: "PN-777", baseline: 184.6, scenario: 178.2, delta: -6.4 },
+      { month: "Nov/26", item: "Blindagem térmica", pn: "PN-381", baseline: 146.8, scenario: 145.1, delta: -1.7 },
+      { month: "Dec/26", item: "Conector principal", pn: "PN-532", baseline: 74.3, scenario: 71.5, delta: -2.8 },
+      { month: "Dec/26", item: "Suporte traseiro", pn: "PN-744", baseline: 118.9, scenario: 116.4, delta: -2.5 },
     ],
   },
   {
@@ -97,6 +108,7 @@ export const simulationScenarios: SimulationScenario[] = [
     createdAt: "Importada do histórico",
     score: 668.31,
     scoreDelta: -6.11,
+    simulatedMonths: ["Nov/26", "Dec/26"],
     knownCost: null,
     knownCostDelta: null,
     priceCoverage: 47.9,
@@ -110,15 +122,21 @@ export const simulationScenarios: SimulationScenario[] = [
       "Score não é comparável sem o mesmo escopo",
     ],
     monthlyChanges: [
-      { month: "Jan/26", item: "Painel lateral", pn: "PN-901", baseline: 128.4, scenario: 131.2, delta: 2.8 },
-      { month: "Fev/26", item: "Conjunto cabo", pn: "PN-654", baseline: 92.15, scenario: 96.9, delta: 4.75 },
-      { month: "Mar/26", item: "Suporte fixação", pn: "PN-440", baseline: 65.7, scenario: 71.3, delta: 5.6 },
-      { month: "Abr/26", item: "Módulo de controle", pn: "PN-218", baseline: 310.2, scenario: 321.4, delta: 11.2 },
+      { month: "Nov/26", item: "Painel lateral", pn: "PN-901", baseline: 128.4, scenario: 131.2, delta: 2.8 },
+      { month: "Nov/26", item: "Conjunto cabo", pn: "PN-654", baseline: 92.15, scenario: 96.9, delta: 4.75 },
+      { month: "Dec/26", item: "Suporte fixação", pn: "PN-440", baseline: 65.7, scenario: 71.3, delta: 5.6 },
+      { month: "Dec/26", item: "Módulo de controle", pn: "PN-218", baseline: 310.2, scenario: 321.4, delta: 11.2 },
+      { month: "Nov/26", item: "Carcaça motor", pn: "PN-777", baseline: 184.6, scenario: 188.1, delta: 3.5 },
+      { month: "Nov/26", item: "Blindagem térmica", pn: "PN-381", baseline: 146.8, scenario: 149.2, delta: 2.4 },
+      { month: "Dec/26", item: "Conector principal", pn: "PN-532", baseline: 74.3, scenario: 76.4, delta: 2.1 },
+      { month: "Dec/26", item: "Suporte traseiro", pn: "PN-744", baseline: 118.9, scenario: 120.6, delta: 1.7 },
     ],
   },
 ]
 
 export const reportFacts = {
+  sopScore: 674.42,
+  sopKnownCost: 15229485.18,
   requestedScore: 675.24,
   maxCalculableScore: 675.24,
   priceCoverage: 62.5,
@@ -133,25 +151,31 @@ export const reportFacts = {
   generatedAt: "14 Jun 2025, 10:42",
 }
 
-export function getMockAnalysisReply(prompt: string, scenarioNames: string[], unknownOriginLines = 18) {
+export function getMockAnalysisReply(prompt: string, scenario: SimulationScenario) {
   const normalized = prompt.toLocaleLowerCase("pt-BR")
-  const context = scenarioNames.join(" + ") || "as simulações selecionadas"
+  const savings = scenario.knownCostDelta === null ? null : Math.abs(scenario.knownCostDelta)
 
   if (normalized.includes("score") || normalized.includes("675")) {
-    return `No recorte de ${context}, o score observado fica em 674,73. O teto calculável também é 675,24, então a diferença restante não é causada pelo solver: ela vem das ${unknownOriginLines} linhas sem origem identificada, que ainda não entram no cálculo econômico.`
+    return `No recorte de ${scenario.name}, o score observado fica em ${scenario.score.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}. O SOP / plano atual está em ${reportFacts.sopScore.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}; a diferença é ${Math.abs(scenario.score - reportFacts.sopScore).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ponto.`
   }
 
   if (normalized.includes("econom") || normalized.includes("custo") || normalized.includes("linha")) {
-    return `A economia conhecida do MILP recomendado é de US$ 53.164,74. As maiores variações aparecem em mar/26 e abr/26, com redução concentrada no suporte de fixação e no módulo de controle. A leitura combina o custo conhecido com as variações do relatório anexado.`
+    return savings === null
+      ? `O custo da ${scenario.name} não foi reconstruído. A comparação financeira só fica disponível quando os preços do mesmo escopo do SOP estiverem confirmados.`
+      : `A ${scenario.name} reduz o custo conhecido em ${usdText(savings)} frente ao SOP. A economia está concentrada nos itens simulados em Nov/26 e Dec/26.`
   }
 
   if (normalized.includes("dezembro") || normalized.includes("diverg") || normalized.includes("origem")) {
-    return `A divergência de dezembro é uma pendência de cobertura, não uma decisão de sourcing. A base atual valida preço em 30 de 48 linhas; as outras ${unknownOriginLines} precisam de origem e preço antes de qualquer conclusão definitiva sobre o ano completo.`
+    return `A simulação cobre Nov/26 e Dec/26. As ${scenario.unknownOriginLines} linhas sem origem identificada ficam fora do score até a confirmação de origem e preço.`
   }
 
   if (normalized.includes("corrig") || normalized.includes("aprovar") || normalized.includes("pend") || normalized.includes("próxim")) {
-    return `Antes de aprovar, eu revisaria as ${unknownOriginLines} linhas sem origem identificada, confirmaria as premissas cambiais e fecharia o preço importado do módulo de controle. Com isso, o comparativo fica auditável e o score pode ser recalculado em uma base completa.`
+    return `Antes de aprovar, eu revisaria as ${scenario.unknownOriginLines} linhas pendentes e manteria o mesmo escopo de meses e premissas do SOP para recalcular o comparativo.`
   }
 
-  return `Posso explicar o score, a economia conhecida, as divergências de cobertura ou as pendências de aprovação do cenário selecionado.`
+  return `Posso explicar o score, a economia frente ao SOP ou o impacto dos meses simulados em ${scenario.name}.`
+}
+
+function usdText(value: number) {
+  return `US$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
 }
