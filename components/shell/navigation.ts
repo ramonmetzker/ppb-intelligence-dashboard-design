@@ -32,6 +32,7 @@ export const NAV_GROUPS: AppNavGroup[] = [
     label: 'plan',
     items: [
       { label: 'simulation', href: '/simulation', icon: GitBranch },
+      { label: 'simulationList', href: '/simulation/list', icon: Table },
       { label: 'constraints', href: '/simulation/constraints', icon: SlidersHorizontal },
     ],
   },
