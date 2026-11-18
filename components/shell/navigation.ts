@@ -40,6 +40,7 @@ export const NAV_GROUPS: AppNavGroup[] = [
     label: 'rawData',
     items: [
       { label: 'materials', href: '/raw-data/material-prices', icon: Tag },
+      { label: 'additionalInfo', href: '/raw-data/additional-info', icon: Table },
       { label: 'ppbItems', href: '/raw-data/ppb-items', icon: Cube },
       { label: 'referenceBom', href: '/raw-data/reference-bom', icon: Table },
       { label: 'products', href: '/products', icon: Database },

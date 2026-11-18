@@ -1,11 +1,13 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Link from 'next/link'
 import { Bell, BellOff, CalendarClock, Plus, Power, PowerOff } from 'lucide-react'
 import { PageActions } from '@/components/app/page-actions'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import {
   DEFAULT_QUERY,
   type BulkAction,
@@ -34,6 +36,7 @@ export function RpaMonitorView() {
   const now = useNow()
   const { rows, setRows } = useRpas()
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_RPA_QUERY)
+  const [showLocalTime, setShowLocalTime] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
   const [scheduling, setScheduling] = useState<Rpa | null>(null)
   const [notifying, setNotifying] = useState<Rpa | null>(null)
@@ -68,7 +71,12 @@ export function RpaMonitorView() {
         hideable: false,
         cell: ({ row }) => (
           <span className="inline-flex min-w-0 items-center gap-2 font-medium">
-            <span className="truncate">{row.name}</span>
+            <Link
+              href={`/rpa-monitor/${encodeURIComponent(row.id)}`}
+              className="truncate hover:underline hover:underline-offset-4 focus-visible:rounded focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              {row.name}
+            </Link>
             {!row.enabled && (
               <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[11px] leading-none font-medium text-muted-foreground">
                 Disabled
@@ -110,7 +118,7 @@ export function RpaMonitorView() {
           const next = row.enabled && now !== null ? nextRun(row.schedule, new Date(now)) : null
           return row.enabled ? (
             next ? (
-              <time dateTime={next.toISOString()}>{formatNextRun(next)}</time>
+              <time dateTime={next.toISOString()}>{formatNextRun(next, showLocalTime)}</time>
             ) : (
               <span className="text-muted-foreground">Calculating…</span>
             )
@@ -122,10 +130,10 @@ export function RpaMonitorView() {
       {
         ...base('lastRunAt'),
         width: 205,
-        description: 'When the last run started. All times are UTC.',
+        description: 'When the last run started. Use the table switch to display UTC or GMT-4.',
         cell: ({ row }) =>
           row.lastRunAt ? (
-            <time dateTime={row.lastRunAt}>{formatDateTime(row.lastRunAt)}</time>
+            <time dateTime={row.lastRunAt}>{formatDateTime(row.lastRunAt, showLocalTime)}</time>
           ) : (
             <span className="text-muted-foreground">Never</span>
           ),
@@ -140,7 +148,7 @@ export function RpaMonitorView() {
         ),
       },
     ],
-    [now],
+    [now, showLocalTime],
   )
 
   const rowActions = (row: Rpa): RowAction<Rpa>[] => {
@@ -193,7 +201,7 @@ export function RpaMonitorView() {
     <>
       <PageHeader
         title="RPA Monitor"
-        description="Every robot, its schedule and the result of its last run. Times are shown in UTC."
+        description="Every robot, its schedule and the result of its last run. Switch table times between UTC and GMT-4."
       >
         <PageActions
           primary={
@@ -216,6 +224,17 @@ export function RpaMonitorView() {
           getRowId={(row) => row.id}
           query={query}
           onQueryChange={setQuery}
+          toolbarStart={
+            <div className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground">
+              <Switch
+                checked={showLocalTime}
+                onCheckedChange={setShowLocalTime}
+                aria-label="Horário local, GMT-4"
+              />
+              <span aria-hidden="true">Horário local</span>
+              <span aria-hidden="true" className="text-muted-foreground">GMT-4</span>
+            </div>
+          }
           selectable
           bulkActions={bulkActions}
           rowActions={rowActions}
