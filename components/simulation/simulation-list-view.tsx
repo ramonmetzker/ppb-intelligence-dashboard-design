@@ -5,14 +5,15 @@ import { Info, Trash } from '@phosphor-icons/react'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
 import { Badge } from '@/components/ui/badge'
-import type { DataTableColumnDefinition } from '@/lib/data-table/types'
+import type { BulkAction, DataTableColumnDefinition } from '@/lib/data-table/types'
 import { SUGGESTION_RESULTS } from '@/lib/ppb-model'
 
 type SimulationListRow = {
   id: string
   profile: string
-  year: number
+  year: string
   finalScore: number
+  costSaving: number
   runDate: string
 }
 
@@ -26,17 +27,32 @@ const PROFILE_BY_ID: Record<string, string> = {
   'supplier-shock': 'STRESS TEST',
 }
 
+const DEMO_COST_SAVINGS: Record<string, number> = {
+  forecast: 0,
+  balanced: 53164.74,
+  'lowest-cost': 68320.5,
+  'memory-sprint': 21450,
+  'battery-hedge': 34780.8,
+  'max-headroom': 92750.25,
+  'supplier-shock': 8250,
+}
+
 const MOCK_SIMULATION_ROWS: SimulationListRow[] = SUGGESTION_RESULTS.map(({ suggestion, sim }) => ({
   id: suggestion.id,
   profile: PROFILE_BY_ID[suggestion.id] ?? suggestion.tag.toUpperCase(),
-  year: Number(suggestion.createdAt.slice(0, 4)),
+  year: suggestion.createdAt.slice(0, 4),
   finalScore: sim.yearEnd,
+  costSaving: DEMO_COST_SAVINGS[suggestion.id] ?? 0,
   runDate: suggestion.createdAt,
 }))
 
 const scoreFormat = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
+})
+const currencyFormat = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
 })
 const dateFormat = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
@@ -74,7 +90,7 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
     id: 'year',
     header: 'Year',
     accessor: 'year',
-    kind: 'number',
+    kind: 'text',
     width: 110,
     minWidth: 96,
     align: 'right',
@@ -88,6 +104,17 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
     minWidth: 130,
     align: 'right',
     cell: ({ value }) => <span className="num font-semibold">{scoreFormat.format(Number(value))}</span>,
+  },
+  {
+    id: 'costSaving',
+    header: 'Cost Saving',
+    accessor: 'costSaving',
+    kind: 'number',
+    width: 170,
+    minWidth: 150,
+    align: 'right',
+    cell: ({ value }) => <span className="num font-semibold">{currencyFormat.format(Number(value))}</span>,
+    exportValue: (row) => currencyFormat.format(row.costSaving),
   },
   {
     id: 'runDate',
@@ -106,12 +133,28 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
 
 export function SimulationListView() {
   const [rows, setRows] = useState(MOCK_SIMULATION_ROWS)
-  const [lastDeletedId, setLastDeletedId] = useState<string | null>(null)
+  const [lastDeletedIds, setLastDeletedIds] = useState<string[]>([])
 
-  const deleteSimulation = (row: SimulationListRow) => {
-    setRows((currentRows) => currentRows.filter((item) => item.id !== row.id))
-    setLastDeletedId(row.id)
+  const deleteSimulations = (ids: string[]) => {
+    const deletedIds = new Set(ids)
+    setRows((currentRows) => currentRows.filter((row) => !deletedIds.has(row.id)))
+    setLastDeletedIds(ids)
   }
+
+  const bulkActions: BulkAction<SimulationListRow>[] = [
+    {
+      id: 'delete',
+      label: 'Delete',
+      icon: <Trash aria-hidden="true" />,
+      tone: 'destructive',
+      confirm: (context) => ({
+        title: `Delete ${context.count} simulations?`,
+        description: 'The selected mock runs will be removed from this list until you reload the page.',
+        confirmLabel: 'Delete',
+      }),
+      onSelect: ({ ids }) => deleteSimulations(ids),
+    },
+  ]
 
   return (
     <div className="flex min-w-0 flex-col">
@@ -122,12 +165,15 @@ export function SimulationListView() {
 
       <div className="mb-4 flex items-center gap-2 rounded-md border border-border bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
         <Info size={15} aria-hidden="true" className="shrink-0" />
-        <span>Mock data for preview. Deleted runs return when you reload this page.</span>
+        <span>Mock data for preview. Cost Saving values are illustrative; deleted runs return after reload.</span>
       </div>
 
-      {lastDeletedId && (
+      {lastDeletedIds.length > 0 && (
         <p role="status" className="sr-only">
-          Simulation {lastDeletedId} was removed from the mock list. It will return after reloading the page.
+          {lastDeletedIds.length === 1
+            ? `Simulation ${lastDeletedIds[0]} was removed from the mock list.`
+            : `${lastDeletedIds.length} simulations were removed from the mock list.`}{' '}
+          Deleted runs will return after reloading the page.
         </p>
       )}
 
@@ -137,19 +183,20 @@ export function SimulationListView() {
         data={rows}
         getRowId={(row) => row.id}
         defaultQuery={{ sort: [{ id: 'runDate', direction: 'desc' }] }}
+        selectable
+        bulkActions={bulkActions}
         rowActions={(row) => [
           {
             id: 'delete',
             label: 'Delete simulation',
             icon: <Trash size={15} aria-hidden="true" />,
-            onSelect: deleteSimulation,
+            onSelect: () => deleteSimulations([row.id]),
             confirm: {
               title: `Delete ${row.id}?`,
               description: `The ${row.profile} mock run will be removed from this list until you reload the page.`,
               confirmLabel: 'Delete',
             },
             tone: 'destructive',
-            inline: true,
           },
         ]}
         actionsWidth={112}
