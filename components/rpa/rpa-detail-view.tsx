@@ -21,7 +21,9 @@ import {
 import { describeCron } from '@/lib/rpa/cron'
 import { formatDateTime } from '@/components/rpa/format'
 import { useRpas } from '@/components/rpa/rpa-provider'
+import { usePreferences } from '@/components/shell/preferences-provider'
 import { Badge } from '@/components/ui/badge'
+import { buttonVariants } from '@/components/ui/button'
 
 const logSchemaById = new Map(RPA_LOG_SCHEMA.map((schema) => [schema.id, schema]))
 const logBase = (id: string) => logSchemaById.get(id)!
@@ -79,6 +81,20 @@ function DetailValue({ label, children }: { label: string; children: ReactNode }
   )
 }
 
+function RpaMonitorBackLink() {
+  const { t } = usePreferences()
+
+  return (
+    <Link
+      href="/rpa-monitor"
+      className={buttonVariants({ variant: 'outline', size: 'lg', className: 'mb-3 self-start' })}
+    >
+      <ArrowLeft aria-hidden="true" data-icon="inline-start" />
+      {t.rpa.backToMonitor}
+    </Link>
+  )
+}
+
 export function RpaDetailView({ rpaId }: { rpaId: string }) {
   const { rows } = useRpas()
   const rpa = rows.find((row) => row.id === rpaId)
@@ -105,11 +121,8 @@ export function RpaDetailView({ rpaId }: { rpaId: string }) {
 
   if (!rpa) {
     return (
-      <div className="flex flex-col gap-4">
-        <Link href="/rpa-monitor" className="inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft aria-hidden="true" />
-          Back to RPA Monitor
-        </Link>
+      <div className="flex min-w-0 flex-col">
+        <RpaMonitorBackLink />
         <PageHeader title="RPA not found" description="This RPA is not available in the current monitor." />
       </div>
     )
@@ -117,10 +130,7 @@ export function RpaDetailView({ rpaId }: { rpaId: string }) {
 
   return (
     <div className="flex min-w-0 flex-col">
-      <Link href="/rpa-monitor" className="mb-2 inline-flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground focus-visible:rounded focus-visible:outline-2 focus-visible:outline-ring">
-        <ArrowLeft aria-hidden="true" />
-        Back to RPA Monitor
-      </Link>
+      <RpaMonitorBackLink />
 
       <PageHeader title={rpa.name} description={rpa.description}>
         <RpaStatusBadge status={rpa.status} />

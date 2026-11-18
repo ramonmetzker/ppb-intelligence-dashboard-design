@@ -28,6 +28,10 @@ const en = {
     referenceBom: 'Reference BOM',
     products: 'Products',
   },
+  rpa: {
+    localTime: 'Local time',
+    backToMonitor: 'Back to RPA Monitor',
+  },
   dataTable: DATA_TABLE_LOCALES['en'],
   topBar: {
     gbm: 'GBM',
@@ -165,6 +169,10 @@ const ptBR: Dictionary = {
     referenceBom: 'Reference BOM',
     products: 'Produtos',
   },
+  rpa: {
+    localTime: 'Horário local',
+    backToMonitor: 'Voltar ao Monitor de RPAs',
+  },
   dataTable: DATA_TABLE_LOCALES['pt-BR'],
   topBar: {
     gbm: 'GBM',
@@ -301,6 +309,10 @@ const ko: Dictionary = {
     salesDemand: 'Sales Demand',
     referenceBom: 'Reference BOM',
     products: '제품',
+  },
+  rpa: {
+    localTime: '현지 시간',
+    backToMonitor: 'RPA 모니터로 돌아가기',
   },
   dataTable: DATA_TABLE_LOCALES['ko'],
   topBar: {

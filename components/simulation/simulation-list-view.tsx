@@ -66,8 +66,8 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
     header: 'ID',
     accessor: 'id',
     kind: 'text',
-    width: 170,
-    minWidth: 140,
+    width: 156,
+    minWidth: 128,
     pin: 'left',
   },
   {
@@ -79,8 +79,8 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
       value: profile,
       label: profile,
     })),
-    width: 170,
-    minWidth: 145,
+    width: 156,
+    minWidth: 124,
     cell: ({ value }) => (
       <Badge variant="outline" className="font-mono text-[10px] tracking-wide">
         {String(value)}
@@ -92,8 +92,8 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
     header: 'Year',
     accessor: 'year',
     kind: 'text',
-    width: 110,
-    minWidth: 96,
+    width: 128,
+    minWidth: 126,
     align: 'right',
   },
   {
@@ -101,8 +101,8 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
     header: 'Final score',
     accessor: 'finalScore',
     kind: 'number',
-    width: 150,
-    minWidth: 130,
+    width: 164,
+    minWidth: 162,
     align: 'right',
     cell: ({ value }) => <span className="num font-semibold">{scoreFormat.format(Number(value))}</span>,
   },
@@ -111,8 +111,8 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
     header: 'Cost Saving',
     accessor: 'costSaving',
     kind: 'number',
-    width: 170,
-    minWidth: 150,
+    width: 172,
+    minWidth: 170,
     align: 'right',
     cell: ({ value }) => <span className="num font-semibold">{currencyFormat.format(Number(value))}</span>,
     exportValue: (row) => currencyFormat.format(row.costSaving),
@@ -122,8 +122,8 @@ const columns: DataTableColumnDefinition<SimulationListRow>[] = [
     header: 'Run date',
     accessor: 'runDate',
     kind: 'date',
-    width: 220,
-    minWidth: 190,
+    width: 200,
+    minWidth: 174,
     cell: ({ value }) => (
       <time dateTime={String(value)} className="text-muted-foreground">
         {dateFormat.format(new Date(String(value)))}
@@ -194,11 +194,11 @@ export function SimulationListView() {
             tone: 'destructive',
           },
         ]}
-        actionsWidth={112}
+        actionsWidth={64}
         bordered
         stickyHeader
         maxHeight="min(72dvh, 760px)"
-        defaultDensity="comfortable"
+        defaultDensity="compact"
         exporter={{ fileName: 'simulation-list' }}
       />
     </div>

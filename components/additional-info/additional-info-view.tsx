@@ -23,8 +23,8 @@ const columns: DataTableColumnDefinition<AdditionalInfoRow>[] = [
     accessor: 'plant',
     kind: 'select',
     options: [...new Set(ADDITIONAL_INFO_ROWS.map((row) => row.plant))].map((plant) => ({ value: plant, label: plant })),
-    width: 210,
-    minWidth: 180,
+    width: 252,
+    minWidth: 190,
     pin: 'left',
   },
   {
@@ -32,16 +32,17 @@ const columns: DataTableColumnDefinition<AdditionalInfoRow>[] = [
     header: 'Part Number',
     accessor: 'partNumber',
     kind: 'text',
-    width: 210,
-    minWidth: 180,
+    width: 180,
+    minWidth: 152,
+    grow: true,
   },
   {
     id: 'ncm',
     header: 'NCM (8 digits)',
     accessor: 'ncm',
     kind: 'text',
-    width: 170,
-    minWidth: 150,
+    width: 188,
+    minWidth: 164,
     cell: ({ value }) => <span className="font-mono tabular-nums">{String(value)}</span>,
   },
   {
@@ -49,8 +50,8 @@ const columns: DataTableColumnDefinition<AdditionalInfoRow>[] = [
     header: 'Suframa (4 digits)',
     accessor: 'suframa',
     kind: 'text',
-    width: 190,
-    minWidth: 170,
+    width: 212,
+    minWidth: 182,
     cell: ({ value }) => <span className="font-mono tabular-nums">{String(value)}</span>,
   },
   {
@@ -58,8 +59,8 @@ const columns: DataTableColumnDefinition<AdditionalInfoRow>[] = [
     header: 'Update Date',
     accessor: 'updateDate',
     kind: 'date',
-    width: 170,
-    minWidth: 150,
+    width: 196,
+    minWidth: 174,
     cell: ({ row }) => (
       <time dateTime={row.updateDate} className="text-muted-foreground">
         {dateFormat.format(new Date(`${row.updateDate}T00:00:00Z`))}
@@ -108,7 +109,7 @@ export function AdditionalInfoView() {
         bordered
         stickyHeader
         maxHeight="min(72dvh, 760px)"
-        defaultDensity="comfortable"
+        defaultDensity="compact"
         exporter={{ fileName: 'additional-info' }}
       />
     </>

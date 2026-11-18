@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Bell, BellOff, CalendarClock, Plus, Power, PowerOff } from 'lucide-react'
+import { Bell, BellOff, CalendarClock, Clock, Plus, Power, PowerOff } from 'lucide-react'
 import { PageActions } from '@/components/app/page-actions'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
+import { dataTableControlClass } from '@/components/data-table/toolbar-controls'
+import { usePreferences } from '@/components/shell/preferences-provider'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import {
   DEFAULT_QUERY,
   type BulkAction,
@@ -33,6 +34,7 @@ const base = (id: string) => schemaById.get(id)!
 const DEFAULT_RPA_QUERY: DataTableQuery = { ...DEFAULT_QUERY, sort: [{ id: 'id', direction: 'asc' }] }
 
 export function RpaMonitorView() {
+  const { t } = usePreferences()
   const now = useNow()
   const { rows, setRows } = useRpas()
   const [query, setQuery] = useState<DataTableQuery>(DEFAULT_RPA_QUERY)
@@ -130,7 +132,7 @@ export function RpaMonitorView() {
       {
         ...base('lastRunAt'),
         width: 205,
-        description: 'When the last run started. Use the table switch to display UTC or GMT-4.',
+        description: 'When the last run started. Use the table toolbar to display UTC or GMT-4.',
         cell: ({ row }) =>
           row.lastRunAt ? (
             <time dateTime={row.lastRunAt}>{formatDateTime(row.lastRunAt, showLocalTime)}</time>
@@ -225,15 +227,16 @@ export function RpaMonitorView() {
           query={query}
           onQueryChange={setQuery}
           toolbarStart={
-            <div className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground">
-              <Switch
-                checked={showLocalTime}
-                onCheckedChange={setShowLocalTime}
-                aria-label="Horário local, GMT-4"
-              />
-              <span aria-hidden="true">Horário local</span>
-              <span aria-hidden="true" className="text-muted-foreground">GMT-4</span>
-            </div>
+            <button
+              type="button"
+              className={cn(dataTableControlClass, 'aria-pressed:bg-muted')}
+              aria-pressed={showLocalTime}
+              onClick={() => setShowLocalTime((current) => !current)}
+            >
+              <Clock aria-hidden="true" className="size-4" />
+              {t.rpa.localTime}
+              <span className="text-muted-foreground">GMT-4</span>
+            </button>
           }
           selectable
           bulkActions={bulkActions}
