@@ -1245,15 +1245,16 @@ export function DataTable<T>(props: DataTableProps<T>) {
 
   return (
     <section className={cn('flex min-w-0 flex-col gap-3', className)} aria-busy={loading}>
-      <div className="relative h-9">
+      <div className="relative min-h-9">
         <div
           aria-hidden={selectionBarActive}
           className={cn(
-            'absolute inset-0 z-20',
-            selectionBarActive ? 'dt-toolbar-controls-exit' : selectionBarHasRun ? 'dt-toolbar-controls-enter' : '',
+            'z-20',
+            selectionBarActive ? 'absolute inset-x-0 top-0 dt-toolbar-controls-exit' : 'relative',
+            !selectionBarActive && selectionBarHasRun && 'dt-toolbar-controls-enter',
           )}
         >
-          <div className="flex h-9 flex-wrap items-center gap-2">
+          <div className="flex min-h-9 flex-wrap items-center gap-2">
             {powerSearch && (
               <PowerSearch
                 value={query.search}

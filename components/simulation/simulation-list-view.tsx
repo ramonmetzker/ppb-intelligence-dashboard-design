@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Info, Trash } from '@phosphor-icons/react'
+import { Trash } from '@phosphor-icons/react'
 import { PageHeader } from '@/components/app/page-header'
 import { DataTable } from '@/components/data-table/data-table'
 import { Badge } from '@/components/ui/badge'
@@ -27,6 +27,7 @@ const PROFILE_BY_ID: Record<string, string> = {
   'supplier-shock': 'STRESS TEST',
 }
 
+// Cost-saving amounts are illustrative until simulation results expose a savings field.
 const DEMO_COST_SAVINGS: Record<string, number> = {
   forecast: 0,
   balanced: 53164.74,
@@ -149,7 +150,7 @@ export function SimulationListView() {
       tone: 'destructive',
       confirm: (context) => ({
         title: `Delete ${context.count} simulations?`,
-        description: 'The selected mock runs will be removed from this list until you reload the page.',
+        description: 'The selected simulations will be removed from the list.',
         confirmLabel: 'Delete',
       }),
       onSelect: ({ ids }) => deleteSimulations(ids),
@@ -163,17 +164,11 @@ export function SimulationListView() {
         description="Review simulation profiles, final scores, and run dates. Remove runs you no longer need."
       />
 
-      <div className="mb-4 flex items-center gap-2 rounded-md border border-border bg-muted/35 px-3 py-2 text-xs text-muted-foreground">
-        <Info size={15} aria-hidden="true" className="shrink-0" />
-        <span>Mock data for preview. Cost Saving values are illustrative; deleted runs return after reload.</span>
-      </div>
-
       {lastDeletedIds.length > 0 && (
         <p role="status" className="sr-only">
           {lastDeletedIds.length === 1
-            ? `Simulation ${lastDeletedIds[0]} was removed from the mock list.`
-            : `${lastDeletedIds.length} simulations were removed from the mock list.`}{' '}
-          Deleted runs will return after reloading the page.
+            ? `Simulation ${lastDeletedIds[0]} was removed.`
+            : `${lastDeletedIds.length} simulations were removed.`}
         </p>
       )}
 
@@ -193,7 +188,7 @@ export function SimulationListView() {
             onSelect: () => deleteSimulations([row.id]),
             confirm: {
               title: `Delete ${row.id}?`,
-              description: `The ${row.profile} mock run will be removed from this list until you reload the page.`,
+              description: `The ${row.profile} simulation will be removed from the list.`,
               confirmLabel: 'Delete',
             },
             tone: 'destructive',
