@@ -227,12 +227,11 @@ export function RpaMonitorView() {
           toolbarStart={
             <div className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground">
               <Switch
-                id="rpa-local-time"
                 checked={showLocalTime}
                 onCheckedChange={setShowLocalTime}
                 aria-label="Horário local, GMT-4"
               />
-              <label htmlFor="rpa-local-time" className="cursor-pointer">Horário local</label>
+              <span aria-hidden="true">Horário local</span>
               <span aria-hidden="true" className="text-muted-foreground">GMT-4</span>
             </div>
           }
